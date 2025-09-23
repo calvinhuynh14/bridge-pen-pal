@@ -1,21 +1,30 @@
-import defaultTheme from 'tailwindcss/defaultTheme';
-import forms from '@tailwindcss/forms';
-import typography from '@tailwindcss/typography';
+import defaultTheme from "tailwindcss/defaultTheme";
+import forms from "@tailwindcss/forms";
+import typography from "@tailwindcss/typography";
 
 /** @type {import('tailwindcss').Config} */
 export default {
     content: [
-        './vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php',
-        './vendor/laravel/jetstream/**/*.blade.php',
-        './storage/framework/views/*.php',
-        './resources/views/**/*.blade.php',
-        './resources/js/**/*.vue',
+        "./vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php",
+        "./vendor/laravel/jetstream/**/*.blade.php",
+        "./storage/framework/views/*.php",
+        "./resources/views/**/*.blade.php",
+        "./resources/js/**/*.vue",
     ],
 
     theme: {
         extend: {
+            colors: {
+                primary: "#B8B8FF",
+                pressed: "#9381FF",
+                hover: "#5E239D",
+                white: "#F1F1F1",
+                background: "#FFF3E7",
+                accent: "#E9D60C",
+                black: "#1F1F1F",
+            },
             fontFamily: {
-                sans: ['Figtree', ...defaultTheme.fontFamily.sans],
+                sans: ["Figtree", ...defaultTheme.fontFamily.sans],
             },
         },
     },
