@@ -58,10 +58,26 @@ defineProps({
                 </h2>
             </div>
             <!-- Three Buttons -->
-            <div class="flex flex-col lg:flex-row gap-4">
-                <CustomButton text="Resident" preset="neutral" size="medium" />
-                <CustomButton text="Volunteer" preset="neutral" size="medium" />
-                <CustomButton text="Admin" preset="neutral" size="medium" />
+            <div
+                class="flex flex-col lg:flex-row gap-4 justify-center items-center"
+            >
+                <Link :href="route('login', { type: 'resident' })">
+                    <CustomButton
+                        text="Resident"
+                        preset="neutral"
+                        size="small"
+                    />
+                </Link>
+                <Link :href="route('login', { type: 'volunteer' })">
+                    <CustomButton
+                        text="Volunteer"
+                        preset="neutral"
+                        size="medium"
+                    />
+                </Link>
+                <Link :href="route('admin.login')">
+                    <CustomButton text="Admin" preset="neutral" size="large" />
+                </Link>
             </div>
         </section>
     </div>

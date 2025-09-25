@@ -22,6 +22,7 @@ export default {
                 background: "#FFF3E7",
                 accent: "#E9D60C",
                 black: "#1F1F1F",
+                inputField: "#F5F5F5",
             },
             fontFamily: {
                 sans: ["Figtree", ...defaultTheme.fontFamily.sans],

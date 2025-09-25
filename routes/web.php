@@ -13,6 +13,13 @@ Route::get('/', function () {
     ]);
 });
 
+Route::get('/admin/login', function () {
+    return Inertia::render('Auth/AdminLogin', [
+        'canResetPassword' => Route::has('password.request'),
+        'status' => session('status'),
+    ]);
+})->name('admin.login');
+
 Route::middleware([
     'auth:sanctum',
     config('jetstream.auth_session'),

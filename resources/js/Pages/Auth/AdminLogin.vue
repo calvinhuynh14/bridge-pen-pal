@@ -31,7 +31,7 @@ const submit = () => {
 </script>
 
 <template>
-    <Head title="Log in" />
+    <Head title="Admin Login" />
 
     <!-- Main Container -->
     <div
@@ -45,12 +45,12 @@ const submit = () => {
                 <h1
                     class="hidden lg:block text-primary text-2xl lg:text-4xl xl:text-6xl"
                 >
-                    Volunteer Login
+                    Admin Login
                 </h1>
                 <h2
                     class="hidden lg:block text-hover text-lg lg:text-2xl xl:text-4xl"
                 >
-                    Access your volunteer dashboard
+                    Access your admin dashboard
                 </h2>
             </div>
 
@@ -66,8 +66,8 @@ const submit = () => {
 
             <!-- Sign Up Section -->
             <div class="text-center mb-4">
-                <p class="text-hover font-bold text-lg">Not a volunteer?</p>
-                <Link :href="route('register', { type: 'volunteer' })">
+                <p class="text-hover font-bold text-lg">Not an admin?</p>
+                <Link :href="route('register', { type: 'admin' })">
                     <CustomButton
                         text="Sign Up"
                         preset="neutral"
@@ -125,18 +125,18 @@ const submit = () => {
                         <!-- Email Field -->
                         <div>
                             <TextInput
-                                id="username"
-                                v-model="form.username"
-                                type="text"
+                                id="email"
+                                v-model="form.email"
+                                type="email"
                                 class="mt-2 block w-full border-gray-300 rounded-lg focus:border-primary focus:ring-primary"
                                 required
                                 autofocus
-                                autocomplete="username"
-                                placeholder="Enter your username"
+                                autocomplete="email"
+                                placeholder="Enter your email"
                             />
                             <InputError
                                 class="mt-2"
-                                :message="form.errors.username"
+                                :message="form.errors.email"
                             />
                         </div>
 
