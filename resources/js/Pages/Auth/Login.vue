@@ -9,9 +9,14 @@ import PrimaryButton from "@/Components/PrimaryButton.vue";
 import TextInput from "@/Components/TextInput.vue";
 import CustomButton from "@/Components/CustomButton.vue";
 
-defineProps({
+// Get user type from query parameter, default to 'volunteer'
+const props = defineProps({
     canResetPassword: Boolean,
     status: String,
+    type: {
+        type: String,
+        default: "volunteer",
+    },
 });
 
 const form = useForm({
@@ -28,10 +33,38 @@ const submit = () => {
         onFinish: () => form.reset("password"),
     });
 };
+
+// Get display text based on user type
+const getUserTypeDisplay = (type) => {
+    const types = {
+        volunteer: "Volunteer",
+        admin: "Admin",
+        resident: "Resident",
+    };
+    return types[type] || "User";
+};
+
+const getTitle = (type) => {
+    const titles = {
+        volunteer: "Volunteer Login",
+        admin: "Admin Login",
+        resident: "Resident Login",
+    };
+    return titles[type] || "Login";
+};
+
+const getSubtitle = (type) => {
+    const subtitles = {
+        volunteer: "Access your volunteer dashboard",
+        admin: "Access your admin dashboard",
+        resident: "Access your resident dashboard",
+    };
+    return subtitles[type] || "Access your dashboard";
+};
 </script>
 
 <template>
-    <Head title="Log in" />
+    <Head :title="`${getUserTypeDisplay(type)} Login`" />
 
     <!-- Main Container -->
     <div
@@ -45,12 +78,12 @@ const submit = () => {
                 <h1
                     class="hidden lg:block text-primary text-2xl lg:text-4xl xl:text-6xl"
                 >
-                    Volunteer Login
+                    {{ getTitle(type) }}
                 </h1>
                 <h2
                     class="hidden lg:block text-hover text-lg lg:text-2xl xl:text-4xl"
                 >
-                    Access your volunteer dashboard
+                    {{ getSubtitle(type) }}
                 </h2>
             </div>
 
@@ -125,18 +158,18 @@ const submit = () => {
                         <!-- Email Field -->
                         <div>
                             <TextInput
-                                id="username"
-                                v-model="form.username"
-                                type="text"
+                                id="email"
+                                v-model="form.email"
+                                type="email"
                                 class="mt-2 block w-full border-gray-300 rounded-lg focus:border-primary focus:ring-primary"
                                 required
                                 autofocus
-                                autocomplete="username"
-                                placeholder="Enter your username"
+                                autocomplete="email"
+                                placeholder="Enter your email"
                             />
                             <InputError
                                 class="mt-2"
-                                :message="form.errors.username"
+                                :message="form.errors.email"
                             />
                         </div>
 
@@ -156,6 +189,21 @@ const submit = () => {
                                 :message="form.errors.password"
                             />
                         </div>
+
+                        <!-- Remember Me Checkbox -->
+                        <div class="flex items-center">
+                            <Checkbox
+                                id="remember"
+                                v-model:checked="form.remember"
+                                name="remember"
+                            />
+                            <label
+                                for="remember"
+                                class="ml-2 text-md text-white font-bold dark:text-white"
+                            >
+                                Remember me
+                            </label>
+                        </div>
                     </div>
 
                     <!-- Submit Button -->
@@ -163,7 +211,7 @@ const submit = () => {
                         <button
                             type="submit"
                             :disabled="form.processing"
-                            class="w-full bg-primary lg:bg-background text-white lg:text-hover lg:border-hover lg:border-2 px-8 py-4 rounded-lg text-lg font-medium hover:bg-pressed transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            class="w-full bg-primary lg:bg-background text-white hover:text-white lg:text-hover lg:border-hover lg:border-2 px-8 py-4 rounded-lg text-lg font-medium hover:bg-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {{ form.processing ? "Signing In..." : "Sign In" }}
                         </button>
@@ -173,7 +221,7 @@ const submit = () => {
                             <Link
                                 v-if="canResetPassword"
                                 :href="route('password.request')"
-                                class="text-white hover:text-pressed text-md"
+                                class="text-hover hover:text-pressed text-lg"
                             >
                                 Forgot your password?
                             </Link>

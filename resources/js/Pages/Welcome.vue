@@ -61,21 +61,21 @@ defineProps({
             <div
                 class="flex flex-col lg:flex-row gap-4 justify-center items-center"
             >
-                <Link :href="route('login', { type: 'resident' })">
+                <Link :href="route('register', { type: 'resident' })">
                     <CustomButton
                         text="Resident"
                         preset="neutral"
-                        size="small"
+                        size="large"
                     />
                 </Link>
-                <Link :href="route('login', { type: 'volunteer' })">
+                <Link :href="route('register', { type: 'volunteer' })">
                     <CustomButton
                         text="Volunteer"
                         preset="neutral"
-                        size="medium"
+                        size="large"
                     />
                 </Link>
-                <Link :href="route('admin.login')">
+                <Link :href="route('register', { type: 'admin' })">
                     <CustomButton text="Admin" preset="neutral" size="large" />
                 </Link>
             </div>

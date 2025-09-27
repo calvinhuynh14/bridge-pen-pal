@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
+use Inertia\Inertia;
 use Laravel\Fortify\Actions\RedirectIfTwoFactorAuthenticatable;
 use Laravel\Fortify\Fortify;
 
@@ -34,6 +35,35 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::updateUserPasswordsUsing(UpdateUserPassword::class);
         Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
         Fortify::redirectUserForTwoFactorAuthenticationUsing(RedirectIfTwoFactorAuthenticatable::class);
+
+        // Customize the register view to pass user type
+        Fortify::registerView(function (Request $request) {
+            return inertia('Auth/Register', [
+                'type' => $request->query('type', 'resident'),
+                'canResetPassword' => \Route::has('password.request'),
+                'status' => session('status'),
+            ]);
+        });
+
+        // Customize the login view to pass user type
+        Fortify::loginView(function (Request $request) {
+            return inertia('Auth/Login', [
+                'type' => $request->query('type', 'volunteer'),
+                'canResetPassword' => \Route::has('password.request'),
+                'status' => session('status'),
+            ]);
+        });
+
+        // Customize the redirect after login based on user type
+        Fortify::redirects('login', function () {
+            $user = auth()->user();
+            
+            if ($user && $user->user_type === 'admin') {
+                return route('admin.dashboard');
+            }
+            
+            return route('dashboard');
+        });
 
         RateLimiter::for('login', function (Request $request) {
             $throttleKey = Str::transliterate(Str::lower($request->input(Fortify::username())).'|'.$request->ip());
