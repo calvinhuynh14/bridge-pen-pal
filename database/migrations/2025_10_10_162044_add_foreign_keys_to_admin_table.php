@@ -13,9 +13,9 @@ return new class extends Migration
     {
         Schema::table('admin', function (Blueprint $table) {
             $table->unsignedBigInteger('user_id')->after('id');
-$table->unsignedBigInteger('organization_id')->after('user_id');
-$table->foreign('user_id')->references('id')->on('users');
-$table->foreign('organization_id')->references('id')->on('organization');
+            $table->unsignedBigInteger('organization_id')->after('user_id');
+            $table->foreign('user_id')->references('id')->on('users');
+            $table->foreign('organization_id')->references('id')->on('organization');
 
         });
     }
@@ -26,7 +26,9 @@ $table->foreign('organization_id')->references('id')->on('organization');
     public function down(): void
     {
         Schema::table('admin', function (Blueprint $table) {
-            //
+            $table->dropForeign(['user_id']);
+            $table->dropForeign(['organization_id']);
+            $table->dropColumn(['user_id', 'organization_id']);
         });
     }
 };
