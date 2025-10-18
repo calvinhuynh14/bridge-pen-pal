@@ -3,8 +3,12 @@
 namespace App\Actions\Fortify;
 
 use App\Models\User;
+use App\Models\Organization;
+use App\Models\Admin;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Laravel\Fortify\Contracts\CreatesNewUsers;
 use Laravel\Jetstream\Jetstream;
 
@@ -53,11 +57,54 @@ class CreateNewUser implements CreatesNewUsers
             default => $input['name'] ?? 'User',
         };
 
-        return User::create([
+        // Check if this is a Google OAuth user
+        $isGoogleUser = session()->has('google_user');
+        
+        // Create the user
+        $user = User::create([
             'name' => $name,
             'email' => $input['email'],
-            'password' => Hash::make($input['password']),
+            'password' => $isGoogleUser ? Hash::make(Str::random(16)) : Hash::make($input['password']),
             'user_type' => $input['user_type'],
         ]);
+
+        /**
+         * Use raw SQL queries
+         */
+        // If user is admin, create organization and admin record
+        if ($userType === 'admin') {
+            DB::transaction(function () use ($user, $input) {
+                // Create organization using raw SQL
+                DB::insert(
+                    'INSERT INTO organization (name, created_at, updated_at) VALUES (?, ?, ?)',
+                    [
+                        $input['organization_name'],
+                        now(),
+                        now()
+                    ]
+                );
+                
+                // Get the organization ID
+                $organizationId = DB::getPdo()->lastInsertId();
+
+                // Create admin record using raw SQL
+                DB::insert(
+                    'INSERT INTO admin (user_id, organization_id, created_at, updated_at) VALUES (?, ?, ?, ?)',
+                    [
+                        $user->id,
+                        $organizationId,
+                        now(),
+                        now()
+                    ]
+                );
+            });
+        }
+
+        // Clear Google user session if it exists
+        if ($isGoogleUser) {
+            session()->forget('google_user');
+        }
+
+        return $user;
     }
 }

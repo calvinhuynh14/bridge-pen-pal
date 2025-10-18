@@ -89,4 +89,20 @@ class User extends Authenticatable
     {
         return $this->user_type === 'admin';
     }
+
+    /**
+     * Get the admin record associated with this user
+     */
+    public function admin()
+    {
+        return $this->hasOne(Admin::class);
+    }
+
+    /**
+     * Get the organization through the admin relationship
+     */
+    public function organization()
+    {
+        return $this->hasOneThrough(Organization::class, Admin::class);
+    }
 }

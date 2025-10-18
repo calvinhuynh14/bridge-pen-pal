@@ -1,5 +1,6 @@
 <script setup>
 import { Head, Link, useForm } from "@inertiajs/vue3";
+import { computed } from "vue";
 import AuthenticationCard from "@/Components/AuthenticationCard.vue";
 import AuthenticationCardLogo from "@/Components/AuthenticationCardLogo.vue";
 import Checkbox from "@/Components/Checkbox.vue";
@@ -15,18 +16,26 @@ const props = defineProps({
         type: String,
         default: "resident",
     },
+    google: {
+        type: String,
+        default: null,
+    },
+    googleUser: {
+        type: Object,
+        default: null,
+    },
 });
 
 const form = useForm({
     // Common fields
-    email: "",
+    email: props.googleUser?.email || "",
     password: "",
     password_confirmation: "",
     terms: false,
     user_type: props.type, // Set user type from props
 
     // Resident fields
-    name: "",
+    name: props.googleUser?.name || "",
 
     // Volunteer fields
     first_name: "",
@@ -77,6 +86,11 @@ const getSubtitle = (type) => {
     };
     return subtitles[type] || "Join our community";
 };
+
+// Check if this is a Google OAuth user
+const isGoogleUser = computed(() => {
+    return props.google === "true" && props.googleUser;
+});
 </script>
 
 <template>
@@ -253,6 +267,7 @@ const getSubtitle = (type) => {
                                 v-model="form.email"
                                 type="email"
                                 class="mt-2 block w-full border-gray-300 rounded-lg focus:border-primary focus:ring-primary"
+                                :disabled="isGoogleUser"
                                 required
                                 autocomplete="email"
                                 placeholder="Enter your email address"
@@ -263,8 +278,34 @@ const getSubtitle = (type) => {
                             />
                         </div>
 
-                        <!-- Password Field -->
-                        <div>
+                        <!-- Google OAuth Message -->
+                        <div
+                            v-if="isGoogleUser"
+                            class="bg-green-50 border border-green-200 rounded-lg p-4"
+                        >
+                            <div class="flex items-center">
+                                <img
+                                    :src="googleUser.avatar"
+                                    :alt="googleUser.name"
+                                    class="w-8 h-8 rounded-full mr-3"
+                                />
+                                <div>
+                                    <p
+                                        class="text-sm text-green-800 font-medium"
+                                    >
+                                        Signed in with Google
+                                    </p>
+                                    <p class="text-xs text-green-600">
+                                        {{ googleUser.name }} ({{
+                                            googleUser.email
+                                        }})
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Password Field - Hidden for Google users -->
+                        <div v-if="!isGoogleUser">
                             <TextInput
                                 id="password"
                                 v-model="form.password"
@@ -280,8 +321,8 @@ const getSubtitle = (type) => {
                             />
                         </div>
 
-                        <!-- Confirm Password Field -->
-                        <div>
+                        <!-- Confirm Password Field - Hidden for Google users -->
+                        <div v-if="!isGoogleUser">
                             <TextInput
                                 id="password_confirmation"
                                 v-model="form.password_confirmation"
@@ -345,7 +386,11 @@ const getSubtitle = (type) => {
                         >
                             {{
                                 form.processing
-                                    ? "Creating Account..."
+                                    ? isGoogleUser
+                                        ? "Completing Registration..."
+                                        : "Creating Account..."
+                                    : isGoogleUser
+                                    ? "Complete Registration"
                                     : "Create Account"
                             }}
                         </button>
@@ -359,19 +404,16 @@ const getSubtitle = (type) => {
                         <span class="px-3 text-black text-md">OR</span>
                         <div class="flex-grow h-0.5 bg-black"></div>
                     </div>
+                </div>
 
-                    <button
-                        class="w-full flex items-center justify-center px-4 py-3 border border-black rounded-lg bg-white hover:bg-gray-50 transition-colors"
-                    >
+                <div class="flex items-center justify-center">
+                    <a :href="route('auth.google.redirect', { type: type })">
                         <img
-                            src="https://developers.google.com/identity/images/g-logo.png"
-                            alt="Google"
-                            class="w-5 h-5 mr-3"
+                            src="/images/logos/web_neutral_rd_SU.svg"
+                            alt="Sign up with Google"
+                            class="h-10"
                         />
-                        <span class="text-gray-700 font-medium"
-                            >Continue with Google</span
-                        >
-                    </button>
+                    </a>
                 </div>
             </div>
         </section>

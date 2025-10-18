@@ -40,6 +40,8 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::registerView(function (Request $request) {
             return inertia('Auth/Register', [
                 'type' => $request->query('type', 'resident'),
+                'google' => $request->query('google'),
+                'googleUser' => session('google_user'),
                 'canResetPassword' => \Route::has('password.request'),
                 'status' => session('status'),
             ]);

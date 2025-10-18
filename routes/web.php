@@ -2,8 +2,13 @@
 
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
+use App\Http\Controllers\GoogleAuthController;
 
+/**
+ * Welcome Route
+ */
 Route::get('/', function () {
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
@@ -13,6 +18,9 @@ Route::get('/', function () {
     ]);
 });
 
+/**
+ * Admin Login Route
+ */
 Route::get('/admin/login', function () {
     return Inertia::render('Auth/AdminLogin', [
         'canResetPassword' => Route::has('password.request'),
@@ -20,6 +28,14 @@ Route::get('/admin/login', function () {
     ]);
 })->name('admin.login');
 
+// Google OAuth routes
+Route::get('/auth/google/redirect', [GoogleAuthController::class, 'redirect'])->name('auth.google.redirect');
+Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->name('auth.google.callback');
+
+
+/**
+ * Protected Routes
+ */
 Route::middleware([
     'auth:sanctum',
     config('jetstream.auth_session'),
@@ -40,7 +56,16 @@ Route::middleware([
     
     // Admin dashboard
     Route::get('/admin/dashboard', function () {
-        return Inertia::render('AdminDashboard');
+        $user = auth()->user();
+        
+        // Check if admin has an organization
+        $hasOrganization = DB::select('SELECT id FROM admin WHERE user_id = ?', [$user->id]);
+        $needsOrganizationSetup = empty($hasOrganization);
+        
+        
+        return Inertia::render('AdminDashboard', [
+            'needsOrganizationSetup' => $needsOrganizationSetup
+        ]);
     })->name('admin.dashboard');
     
     // Admin management routes
@@ -65,4 +90,8 @@ Route::middleware([
     Route::get('/profile/settings', function () {
         return Inertia::render('ProfileSettings');
     })->name('profile.settings');
+    
+    // Organization routes
+    Route::post('/organization', [App\Http\Controllers\OrganizationController::class, 'store']);
+    Route::get('/organization/check', [App\Http\Controllers\OrganizationController::class, 'check']);
 });

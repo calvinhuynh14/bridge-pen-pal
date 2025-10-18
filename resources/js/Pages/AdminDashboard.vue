@@ -1,10 +1,35 @@
 <script setup>
 import AppLayout from "@/Layouts/AppLayout.vue";
-import { Head, Link } from "@inertiajs/vue3";
+import { Head, Link, router } from "@inertiajs/vue3";
 import CustomButton from "@/Components/CustomButton.vue";
+import OrganizationSetupModal from "@/Components/OrganizationSetupModal.vue";
+import { ref, onMounted } from "vue";
 
-// This will be the admin management system
-// Similar to Facebook's admin panel for managing users, content, etc.
+const props = defineProps({
+    needsOrganizationSetup: {
+        type: Boolean,
+        default: false,
+    },
+});
+
+const showModal = ref(false);
+
+onMounted(() => {
+    // Show modal if organization setup is needed
+    if (props.needsOrganizationSetup) {
+        showModal.value = true;
+    }
+});
+
+const handleModalClose = () => {
+    showModal.value = false;
+};
+
+const handleModalSuccess = () => {
+    // Close the modal and update the needsOrganizationSetup state
+    showModal.value = false;
+    // The page will automatically update the needsOrganizationSetup prop on next navigation
+};
 </script>
 
 <template>
@@ -97,5 +122,12 @@ import CustomButton from "@/Components/CustomButton.vue";
                 </div>
             </div>
         </div>
+
+        <!-- Organization Setup Modal -->
+        <OrganizationSetupModal
+            :show="showModal"
+            @close="handleModalClose"
+            @success="handleModalSuccess"
+        />
     </AppLayout>
 </template>
