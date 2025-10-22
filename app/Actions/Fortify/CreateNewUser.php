@@ -25,27 +25,13 @@ class CreateNewUser implements CreatesNewUsers
     {
         $userType = $input['user_type'];
         
-        // Check if this is a Google OAuth user
-        $isGoogleUser = session()->has('google_user');
-        
-        // Debug logging
-        \Log::info('CreateNewUser called', [
-            'user_type' => $userType,
-            'is_google_user' => $isGoogleUser,
-            'input_keys' => array_keys($input)
-        ]);
-        
         // Define validation rules based on user type
         $rules = [
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'password' => $this->passwordRules(),
             'user_type' => ['required', 'string', 'in:resident,volunteer,admin'],
             'terms' => Jetstream::hasTermsAndPrivacyPolicyFeature() ? ['accepted', 'required'] : '',
         ];
-        
-        // Only require password for non-Google users
-        if (!$isGoogleUser) {
-            $rules['password'] = $this->passwordRules();
-        }
 
         // Add type-specific validation rules
         switch ($userType) {
@@ -72,6 +58,9 @@ class CreateNewUser implements CreatesNewUsers
             'admin' => $input['organization_name'],
             default => $input['name'] ?? 'User',
         };
+
+        // Check if this is a Google OAuth user
+        $isGoogleUser = session()->has('google_user');
         
         // Create the user
         $user = User::create([

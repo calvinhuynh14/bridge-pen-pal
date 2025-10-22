@@ -1,6 +1,12 @@
 <script setup>
-import { Head, Link } from "@inertiajs/vue3";
+import { Head, Link, useForm } from "@inertiajs/vue3";
 import CustomButton from "@/Components/CustomButton.vue";
+
+const logoutForm = useForm({});
+
+const logoutAndRedirect = () => {
+    logoutForm.post("/logout-to-login");
+};
 </script>
 
 <template>
@@ -142,14 +148,16 @@ import CustomButton from "@/Components/CustomButton.vue";
                         />
                     </Link>
 
-                    <Link href="/login?type=volunteer" class="block">
+                    <div class="block">
                         <CustomButton
                             text="Already have an account? Sign in"
                             preset="neutral"
                             size="small"
                             class="w-full"
+                            @click="logoutAndRedirect"
+                            :disabled="logoutForm.processing"
                         />
-                    </Link>
+                    </div>
                 </div>
             </div>
         </section>

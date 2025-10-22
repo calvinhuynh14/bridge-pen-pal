@@ -3,6 +3,8 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Http\Controllers\GoogleAuthController;
 
@@ -32,10 +34,19 @@ Route::get('/admin/login', function () {
 Route::get('/auth/google/redirect', [GoogleAuthController::class, 'redirect'])->name('auth.google.redirect');
 Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->name('auth.google.callback');
 
-// Application submitted page for volunteers (public route)
-Route::get('/application/submitted', function () {
-    return Inertia::render('Auth/ApplicationSubmitted');
-})->name('application.submitted');
+    // Application submitted page for volunteers (public route)
+    Route::get('/application/submitted', function () {
+        return Inertia::render('Auth/ApplicationSubmitted');
+    })->name('application.submitted');
+    
+    // Custom logout route that redirects to login
+    Route::post('/logout-to-login', function (Request $request) {
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+        
+        return redirect('/login?type=volunteer');
+    })->name('logout.to.login');
 
 
 /**
@@ -68,9 +79,35 @@ Route::middleware([
         $hasOrganization = DB::select('SELECT id FROM admin WHERE user_id = ?', [$user->id]);
         $needsOrganizationSetup = empty($hasOrganization);
         
+        // Get volunteer applications for this admin's organization
+        $volunteerApplications = [];
+        if (!$needsOrganizationSetup) {
+            $adminRecord = DB::select('SELECT organization_id FROM admin WHERE user_id = ?', [$user->id]);
+            if (!empty($adminRecord)) {
+                $organizationId = $adminRecord[0]->organization_id;
+                
+                // Get volunteer applications using raw SQL
+                $volunteerApplications = DB::select('
+                    SELECT 
+                        v.id,
+                        v.status,
+                        v.application_date,
+                        v.application_notes,
+                        u.name,
+                        u.email,
+                        o.name as organization_name
+                    FROM volunteer v
+                    JOIN users u ON v.user_id = u.id
+                    JOIN organization o ON v.organization_id = o.id
+                    WHERE v.organization_id = ?
+                    ORDER BY v.application_date DESC
+                ', [$organizationId]);
+            }
+        }
         
         return Inertia::render('AdminDashboard', [
-            'needsOrganizationSetup' => $needsOrganizationSetup
+            'needsOrganizationSetup' => $needsOrganizationSetup,
+            'volunteerApplications' => $volunteerApplications
         ]);
     })->name('admin.dashboard');
     

@@ -465,8 +465,8 @@ const isGoogleUser = computed(() => {
                 <div class="flex items-center justify-center">
                     <a :href="route('auth.google.redirect', { type: type })">
                         <img
-                            src="/images/logos/web_neutral_rd_SU.svg"
-                            alt="Sign up with Google"
+                            src="/images/logos/web_neutral_sq_ctn.svg"
+                            alt="Continue with Google"
                             class="h-10"
                         />
                     </a>

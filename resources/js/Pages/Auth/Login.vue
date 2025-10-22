@@ -110,18 +110,16 @@ const getSubtitle = (type) => {
             </div>
 
             <div class="text-center">
-                <button
-                    class="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors lg:hidden"
+                <a
+                    :href="route('auth.google.redirect', { type: type })"
+                    class="block lg:hidden"
                 >
                     <img
-                        src="https://developers.google.com/identity/images/g-logo.png"
-                        alt="Google"
-                        class="w-5 h-5 mr-3"
+                        src="/images/logos/web_neutral_rd_SU.svg"
+                        alt="Sign in with Google"
+                        class="h-10 mx-auto"
                     />
-                    <span class="text-gray-700 font-medium"
-                        >Continue with Google</span
-                    >
-                </button>
+                </a>
 
                 <!-- Divider line with OR - only visible on small screens -->
                 <div class="md:hidden mt-4">
@@ -237,18 +235,19 @@ const getSubtitle = (type) => {
                         <div class="flex-grow h-0.5 bg-black"></div>
                     </div>
 
-                    <button
-                        class="w-full flex items-center justify-center px-4 py-3 border border-black rounded-lg bg-white hover:bg-gray-50 transition-colors"
-                    >
-                        <img
-                            src="https://developers.google.com/identity/images/g-logo.png"
-                            alt="Google"
-                            class="w-5 h-5 mr-3"
-                        />
-                        <span class="text-gray-700 font-medium"
-                            >Continue with Google</span
+                    <div class="flex items-center justify-center">
+                        <a
+                            :href="
+                                route('auth.google.redirect', { type: type })
+                            "
                         >
-                    </button>
+                            <img
+                                src="/images/logos/web_neutral_sq_ctn.svg"
+                                alt="Continue with Google"
+                                class="h-10"
+                            />
+                        </a>
+                    </div>
                 </div>
             </div>
         </section>

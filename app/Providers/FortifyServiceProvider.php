@@ -70,8 +70,20 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::redirects('login', function () {
             $user = auth()->user();
             
-            if ($user && $user->user_type === 'admin') {
-                return route('admin.dashboard');
+            if ($user) {
+                if ($user->user_type === 'admin') {
+                    return route('admin.dashboard');
+                }
+                
+                // Check volunteer approval status
+                if ($user->user_type === 'volunteer') {
+                    $volunteerStatus = \DB::select('SELECT status FROM volunteer WHERE user_id = ?', [$user->id]);
+                    
+                    if (empty($volunteerStatus) || $volunteerStatus[0]->status !== 'approved') {
+                        // Volunteer not approved yet, show application submitted page
+                        return route('application.submitted');
+                    }
+                }
             }
             
             return route('dashboard');
