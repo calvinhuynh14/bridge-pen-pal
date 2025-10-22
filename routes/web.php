@@ -32,6 +32,11 @@ Route::get('/admin/login', function () {
 Route::get('/auth/google/redirect', [GoogleAuthController::class, 'redirect'])->name('auth.google.redirect');
 Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->name('auth.google.callback');
 
+// Application submitted page for volunteers (public route)
+Route::get('/application/submitted', function () {
+    return Inertia::render('Auth/ApplicationSubmitted');
+})->name('application.submitted');
+
 
 /**
  * Protected Routes
@@ -40,6 +45,7 @@ Route::middleware([
     'auth:sanctum',
     config('jetstream.auth_session'),
     'verified',
+    'volunteer.approved',
 ])->group(function () {
     // Main dashboard route - redirects based on user type
     Route::get('/dashboard', function () {
@@ -50,7 +56,7 @@ Route::middleware([
             return redirect()->route('admin.dashboard');
         }
         
-        // Redirect residents and volunteers to platform home
+        // Volunteers and residents go to platform home (middleware ensures volunteers are approved)
         return redirect()->route('platform.home');
     })->name('dashboard');
     
@@ -85,6 +91,7 @@ Route::middleware([
     Route::get('/platform/home', function () {
         return Inertia::render('PlatformHome');
     })->name('platform.home');
+    
     
     // Profile settings for all users
     Route::get('/profile/settings', function () {

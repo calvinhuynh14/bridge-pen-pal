@@ -17,7 +17,10 @@ return Application::configure(basePath: dirname(__DIR__))
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
         ]);
 
-        //
+        // Register custom middleware
+        $middleware->alias([
+            'volunteer.approved' => \App\Http\Middleware\CheckVolunteerApproval::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

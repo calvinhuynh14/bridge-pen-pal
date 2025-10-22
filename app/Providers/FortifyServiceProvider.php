@@ -8,6 +8,7 @@ use App\Actions\Fortify\UpdateUserPassword;
 use App\Actions\Fortify\UpdateUserProfileInformation;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
@@ -38,10 +39,19 @@ class FortifyServiceProvider extends ServiceProvider
 
         // Customize the register view to pass user type
         Fortify::registerView(function (Request $request) {
+            $userType = $request->query('type', 'resident');
+            $organizations = [];
+            
+            // Fetch organizations for volunteer registration
+            if ($userType === 'volunteer') {
+                $organizations = \DB::select('SELECT id, name FROM organization ORDER BY name');
+            }
+            
             return inertia('Auth/Register', [
-                'type' => $request->query('type', 'resident'),
+                'type' => $userType,
                 'google' => $request->query('google'),
                 'googleUser' => session('google_user'),
+                'organizations' => $organizations,
                 'canResetPassword' => \Route::has('password.request'),
                 'status' => session('status'),
             ]);
@@ -62,6 +72,24 @@ class FortifyServiceProvider extends ServiceProvider
             
             if ($user && $user->user_type === 'admin') {
                 return route('admin.dashboard');
+            }
+            
+            return route('dashboard');
+        });
+
+        // Customize the redirect after registration based on user type
+        Fortify::redirects('register', function () {
+            $user = auth()->user();
+            
+            if ($user) {
+                switch ($user->user_type) {
+                    case 'admin':
+                        return route('admin.dashboard');
+                    case 'volunteer':
+                        return route('application.submitted');
+                    default:
+                        return route('dashboard');
+                }
             }
             
             return route('dashboard');

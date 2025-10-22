@@ -24,6 +24,10 @@ const props = defineProps({
         type: Object,
         default: null,
     },
+    organizations: {
+        type: Array,
+        default: () => [],
+    },
 });
 
 const form = useForm({
@@ -38,8 +42,10 @@ const form = useForm({
     name: props.googleUser?.name || "",
 
     // Volunteer fields
-    first_name: "",
-    last_name: "",
+    first_name: props.googleUser?.name?.split(" ")[0] || "",
+    last_name: props.googleUser?.name?.split(" ").slice(1).join(" ") || "",
+    organization_id: "",
+    application_notes: "",
 
     // Admin fields
     organization_name: "",
@@ -54,6 +60,8 @@ const submit = () => {
                 "name",
                 "first_name",
                 "last_name",
+                "organization_id",
+                "application_notes",
                 "organization_name"
             ),
     });
@@ -240,6 +248,54 @@ const isGoogleUser = computed(() => {
                                     :message="form.errors.last_name"
                                 />
                             </div>
+                        </div>
+
+                        <!-- Volunteer: Organization Selection -->
+                        <div v-if="type === 'volunteer'">
+                            <InputLabel
+                                for="organization_id"
+                                value="Select Organization"
+                            />
+                            <select
+                                id="organization_id"
+                                v-model="form.organization_id"
+                                class="mt-2 block w-full border-gray-300 rounded-lg focus:border-primary focus:ring-primary"
+                                required
+                            >
+                                <option value="">
+                                    Choose an organization...
+                                </option>
+                                <option
+                                    v-for="org in organizations"
+                                    :key="org.id"
+                                    :value="org.id"
+                                >
+                                    {{ org.name }}
+                                </option>
+                            </select>
+                            <InputError
+                                class="mt-2"
+                                :message="form.errors.organization_id"
+                            />
+                        </div>
+
+                        <!-- Volunteer: Application Notes -->
+                        <div v-if="type === 'volunteer'">
+                            <InputLabel
+                                for="application_notes"
+                                value="Why do you want to volunteer? (Optional)"
+                            />
+                            <textarea
+                                id="application_notes"
+                                v-model="form.application_notes"
+                                class="mt-2 block w-full border-gray-300 rounded-lg focus:border-primary focus:ring-primary"
+                                rows="3"
+                                placeholder="Tell us why you're interested in becoming a pen pal volunteer..."
+                            ></textarea>
+                            <InputError
+                                class="mt-2"
+                                :message="form.errors.application_notes"
+                            />
                         </div>
 
                         <!-- Admin: Organization Name Field -->

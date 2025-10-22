@@ -22,7 +22,7 @@ return new class extends Migration
             
             $table->foreign('user_id')->references('id')->on('users');
             $table->foreign('organization_id')->references('id')->on('organization');
-            $table->unique(['user_id', 'organization_id']); // Prevent duplicate applications
+            $table->unique('user_id', 'unique_volunteer_user'); // One organization per volunteer permanently
         });
     }
 

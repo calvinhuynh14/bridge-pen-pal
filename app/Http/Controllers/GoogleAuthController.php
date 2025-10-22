@@ -51,11 +51,29 @@ class GoogleAuthController extends Controller
             Auth::login($existingUser);
             return redirect()->route('dashboard');
         } else {
-            // Create new user directly with Google data
-            try {
-                // Get the user type from session
-                $userType = session('google_oauth_user_type', 'admin');
+            // Get the user type from session
+            $userType = session('google_oauth_user_type', 'admin');
+            
+            // For volunteers, redirect back to registration form to complete application
+            if ($userType === 'volunteer') {
+                // Store Google user data in session for registration form
+                session([
+                    'google_user' => [
+                        'name' => $googleUser->name,
+                        'email' => $googleUser->email,
+                        'avatar' => $googleUser->avatar
+                    ]
+                ]);
                 
+                // Clear the user type session
+                session()->forget('google_oauth_user_type');
+                
+                // Redirect to registration form with Google data
+                return redirect()->route('register', ['type' => 'volunteer', 'google' => 'true']);
+            }
+            
+            // For admins, create user directly
+            try {
                 $newUser = User::create([
                     'name' => $googleUser->name,
                     'email' => $googleUser->email,
@@ -70,8 +88,8 @@ class GoogleAuthController extends Controller
                 // Log the user in
                 Auth::login($newUser);
 
-                // Redirect to dashboard (we'll add the modal later)
-                return redirect()->route('dashboard');
+                // Redirect to admin dashboard
+                return redirect()->route('admin.dashboard');
             } catch (Throwable $e) {
                 return redirect('/')->with('error', 'Failed to create user account.');
             }
