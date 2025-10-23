@@ -177,11 +177,62 @@ class TestDataSeeder extends Seeder
             ]);
         }
 
+        // Create 30 residents
+        $residentNames = [
+            'Alice Johnson', 'Bob Smith', 'Carol Davis', 'David Wilson', 'Emma Brown',
+            'Frank Miller', 'Grace Lee', 'Henry Taylor', 'Ivy Anderson', 'Jack Thomas',
+            'Karen White', 'Liam Harris', 'Mia Martin', 'Noah Thompson', 'Olivia Garcia',
+            'Peter Martinez', 'Quinn Robinson', 'Rachel Clark', 'Sam Rodriguez', 'Tina Lewis',
+            'Uma Walker', 'Victor Hall', 'Wendy Allen', 'Xavier Young', 'Yara King',
+            'Zoe Wright', 'Adam Lopez', 'Beth Hill', 'Carl Scott', 'Diana Green'
+        ];
+
+        $medicalNotes = [
+            "No known medical conditions. Independent mobility.",
+            "Requires assistance with medication management.",
+            "Mild dementia, needs memory support activities.",
+            "Wheelchair user, requires accessible facilities.",
+            "Diabetes management, regular blood sugar monitoring needed.",
+            "High blood pressure, medication compliance important.",
+            "Arthritis in hands, may need assistance with fine motor tasks.",
+            "Hearing aid user, speak clearly and face resident.",
+            "Vision impaired, large print materials preferred.",
+            "Social isolation concerns, encourage group activities."
+        ];
+
+        for ($i = 0; $i < 30; $i++) {
+            $orgId = $organizationIds[array_rand($organizationIds)]; // Random organization
+            $status = ['pending', 'approved', 'rejected'][array_rand(['pending', 'approved', 'rejected'])];
+            $applicationDate = now()->subDays(rand(1, 180)); // Random date in last 6 months
+
+            $user_id = DB::table('users')->insertGetId([
+                'name' => $residentNames[$i],
+                'email' => 'resident' . ($i + 1) . '@test.com',
+                'password' => Hash::make('password'),
+                'user_type' => 'resident',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            DB::table('resident')->insert([
+                'user_id' => $user_id,
+                'organization_id' => $orgId,
+                'status' => $status,
+                'application_date' => $applicationDate,
+                'application_notes' => "Resident application submitted for care services.",
+                'medical_notes' => $medicalNotes[array_rand($medicalNotes)],
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+        $this->command->info('Created 30 Residents.');
+
         $this->command->info('Test data seeded successfully!');
         $this->command->info('Created:');
         $this->command->info('- 5 Organizations');
         $this->command->info('- 5 Admin Users');
         $this->command->info('- 50 Volunteer Applications');
+        $this->command->info('- 30 Residents');
         $this->command->info('');
         $this->command->info('Admin Login Credentials:');
         for ($i = 1; $i <= 5; $i++) {

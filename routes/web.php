@@ -112,8 +112,116 @@ Route::middleware([
     })->name('admin.dashboard');
     
     // Admin management routes
-    Route::get('/admin/residents', function () {
-        return Inertia::render('Admin/ResidentManagement');
+    Route::get('/admin/residents', function (Request $request) {
+        $user = auth()->user();
+        
+        // Get residents for this admin's organization
+        $residents = [];
+        $adminRecord = DB::select('SELECT organization_id FROM admin WHERE user_id = ?', [$user->id]);
+        if (!empty($adminRecord)) {
+            $organizationId = $adminRecord[0]->organization_id;
+            
+            // Get total count for pagination
+            $totalCount = DB::select('
+                SELECT COUNT(*) as total
+                FROM resident r
+                JOIN users u ON r.user_id = u.id
+                JOIN organization o ON r.organization_id = o.id
+                WHERE r.organization_id = ?
+            ', [$organizationId])[0]->total;
+            
+            // Get status counts for statistics
+            $statusCounts = DB::select('
+                SELECT 
+                    status,
+                    COUNT(*) as count
+                FROM resident r
+                JOIN users u ON r.user_id = u.id
+                JOIN organization o ON r.organization_id = o.id
+                WHERE r.organization_id = ?
+                GROUP BY status
+            ', [$organizationId]);
+            
+            // Convert to associative array for easy access
+            $statusCountsArray = [];
+            foreach ($statusCounts as $status) {
+                $statusCountsArray[$status->status] = $status->count;
+            }
+            
+            // Get paginated residents using raw SQL
+            $page = $request->get('page', 1);
+            $perPage = 10; // 10 residents per page
+            $offset = ($page - 1) * $perPage;
+            
+            $residents = DB::select('
+                SELECT 
+                    r.id,
+                    r.status,
+                    r.application_date,
+                    r.application_notes,
+                    r.medical_notes,
+                    u.name,
+                    u.email,
+                    o.name as organization_name
+                FROM resident r
+                JOIN users u ON r.user_id = u.id
+                JOIN organization o ON r.organization_id = o.id
+                WHERE r.organization_id = ?
+                ORDER BY r.application_date DESC
+                LIMIT ? OFFSET ?
+            ', [$organizationId, $perPage, $offset]);
+            
+            // Calculate pagination data
+            $totalPages = ceil($totalCount / $perPage);
+            $hasNextPage = $page < $totalPages;
+            $hasPrevPage = $page > 1;
+            
+            return Inertia::render('Admin/ResidentManagement', [
+                'residents' => $residents,
+                'pagination' => [
+                    'currentPage' => (int) $page,
+                    'totalPages' => $totalPages,
+                    'perPage' => $perPage,
+                    'total' => $totalCount,
+                    'hasNextPage' => $hasNextPage,
+                    'hasPrevPage' => $hasPrevPage,
+                    'nextPage' => $hasNextPage ? $page + 1 : null,
+                    'prevPage' => $hasPrevPage ? $page - 1 : null,
+                ],
+                'statusCounts' => [
+                    'pending' => $statusCountsArray['pending'] ?? 0,
+                    'approved' => $statusCountsArray['approved'] ?? 0,
+                    'rejected' => $statusCountsArray['rejected'] ?? 0,
+                ],
+                'flash' => [
+                    'success' => session('success'),
+                    'error' => session('error'),
+                ]
+            ]);
+        }
+        
+        return Inertia::render('Admin/ResidentManagement', [
+            'residents' => [],
+            'pagination' => [
+                'currentPage' => 1,
+                'totalPages' => 0,
+                'perPage' => 10,
+                'total' => 0,
+                'hasNextPage' => false,
+                'hasPrevPage' => false,
+                'nextPage' => null,
+                'prevPage' => null,
+            ],
+            'statusCounts' => [
+                'pending' => 0,
+                'approved' => 0,
+                'rejected' => 0,
+            ],
+            'flash' => [
+                'success' => session('success'),
+                'error' => session('error'),
+            ]
+        ]);
     })->name('admin.residents');
     
     Route::get('/admin/volunteers', function (Request $request) {
