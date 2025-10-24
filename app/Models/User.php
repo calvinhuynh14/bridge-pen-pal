@@ -147,4 +147,38 @@ class User extends Authenticatable
     {
         return $this->hasOneThrough(Organization::class, Admin::class);
     }
+
+    /**
+     * Get the resident record associated with this user
+     */
+    public function resident()
+    {
+        return $this->hasOne(Resident::class);
+    }
+
+    /**
+     * Get the volunteer record associated with this user
+     */
+    public function volunteer()
+    {
+        return $this->hasOne(Volunteer::class);
+    }
+
+    /**
+     * Get the user's interests
+     */
+    public function interests()
+    {
+        return $this->belongsToMany(Interest::class, 'user_interests');
+    }
+
+    /**
+     * Get the user's languages
+     */
+    public function languages()
+    {
+        return $this->belongsToMany(Language::class, 'user_languages')
+            ->withPivot('proficiency_level')
+            ->withTimestamps();
+    }
 }

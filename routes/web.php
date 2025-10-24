@@ -63,7 +63,7 @@ Route::middleware([
         $user = auth()->user();
         
         // Redirect admins to admin dashboard
-        if ($user->user_type === 'admin') {
+        if ($user->isAdmin()) {
             return redirect()->route('admin.dashboard');
         }
         
@@ -92,7 +92,6 @@ Route::middleware([
                         v.id,
                         v.status,
                         v.application_date,
-                        v.application_notes,
                         u.name,
                         u.email,
                         o.name as organization_name
@@ -158,8 +157,9 @@ Route::middleware([
                     r.id,
                     r.status,
                     r.application_date,
-                    r.application_notes,
-                    r.medical_notes,
+                    r.room_number,
+                    r.floor_number,
+                    r.date_of_birth,
                     u.name,
                     u.email,
                     o.name as organization_name
@@ -270,7 +270,6 @@ Route::middleware([
                     v.id,
                     v.status,
                     v.application_date,
-                    v.application_notes,
                     u.name,
                     u.email,
                     o.name as organization_name
@@ -353,6 +352,11 @@ Route::middleware([
     // Organization routes
     Route::post('/organization', [App\Http\Controllers\OrganizationController::class, 'store']);
     Route::get('/organization/check', [App\Http\Controllers\OrganizationController::class, 'check']);
+    
+    // Resident batch management routes
+    Route::get('/admin/residents/batch', [App\Http\Controllers\ResidentBatchController::class, 'index'])->name('admin.residents.batch');
+    Route::post('/admin/residents/batch/upload', [App\Http\Controllers\ResidentBatchController::class, 'upload'])->name('admin.residents.batch.upload');
+    Route::get('/admin/residents/batch/template', [App\Http\Controllers\ResidentBatchController::class, 'downloadTemplate'])->name('admin.residents.batch.template');
     
     // Volunteer application actions
     Route::post('/admin/volunteers/{id}/approve', function ($id) {

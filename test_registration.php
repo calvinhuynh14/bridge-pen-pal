@@ -45,7 +45,7 @@ $sampleInput = [
     'first_name' => 'John',
     'last_name' => 'Doe',
     'organization_id' => 1,
-    'application_notes' => 'Test application',
+    // Removed application_notes as column was dropped
     'terms' => true,
 ];
 

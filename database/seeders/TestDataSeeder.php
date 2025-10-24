@@ -176,7 +176,7 @@ class TestDataSeeder extends Seeder
                 'organization_id' => $orgId,
                 'status' => $status,
                 'application_date' => now()->subDays(rand(1, 90)), // Random date within last 90 days
-                'application_notes' => $applicationMessages[array_rand($applicationMessages)],
+                // Removed application_notes as column was dropped
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
@@ -224,8 +224,7 @@ class TestDataSeeder extends Seeder
                 'organization_id' => $orgId,
                 'status' => $status,
                 'application_date' => $applicationDate,
-                'application_notes' => "Resident application submitted for care services.",
-                'medical_notes' => $medicalNotes[array_rand($medicalNotes)],
+                // Removed application_notes and medical_notes as columns were dropped
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);

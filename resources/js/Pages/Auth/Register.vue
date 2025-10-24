@@ -58,7 +58,7 @@ const form = useForm({
     first_name: props.googleUser?.name?.split(" ")[0] || "",
     last_name: props.googleUser?.name?.split(" ").slice(1).join(" ") || "",
     organization_id: "",
-    application_notes: "",
+    // Removed application_notes as column was dropped
 
     // Admin fields
     organization_name: "",
@@ -85,7 +85,7 @@ const submit = () => {
                 "first_name",
                 "last_name",
                 "organization_id",
-                "application_notes",
+                // Removed application_notes as column was dropped
                 "organization_name"
             ),
     });
@@ -318,24 +318,7 @@ console.log("Updated form user_type_id:", form.user_type_id);
                             />
                         </div>
 
-                        <!-- Volunteer: Application Notes -->
-                        <div v-if="type === 'volunteer'">
-                            <InputLabel
-                                for="application_notes"
-                                value="Why do you want to volunteer? (Optional)"
-                            />
-                            <textarea
-                                id="application_notes"
-                                v-model="form.application_notes"
-                                class="mt-2 block w-full border-gray-300 rounded-lg focus:border-primary focus:ring-primary"
-                                rows="3"
-                                placeholder="Tell us why you're interested in becoming a pen pal volunteer..."
-                            ></textarea>
-                            <InputError
-                                class="mt-2"
-                                :message="form.errors.application_notes"
-                            />
-                        </div>
+                        <!-- Removed application_notes field as column was dropped -->
 
                         <!-- Admin: Organization Name Field -->
                         <div v-if="type === 'admin'">

@@ -71,12 +71,12 @@ class FortifyServiceProvider extends ServiceProvider
             $user = auth()->user();
             
             if ($user) {
-                if ($user->user_type === 'admin') {
+                if ($user->isAdmin()) {
                     return route('admin.dashboard');
                 }
                 
                 // Check volunteer approval status
-                if ($user->user_type === 'volunteer') {
+                if ($user->isVolunteer()) {
                     $volunteerStatus = \DB::select('SELECT status FROM volunteer WHERE user_id = ?', [$user->id]);
                     
                     if (empty($volunteerStatus) || $volunteerStatus[0]->status !== 'approved') {
@@ -94,13 +94,12 @@ class FortifyServiceProvider extends ServiceProvider
             $user = auth()->user();
             
             if ($user) {
-                switch ($user->user_type) {
-                    case 'admin':
-                        return route('admin.dashboard');
-                    case 'volunteer':
-                        return route('application.submitted');
-                    default:
-                        return route('dashboard');
+                if ($user->isAdmin()) {
+                    return route('admin.dashboard');
+                } elseif ($user->isVolunteer()) {
+                    return route('application.submitted');
+                } else {
+                    return route('dashboard');
                 }
             }
             

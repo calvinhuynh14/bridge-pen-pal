@@ -50,7 +50,7 @@ class CreateNewUser implements CreatesNewUsers
                 $rules['first_name'] = ['required', 'string', 'max:255'];
                 $rules['last_name'] = ['required', 'string', 'max:255'];
                 $rules['organization_id'] = ['required', 'integer', 'exists:organization,id'];
-                $rules['application_notes'] = ['nullable', 'string', 'max:1000'];
+                // Removed application_notes validation as column was dropped
                 break;
             case 'admin':
                 $rules['organization_name'] = ['required', 'string', 'max:255'];
@@ -113,13 +113,12 @@ class CreateNewUser implements CreatesNewUsers
             // Create volunteer application record
             DB::transaction(function () use ($user, $input) {
                 DB::insert(
-                    'INSERT INTO volunteer (user_id, organization_id, status, application_date, application_notes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                    'INSERT INTO volunteer (user_id, organization_id, status, application_date, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
                     [
                         $user->id,
                         $input['organization_id'],
                         'pending',
                         now(),
-                        $input['application_notes'] ?? null,
                         now(),
                         now()
                     ]

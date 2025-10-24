@@ -2,6 +2,7 @@
 import AppLayout from "@/Layouts/AppLayout.vue";
 import { Head, Link, useForm } from "@inertiajs/vue3";
 import { ref, computed } from "vue";
+import ViewDetailsModal from "@/Components/ViewDetailsModal.vue";
 
 const props = defineProps({
     volunteerApplications: {
@@ -804,135 +805,11 @@ const getVisiblePages = () => {
         </div>
 
         <!-- View Details Modal -->
-        <div
-            v-if="showModal"
-            class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-            @click="closeModal"
-        >
-            <div
-                class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4"
-                @click.stop
-            >
-                <!-- Modal Header -->
-                <div
-                    class="flex justify-between items-center p-6 border-b border-gray-200"
-                >
-                    <h3 class="text-lg font-semibold text-gray-900">
-                        Volunteer Details
-                    </h3>
-                    <button
-                        @click="closeModal"
-                        class="text-gray-400 hover:text-gray-600 transition-colors"
-                    >
-                        <svg
-                            class="w-6 h-6"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M6 18L18 6M6 6l12 12"
-                            ></path>
-                        </svg>
-                    </button>
-                </div>
-
-                <!-- Modal Body -->
-                <div class="p-6" v-if="selectedApplication">
-                    <!-- Avatar and Name -->
-                    <div class="flex items-center space-x-4 mb-6">
-                        <div
-                            class="w-16 h-16 bg-gray-300 rounded-full flex items-center justify-center"
-                        >
-                            <span class="text-gray-600 text-xl font-medium">
-                                {{
-                                    selectedApplication.name
-                                        .charAt(0)
-                                        .toUpperCase()
-                                }}
-                            </span>
-                        </div>
-                        <div>
-                            <h4 class="text-xl font-semibold text-gray-900">
-                                {{ selectedApplication.name }}
-                            </h4>
-                            <p class="text-gray-600">
-                                {{ selectedApplication.email }}
-                            </p>
-                        </div>
-                    </div>
-
-                    <!-- Status -->
-                    <div class="mb-6">
-                        <label
-                            class="block text-sm font-medium text-gray-700 mb-2"
-                        >
-                            Status
-                        </label>
-                        <span
-                            :class="{
-                                'bg-accent text-black':
-                                    selectedApplication.status === 'pending',
-                                'bg-green-100 text-green-800 border border-green-200':
-                                    selectedApplication.status === 'approved',
-                                'bg-red-100 text-red-800 border border-red-200':
-                                    selectedApplication.status === 'rejected',
-                            }"
-                            class="inline-flex px-3 py-1 text-sm font-semibold rounded-full"
-                        >
-                            {{
-                                selectedApplication.status
-                                    .charAt(0)
-                                    .toUpperCase() +
-                                selectedApplication.status.slice(1)
-                            }}
-                        </span>
-                    </div>
-
-                    <!-- Application Date -->
-                    <div class="mb-6">
-                        <label
-                            class="block text-sm font-medium text-gray-700 mb-2"
-                        >
-                            Application Date
-                        </label>
-                        <p class="text-gray-900">
-                            {{
-                                new Date(
-                                    selectedApplication.application_date
-                                ).toLocaleDateString()
-                            }}
-                        </p>
-                    </div>
-
-                    <!-- Application Notes -->
-                    <div v-if="selectedApplication.application_notes">
-                        <label
-                            class="block text-sm font-medium text-gray-700 mb-2"
-                        >
-                            Application Message
-                        </label>
-                        <div class="bg-gray-50 rounded-lg p-4">
-                            <p class="text-gray-900 whitespace-pre-wrap">
-                                {{ selectedApplication.application_notes }}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Modal Footer -->
-                <div class="flex justify-end p-6 border-t border-gray-200">
-                    <button
-                        @click="closeModal"
-                        class="bg-primary hover:bg-pressed text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
-                    >
-                        Close
-                    </button>
-                </div>
-            </div>
-        </div>
+        <ViewDetailsModal
+            :show="showModal"
+            :selected-item="selectedApplication"
+            item-type="volunteer"
+            @close="closeModal"
+        />
     </AppLayout>
 </template>
