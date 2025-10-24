@@ -3,6 +3,7 @@
 namespace App\Actions\Fortify;
 
 use App\Models\User;
+use App\Models\UserType;
 use App\Models\Organization;
 use App\Models\Admin;
 use Illuminate\Support\Facades\Hash;
@@ -23,18 +24,25 @@ class CreateNewUser implements CreatesNewUsers
      */
     public function create(array $input): User
     {
-        $userType = $input['user_type'];
+        $userTypeId = $input['user_type_id'];
+        
+        // Get user type name for validation
+        $userType = UserType::find($userTypeId);
+        if (!$userType) {
+            throw new \InvalidArgumentException('Invalid user type ID');
+        }
+        $userTypeName = $userType->name;
         
         // Define validation rules based on user type
         $rules = [
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => $this->passwordRules(),
-            'user_type' => ['required', 'string', 'in:resident,volunteer,admin'],
+            'user_type_id' => ['required', 'integer', 'exists:user_types,id'],
             'terms' => Jetstream::hasTermsAndPrivacyPolicyFeature() ? ['accepted', 'required'] : '',
         ];
 
         // Add type-specific validation rules
-        switch ($userType) {
+        switch ($userTypeName) {
             case 'resident':
                 $rules['name'] = ['required', 'string', 'max:255'];
                 break;
@@ -52,7 +60,7 @@ class CreateNewUser implements CreatesNewUsers
         Validator::make($input, $rules)->validate();
 
         // Determine the name field based on user type
-        $name = match ($userType) {
+        $name = match ($userTypeName) {
             'resident' => $input['name'],
             'volunteer' => $input['first_name'] . ' ' . $input['last_name'],
             'admin' => $input['organization_name'],
@@ -67,14 +75,14 @@ class CreateNewUser implements CreatesNewUsers
             'name' => $name,
             'email' => $input['email'],
             'password' => $isGoogleUser ? Hash::make(Str::random(16)) : Hash::make($input['password']),
-            'user_type' => $input['user_type'],
+            'user_type_id' => $userTypeId,
         ]);
 
         /**
          * Use raw SQL queries
          */
         // Handle user type specific logic
-        if ($userType === 'admin') {
+        if ($userTypeName === 'admin') {
             // Create organization and admin record
             DB::transaction(function () use ($user, $input) {
                 // Create organization using raw SQL
@@ -101,7 +109,7 @@ class CreateNewUser implements CreatesNewUsers
                     ]
                 );
             });
-        } elseif ($userType === 'volunteer') {
+        } elseif ($userTypeName === 'volunteer') {
             // Create volunteer application record
             DB::transaction(function () use ($user, $input) {
                 DB::insert(

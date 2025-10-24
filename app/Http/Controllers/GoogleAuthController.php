@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\UserType;
 use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -74,12 +75,18 @@ class GoogleAuthController extends Controller
             
             // For admins, create user directly
             try {
+                // Get the user type ID
+                $userTypeModel = UserType::where('name', $userType)->first();
+                if (!$userTypeModel) {
+                    return redirect('/')->with('error', 'Invalid user type.');
+                }
+
                 $newUser = User::create([
                     'name' => $googleUser->name,
                     'email' => $googleUser->email,
                     'password' => bcrypt(Str::random(16)), // Set a random password
                     'email_verified_at' => now(),
-                    'user_type' => $userType // Use the stored user type
+                    'user_type_id' => $userTypeModel->id // Use the user type ID
                 ]);
 
                 // Clear the session data

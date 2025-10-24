@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
@@ -28,8 +29,9 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'username',
         'password',
-        'user_type',
+        'user_type_id',
     ];
 
     /**
@@ -67,11 +69,19 @@ class User extends Authenticatable
     }
 
     /**
+     * Get the user type for this user.
+     */
+    public function userType(): BelongsTo
+    {
+        return $this->belongsTo(UserType::class);
+    }
+
+    /**
      * Check if user is a resident
      */
     public function isResident(): bool
     {
-        return $this->user_type === 'resident';
+        return $this->userType?->name === 'resident';
     }
 
     /**
@@ -79,7 +89,7 @@ class User extends Authenticatable
      */
     public function isVolunteer(): bool
     {
-        return $this->user_type === 'volunteer';
+        return $this->userType?->name === 'volunteer';
     }
 
     /**
@@ -87,7 +97,39 @@ class User extends Authenticatable
      */
     public function isAdmin(): bool
     {
-        return $this->user_type === 'admin';
+        return $this->userType?->name === 'admin';
+    }
+
+    /**
+     * Get the user type name
+     */
+    public function getUserTypeName(): ?string
+    {
+        return $this->userType?->name;
+    }
+
+    /**
+     * Check if user requires email authentication
+     */
+    public function requiresEmail(): bool
+    {
+        return $this->userType?->requires_email ?? false;
+    }
+
+    /**
+     * Check if user requires username authentication
+     */
+    public function requiresUsername(): bool
+    {
+        return $this->userType?->requires_username ?? false;
+    }
+
+    /**
+     * Get the authentication method for this user
+     */
+    public function getAuthenticationMethod(): ?string
+    {
+        return $this->userType?->authentication_method;
     }
 
     /**

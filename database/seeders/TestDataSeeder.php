@@ -33,6 +33,11 @@ class TestDataSeeder extends Seeder
             $organizationIds[] = $orgId;
         }
 
+        // Get user type IDs
+        $adminTypeId = DB::table('user_types')->where('name', 'admin')->value('id');
+        $volunteerTypeId = DB::table('user_types')->where('name', 'volunteer')->value('id');
+        $residentTypeId = DB::table('user_types')->where('name', 'resident')->value('id');
+
         // Create admin users for each organization
         $adminUsers = [];
         foreach ($organizationIds as $index => $orgId) {
@@ -41,7 +46,7 @@ class TestDataSeeder extends Seeder
                 'email' => 'admin' . ($index + 1) . '@test.com',
                 'email_verified_at' => now(),
                 'password' => Hash::make('password'),
-                'user_type' => 'admin',
+                'user_type_id' => $adminTypeId,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
@@ -154,7 +159,7 @@ class TestDataSeeder extends Seeder
                 'email' => $volunteerEmails[$i],
                 'email_verified_at' => now(),
                 'password' => Hash::make('password'),
-                'user_type' => 'volunteer',
+                'user_type_id' => $volunteerTypeId,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
@@ -209,7 +214,7 @@ class TestDataSeeder extends Seeder
                 'name' => $residentNames[$i],
                 'email' => 'resident' . ($i + 1) . '@test.com',
                 'password' => Hash::make('password'),
-                'user_type' => 'resident',
+                'user_type_id' => $residentTypeId,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);

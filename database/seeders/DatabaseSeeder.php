@@ -20,6 +20,9 @@ class DatabaseSeeder extends Seeder
             'email' => 'test@example.com',
         ]);
 
+        // Run the user type seeder first
+        $this->call(UserTypeSeeder::class);
+        
         // Run the test data seeder
         $this->call(TestDataSeeder::class);
     }

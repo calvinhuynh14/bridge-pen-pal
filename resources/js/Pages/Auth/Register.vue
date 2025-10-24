@@ -30,13 +30,26 @@ const props = defineProps({
     },
 });
 
+// Get user type ID based on user type name
+const getUserTypeId = (type) => {
+    console.log("getUserTypeId called with type:", type);
+    const typeIds = {
+        resident: 3, // Based on the migration order
+        volunteer: 2,
+        admin: 1,
+    };
+    const result = typeIds[type] || 2; // Default to volunteer
+    console.log("getUserTypeId returning:", result);
+    return result;
+};
+
 const form = useForm({
     // Common fields
     email: props.googleUser?.email || "",
     password: "",
     password_confirmation: "",
     terms: false,
-    user_type: props.type, // Set user type from props
+    user_type_id: getUserTypeId(props.type), // Will be set based on user type
 
     // Resident fields
     name: props.googleUser?.name || "",
@@ -52,6 +65,17 @@ const form = useForm({
 });
 
 const submit = () => {
+    // Ensure user_type_id is set before submission
+    form.user_type_id = getUserTypeId(props.type);
+
+    // Log the form data and user type information
+    console.log("=== REGISTRATION DEBUG ===");
+    console.log("Type prop:", props.type);
+    console.log("User type ID:", getUserTypeId(props.type));
+    console.log("Form data:", form.data());
+    console.log("Form user_type_id:", form.user_type_id);
+    console.log("========================");
+
     form.post(route("register"), {
         onFinish: () =>
             form.reset(
@@ -99,6 +123,17 @@ const getSubtitle = (type) => {
 const isGoogleUser = computed(() => {
     return props.google === "true" && props.googleUser;
 });
+
+// Log component initialization
+console.log("=== REGISTER COMPONENT INIT ===");
+console.log("Props:", props);
+console.log("Initial form data:", form.data());
+console.log("User type ID from getUserTypeId:", getUserTypeId(props.type));
+console.log("================================");
+
+// Ensure user_type_id is set correctly in the form
+form.user_type_id = getUserTypeId(props.type);
+console.log("Updated form user_type_id:", form.user_type_id);
 </script>
 
 <template>
@@ -191,7 +226,11 @@ const isGoogleUser = computed(() => {
             <div class="rounded-lg px-8 max-w-md mx-auto space-y-4">
                 <form @submit.prevent="submit">
                     <!-- Hidden field for user type -->
-                    <input type="hidden" name="user_type" :value="type" />
+                    <input
+                        type="hidden"
+                        name="user_type_id"
+                        :value="getUserTypeId(type)"
+                    />
 
                     <div class="space-y-4">
                         <!-- Resident: Full Name Field -->

@@ -24,13 +24,13 @@ class CheckVolunteerApproval
             'url' => $request->url(),
             'method' => $request->method(),
             'user_id' => $user ? $user->id : null,
-            'user_type' => $user ? $user->user_type : null,
+            'user_type' => $user ? $user->getUserTypeName() : null,
             'authenticated' => Auth::check(),
             'session_id' => session()->getId()
         ]);
         
         // Only check volunteers
-        if ($user && $user->user_type === 'volunteer') {
+        if ($user && $user->isVolunteer()) {
             // Check volunteer approval status using raw SQL
             $volunteerStatus = DB::select('SELECT status FROM volunteer WHERE user_id = ?', [$user->id]);
             
@@ -53,7 +53,7 @@ class CheckVolunteerApproval
         
         \Log::info('CheckVolunteerApproval middleware passed', [
             'user_id' => $user ? $user->id : null,
-            'user_type' => $user ? $user->user_type : null
+            'user_type' => $user ? $user->getUserTypeName() : null
         ]);
         
         return $next($request);

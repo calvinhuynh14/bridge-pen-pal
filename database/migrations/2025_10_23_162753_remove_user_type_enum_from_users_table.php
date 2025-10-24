@@ -11,10 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // This migration is now handled by the new user_types table approach
-        // The user_type enum will be added temporarily and then removed
         Schema::table('users', function (Blueprint $table) {
-            $table->enum('user_type', ['resident', 'volunteer', 'admin'])->default('resident')->after('email');
+            $table->dropColumn('user_type');
         });
     }
 
@@ -24,7 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn('user_type');
+            $table->enum('user_type', ['admin', 'volunteer', 'resident'])->default('volunteer');
         });
     }
 };
