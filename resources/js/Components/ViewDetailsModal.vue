@@ -1,5 +1,6 @@
 <script setup>
 import Modal from "@/Components/Modal.vue";
+import { ref } from "vue";
 
 const props = defineProps({
     show: {
@@ -17,6 +18,13 @@ const props = defineProps({
 });
 
 const emit = defineEmits(["close"]);
+
+// PIN visibility state
+const isPinVisible = ref(false);
+
+const togglePinVisibility = () => {
+    isPinVisible.value = !isPinVisible.value;
+};
 
 const closeModal = () => {
     emit("close");
@@ -46,6 +54,11 @@ const getItemTitle = () => {
 
 const getIdLabel = () => {
     return props.itemType === "volunteer" ? "Volunteer ID" : "Resident ID";
+};
+
+const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString();
 };
 </script>
 
@@ -95,6 +108,12 @@ const getIdLabel = () => {
                         <p class="text-gray-600" v-if="selectedItem.email">
                             {{ selectedItem.email }}
                         </p>
+                        <p
+                            class="text-gray-600"
+                            v-else-if="itemType === 'volunteer'"
+                        >
+                            Email address
+                        </p>
                         <p class="text-gray-600" v-else>No email address</p>
                     </div>
                 </div>
@@ -112,15 +131,15 @@ const getIdLabel = () => {
                     </span>
                 </div>
 
-                <!-- ID -->
-                <div>
+                <!-- ID (only for residents) -->
+                <div v-if="itemType === 'resident'">
                     <label class="block text-sm font-medium text-black mb-2">
                         {{ getIdLabel() }}
                     </label>
                     <p
                         class="text-black font-mono bg-white border-2 border-primary px-3 py-2 rounded-lg"
                     >
-                        {{ selectedItem.id }}
+                        {{ selectedItem.username || selectedItem.id }}
                     </p>
                 </div>
 
@@ -169,16 +188,48 @@ const getIdLabel = () => {
                     </p>
                 </div>
 
-                <!-- Application Date -->
-                <div v-if="selectedItem.application_date">
+                <!-- PIN Code for residents -->
+                <div v-if="itemType === 'resident' && selectedItem.pin_code">
                     <label class="block text-sm font-medium text-black mb-2">
-                        Application Date
+                        PIN Code
                     </label>
-                    <p
-                        class="text-black bg-white border-2 border-primary px-3 py-2 rounded-lg"
+                    <button
+                        @click="togglePinVisibility"
+                        class="text-black font-mono bg-white border-2 border-primary px-3 py-2 rounded-lg hover:bg-pressed hover:text-white transition-colors"
                     >
-                        {{ selectedItem.application_date }}
-                    </p>
+                        {{ isPinVisible ? selectedItem.pin_code : "••••••" }}
+                    </button>
+                </div>
+
+                <!-- Volunteer-specific fields -->
+                <div v-if="itemType === 'volunteer'">
+                    <!-- Application Date -->
+                    <div v-if="selectedItem.application_date">
+                        <label
+                            class="block text-sm font-medium text-black mb-2"
+                        >
+                            Application Date
+                        </label>
+                        <p
+                            class="text-black bg-white border-2 border-primary px-3 py-2 rounded-lg"
+                        >
+                            {{ formatDate(selectedItem.application_date) }}
+                        </p>
+                    </div>
+
+                    <!-- Application Notes -->
+                    <div v-if="selectedItem.application_notes">
+                        <label
+                            class="block text-sm font-medium text-black mb-2"
+                        >
+                            Application Notes
+                        </label>
+                        <div
+                            class="text-black bg-white border-2 border-primary px-3 py-2 rounded-lg min-h-[100px] whitespace-pre-wrap"
+                        >
+                            {{ selectedItem.application_notes }}
+                        </div>
+                    </div>
                 </div>
             </div>
 

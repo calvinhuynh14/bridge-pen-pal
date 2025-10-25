@@ -66,6 +66,29 @@ class FortifyServiceProvider extends ServiceProvider
             ]);
         });
 
+        // Customize authentication to support both email and username
+        Fortify::authenticateUsing(function (Request $request) {
+            // Check if username is provided (for residents)
+            if ($request->has('username') && $request->username) {
+                $user = \App\Models\User::where('username', $request->username)->first();
+                
+                if ($user && \Hash::check($request->password, $user->password)) {
+                    return $user;
+                }
+            }
+            
+            // Check if email is provided (for volunteers/admins)
+            if ($request->has('email') && $request->email) {
+                $user = \App\Models\User::where('email', $request->email)->first();
+                
+                if ($user && \Hash::check($request->password, $user->password)) {
+                    return $user;
+                }
+            }
+            
+            return null;
+        });
+
         // Customize the redirect after login based on user type
         Fortify::redirects('login', function () {
             $user = auth()->user();

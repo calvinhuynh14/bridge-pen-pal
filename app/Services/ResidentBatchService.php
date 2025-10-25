@@ -175,7 +175,7 @@ class ResidentBatchService
                 'room_number' => $data['room_number'] ?? null,
                 'floor_number' => $data['floor_number'] ?? null,
                 'date_of_birth' => $data['date_of_birth'],
-                'pin_code' => $this->pinService->hashPin($pin),
+                'pin_code' => $pin, // Store plain PIN code for admin viewing
                 'status' => 'approved', // Auto-approve batch created residents
                 'application_date' => now() // Set application date to current time
             ];

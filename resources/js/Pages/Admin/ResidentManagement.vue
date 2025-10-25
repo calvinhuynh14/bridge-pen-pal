@@ -4,24 +4,14 @@ import { Head, Link, useForm } from "@inertiajs/vue3";
 import { ref, computed } from "vue";
 import ResidentBatchModal from "@/Components/ResidentBatchModal.vue";
 import ViewDetailsModal from "@/Components/ViewDetailsModal.vue";
+import EditResidentModal from "@/Components/EditResidentModal.vue";
+import DeleteConfirmationModal from "@/Components/DeleteConfirmationModal.vue";
+import DataTable from "@/Components/DataTable.vue";
 
 const props = defineProps({
     residents: {
         type: Array,
         default: () => [],
-    },
-    pagination: {
-        type: Object,
-        default: () => ({
-            currentPage: 1,
-            totalPages: 0,
-            perPage: 10,
-            total: 0,
-            hasNextPage: false,
-            hasPrevPage: false,
-            nextPage: null,
-            prevPage: null,
-        }),
     },
     statusCounts: {
         type: Object,
@@ -37,14 +27,97 @@ const props = defineProps({
     },
 });
 
-// Sorting state
-const sortField = ref("application_date");
-const sortDirection = ref("desc");
+// Sorting is now handled client-side in the DataTable component
 
 // Modal state
 const showModal = ref(false);
 const selectedResident = ref(null);
 const showBatchModal = ref(false);
+const showEditModal = ref(false);
+const editingResident = ref(null);
+const showDeleteModal = ref(false);
+const deletingResident = ref(null);
+
+// PIN code visibility state
+const visiblePins = ref(new Set());
+
+// Sorting state
+const sortField = ref("name");
+const sortDirection = ref("asc");
+
+// Computed properties for total counts from backend
+const pendingCount = computed(() => {
+    return props.statusCounts.pending;
+});
+
+const approvedCount = computed(() => {
+    return props.statusCounts.approved;
+});
+
+const rejectedCount = computed(() => {
+    return props.statusCounts.rejected;
+});
+
+const totalCount = computed(() => {
+    return pendingCount.value + approvedCount.value + rejectedCount.value;
+});
+
+// Sorting is handled by the DataTable component
+
+// Modal functions
+const openModal = (resident) => {
+    selectedResident.value = resident;
+    showModal.value = true;
+};
+
+const closeModal = () => {
+    showModal.value = false;
+    selectedResident.value = null;
+};
+
+// DataTable event handlers
+const handleView = (resident) => {
+    selectedResident.value = resident;
+    showModal.value = true;
+};
+
+const handleEdit = (resident) => {
+    editingResident.value = resident;
+    showEditModal.value = true;
+};
+
+const handleDelete = (resident) => {
+    deletingResident.value = resident;
+    showDeleteModal.value = true;
+};
+
+// PIN toggle functions
+const togglePinVisibility = (residentId) => {
+    if (visiblePins.value.has(residentId)) {
+        visiblePins.value.delete(residentId);
+    } else {
+        visiblePins.value.add(residentId);
+    }
+};
+
+const isPinVisible = (residentId) => {
+    return visiblePins.value.has(residentId);
+};
+
+// Sorting functions
+const handleSort = (field) => {
+    if (sortField.value === field) {
+        sortDirection.value = sortDirection.value === "asc" ? "desc" : "asc";
+    } else {
+        sortField.value = field;
+        sortDirection.value = "asc";
+    }
+};
+
+const getSortIcon = (field) => {
+    if (sortField.value !== field) return "↕";
+    return sortDirection.value === "asc" ? "↑" : "↓";
+};
 
 // Computed property for sorted residents
 const sortedResidents = computed(() => {
@@ -61,10 +134,6 @@ const sortedResidents = computed(() => {
             case "id":
                 aValue = parseInt(a.id);
                 bValue = parseInt(b.id);
-                break;
-            case "application_date":
-                aValue = new Date(a.application_date);
-                bValue = new Date(b.application_date);
                 break;
             case "status":
                 aValue = a.status.toLowerCase();
@@ -84,44 +153,6 @@ const sortedResidents = computed(() => {
     });
 });
 
-// Computed properties for total counts from backend
-const pendingCount = computed(() => {
-    return props.statusCounts.pending;
-});
-
-const approvedCount = computed(() => {
-    return props.statusCounts.approved;
-});
-
-// Function to handle sorting
-const handleSort = (field) => {
-    if (sortField.value === field) {
-        sortDirection.value = sortDirection.value === "asc" ? "desc" : "asc";
-    } else {
-        sortField.value = field;
-        sortDirection.value = "asc";
-    }
-};
-
-// Function to get sort icon
-const getSortIcon = (field) => {
-    if (sortField.value !== field) {
-        return ""; // No icon for neutral state
-    }
-    return sortDirection.value === "asc" ? "↑" : "↓";
-};
-
-// Modal functions
-const openModal = (resident) => {
-    selectedResident.value = resident;
-    showModal.value = true;
-};
-
-const closeModal = () => {
-    showModal.value = false;
-    selectedResident.value = null;
-};
-
 // Action methods
 const editResident = (residentId) => {
     // TODO: Implement edit functionality
@@ -129,63 +160,48 @@ const editResident = (residentId) => {
 };
 
 const deleteResident = (residentId) => {
-    if (
-        confirm(
-            "Are you sure you want to delete this resident? This action cannot be undone."
-        )
-    ) {
-        // TODO: Implement delete functionality
-        console.log("Delete resident:", residentId);
-    }
+    // TODO: Implement delete functionality
+    console.log("Delete resident:", residentId);
 };
 
-// Function to get visible page numbers for pagination
-const getVisiblePages = () => {
-    const current = props.pagination.currentPage;
-    const total = props.pagination.totalPages;
-    const pages = [];
+const createResident = () => {
+    // TODO: Implement create functionality
+    console.log("Create resident");
+};
 
-    if (total <= 7) {
-        // Show all pages if 7 or fewer
-        for (let i = 1; i <= total; i++) {
-            pages.push(i);
-        }
-    } else {
-        // Always show first page
-        pages.push(1);
+const openBatchModal = () => {
+    showBatchModal.value = true;
+};
 
-        if (current > 4) {
-            pages.push("...");
-        }
+const closeBatchModal = () => {
+    showBatchModal.value = false;
+};
 
-        // Show pages around current page
-        const start = Math.max(2, current - 1);
-        const end = Math.min(total - 1, current + 1);
+const closeEditModal = () => {
+    showEditModal.value = false;
+    editingResident.value = null;
+};
 
-        for (let i = start; i <= end; i++) {
-            if (i !== 1 && i !== total) {
-                pages.push(i);
-            }
-        }
+const handleResidentUpdated = () => {
+    // Refresh the page to show updated data
+    window.location.reload();
+};
 
-        if (current < total - 3) {
-            pages.push("...");
-        }
+const closeDeleteModal = () => {
+    showDeleteModal.value = false;
+    deletingResident.value = null;
+};
 
-        // Always show last page
-        if (total > 1) {
-            pages.push(total);
-        }
-    }
-
-    return pages;
+const handleResidentDeleted = () => {
+    // Refresh the page to show updated data
+    window.location.reload();
 };
 </script>
 
 <template>
-    <Head title="Resident Management" />
+    <AppLayout>
+        <Head title="Resident Management" />
 
-    <AppLayout title="Resident Management">
         <div class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
                 <!-- Success Message -->
@@ -206,12 +222,12 @@ const getVisiblePages = () => {
                     >
                         Resident Statistics
                     </h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div
                             class="text-center bg-white bg-opacity-20 rounded-lg p-4"
                         >
                             <div class="text-3xl font-bold text-white mb-2">
-                                {{ pagination.total }}
+                                {{ totalCount }}
                             </div>
                             <div
                                 class="text-white sm:text-sm lg:text-lg font-medium"
@@ -222,13 +238,13 @@ const getVisiblePages = () => {
                         <div
                             class="text-center bg-white bg-opacity-20 rounded-lg p-4"
                         >
-                            <div class="text-3xl font-bold text-accent mb-2">
+                            <div class="text-3xl font-bold text-white mb-2">
                                 {{ pendingCount }}
                             </div>
                             <div
                                 class="text-white sm:text-sm lg:text-lg font-medium"
                             >
-                                Pending Residents
+                                Pending
                             </div>
                         </div>
                         <div
@@ -240,26 +256,22 @@ const getVisiblePages = () => {
                             <div
                                 class="text-white sm:text-sm lg:text-lg font-medium"
                             >
-                                Active Residents
+                                Approved
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Action Buttons -->
-                <div class="mb-6 flex flex-wrap gap-4 justify-center">
+                <div class="mb-6 flex flex-col md:flex-row gap-4">
                     <button
-                        class="bg-primary hover:bg-pressed text-white px-6 py-3 rounded-lg font-medium transition-colors shadow-sm"
-                    >
-                        Print Residents
-                    </button>
-                    <button
-                        @click="showBatchModal = true"
+                        @click="openBatchModal"
                         class="bg-primary hover:bg-pressed text-white px-6 py-3 rounded-lg font-medium transition-colors shadow-sm"
                     >
                         Batch Create
                     </button>
                     <button
+                        @click="createResident"
                         class="bg-primary hover:bg-pressed text-white px-6 py-3 rounded-lg font-medium transition-colors shadow-sm"
                     >
                         Manual Create
@@ -279,16 +291,137 @@ const getVisiblePages = () => {
                         </p>
                     </div>
 
+                    <!-- Simplified DataTable -->
+                    <!-- Mobile Cards -->
+                    <div class="lg:hidden">
+                        <div
+                            v-if="residents.length === 0"
+                            class="p-6 text-center text-gray-500"
+                        >
+                            No residents found
+                        </div>
+                        <div v-else class="divide-y divide-gray-200">
+                            <div
+                                v-for="resident in sortedResidents"
+                                :key="resident.id"
+                                class="p-4 hover:bg-background transition-colors"
+                            >
+                                <div class="flex items-center justify-between">
+                                    <!-- Left side: Avatar and Name -->
+                                    <div class="flex items-center space-x-3">
+                                        <div
+                                            class="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center"
+                                        >
+                                            <span
+                                                class="text-gray-600 text-sm font-medium"
+                                            >
+                                                {{
+                                                    resident.name
+                                                        .charAt(0)
+                                                        .toUpperCase()
+                                                }}
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <div
+                                                class="text-sm font-medium text-black"
+                                            >
+                                                {{ resident.name }}
+                                            </div>
+                                            <div class="text-xs text-gray-500">
+                                                ID:
+                                                {{
+                                                    resident.username ||
+                                                    resident.id
+                                                }}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Right side: Actions -->
+                                    <div class="flex items-center space-x-2">
+                                        <!-- Action Buttons -->
+                                        <div class="flex space-x-1">
+                                            <!-- View Button -->
+                                            <button
+                                                @click="handleView(resident)"
+                                                class="bg-primary hover:bg-pressed text-white px-2 py-1 rounded text-xs font-medium transition-colors flex items-center justify-center"
+                                                title="View"
+                                            >
+                                                <svg
+                                                    class="w-4 h-4"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    viewBox="0 0 24 24"
+                                                >
+                                                    <path
+                                                        stroke-linecap="round"
+                                                        stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                                    ></path>
+                                                    <path
+                                                        stroke-linecap="round"
+                                                        stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                                                    ></path>
+                                                </svg>
+                                            </button>
+
+                                            <!-- Edit Button -->
+                                            <button
+                                                @click="handleEdit(resident)"
+                                                class="bg-primary hover:bg-pressed text-white px-2 py-1 rounded text-xs font-medium transition-colors flex items-center justify-center"
+                                                title="Edit"
+                                            >
+                                                <svg
+                                                    class="w-4 h-4"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    viewBox="0 0 24 24"
+                                                >
+                                                    <path
+                                                        stroke-linecap="round"
+                                                        stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                                    ></path>
+                                                </svg>
+                                            </button>
+
+                                            <!-- Delete Button -->
+                                            <button
+                                                @click="handleDelete(resident)"
+                                                class="bg-primary hover:bg-red-800 text-white px-2 py-1 rounded text-xs font-medium transition-colors flex items-center justify-center"
+                                                title="Delete"
+                                            >
+                                                <svg
+                                                    class="w-4 h-4"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    viewBox="0 0 24 24"
+                                                >
+                                                    <path
+                                                        stroke-linecap="round"
+                                                        stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                                    ></path>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Desktop Table -->
                     <div class="hidden lg:block overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-primary">
                                 <tr>
-                                    <th
-                                        class="px-6 py-3 text-center text-xs font-medium text-white uppercase tracking-wider"
-                                    >
-                                        Avatar
-                                    </th>
                                     <th
                                         class="px-6 py-3 text-center text-xs font-medium text-white uppercase tracking-wider cursor-pointer hover:bg-pressed transition-colors"
                                         @click="handleSort('name')"
@@ -331,14 +464,19 @@ const getVisiblePages = () => {
                                     <th
                                         class="px-6 py-3 text-center text-xs font-medium text-white uppercase tracking-wider"
                                     >
+                                        PIN Code
+                                    </th>
+                                    <th
+                                        class="px-6 py-3 text-center text-xs font-medium text-white uppercase tracking-wider"
+                                    >
                                         Actions
                                     </th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
-                                <tr v-if="sortedResidents.length === 0">
+                                <tr v-if="residents.length === 0">
                                     <td
-                                        colspan="6"
+                                        colspan="5"
                                         class="px-6 py-4 text-center text-gray-500"
                                     >
                                         No residents found
@@ -349,43 +487,27 @@ const getVisiblePages = () => {
                                     :key="resident.id"
                                     class="hover:bg-background transition-colors"
                                 >
-                                    <td
-                                        class="px-6 py-4 whitespace-nowrap text-center"
-                                    >
-                                        <div class="flex justify-center">
-                                            <div
-                                                class="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center"
-                                            >
-                                                <span
-                                                    class="text-gray-600 text-sm font-medium"
-                                                >
-                                                    {{
-                                                        resident.name
-                                                            .charAt(0)
-                                                            .toUpperCase()
-                                                    }}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td
-                                        class="px-6 py-4 whitespace-nowrap text-center"
-                                    >
+                                    <!-- Name -->
+                                    <td class="px-6 py-4 whitespace-nowrap">
                                         <div
                                             class="text-sm font-medium text-black"
                                         >
                                             {{ resident.name }}
                                         </div>
                                     </td>
-                                    <td
-                                        class="px-6 py-4 whitespace-nowrap text-center"
-                                    >
+
+                                    <!-- ID -->
+                                    <td class="px-6 py-4 whitespace-nowrap">
                                         <div
-                                            class="text-sm font-medium text-black"
+                                            class="text-sm text-black font-mono"
                                         >
-                                            {{ resident.id }}
+                                            {{
+                                                resident.username || resident.id
+                                            }}
                                         </div>
                                     </td>
+
+                                    <!-- Status -->
                                     <td
                                         class="px-6 py-4 whitespace-nowrap text-center"
                                     >
@@ -401,7 +523,7 @@ const getVisiblePages = () => {
                                                     resident.status ===
                                                     'rejected',
                                             }"
-                                            class="inline-flex px-3 py-1 text-xs font-semibold rounded-full"
+                                            class="inline-flex px-3 py-1 text-sm font-semibold rounded-full"
                                         >
                                             {{
                                                 resident.status
@@ -411,36 +533,45 @@ const getVisiblePages = () => {
                                             }}
                                         </span>
                                     </td>
+
+                                    <!-- PIN Code -->
                                     <td
-                                        class="px-6 py-4 whitespace-nowrap text-sm font-medium text-center"
+                                        class="px-6 py-4 whitespace-nowrap text-center"
                                     >
-                                        <div
-                                            class="flex gap-2 justify-center flex-wrap"
+                                        <button
+                                            @click="
+                                                togglePinVisibility(resident.id)
+                                            "
+                                            class="text-sm font-mono bg-white border-2 border-primary px-3 py-1 rounded hover:bg-pressed hover:text-white transition-colors"
                                         >
-                                            <!-- View Details Button -->
+                                            {{
+                                                isPinVisible(resident.id)
+                                                    ? resident.pin_code
+                                                    : "••••••"
+                                            }}
+                                        </button>
+                                    </td>
+
+                                    <!-- Actions -->
+                                    <td
+                                        class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium"
+                                    >
+                                        <div class="flex flex-col space-y-1">
                                             <button
-                                                @click="openModal(resident)"
-                                                class="bg-primary hover:bg-pressed text-white px-3 py-2 rounded-md text-xs font-medium transition-colors shadow-sm"
+                                                @click="handleView(resident)"
+                                                class="bg-primary hover:bg-pressed text-white px-2 py-1 rounded text-xs font-medium transition-colors shadow-sm"
                                             >
                                                 View
                                             </button>
-
-                                            <!-- Edit Button -->
                                             <button
-                                                @click="
-                                                    editResident(resident.id)
-                                                "
-                                                class="bg-primary hover:bg-pressed text-white px-3 py-2 rounded-md text-xs font-medium transition-colors shadow-sm"
+                                                @click="handleEdit(resident)"
+                                                class="bg-primary hover:bg-pressed text-white px-2 py-1 rounded text-xs font-medium transition-colors shadow-sm"
                                             >
                                                 Edit
                                             </button>
-
-                                            <!-- Delete Button -->
                                             <button
-                                                @click="
-                                                    deleteResident(resident.id)
-                                                "
-                                                class="bg-primary hover:bg-red-800 text-white px-3 py-2 rounded-md text-xs font-medium transition-colors shadow-sm"
+                                                @click="handleDelete(resident)"
+                                                class="bg-primary hover:bg-red-800 text-white px-2 py-1 rounded text-xs font-medium transition-colors shadow-sm"
                                             >
                                                 Delete
                                             </button>
@@ -449,264 +580,6 @@ const getVisiblePages = () => {
                                 </tr>
                             </tbody>
                         </table>
-                    </div>
-
-                    <!-- Mobile Cards -->
-                    <div class="lg:hidden">
-                        <div
-                            v-if="sortedResidents.length === 0"
-                            class="p-6 text-center text-gray-500"
-                        >
-                            No residents found
-                        </div>
-                        <div v-else class="divide-y divide-gray-200">
-                            <div
-                                v-for="resident in sortedResidents"
-                                :key="resident.id"
-                                class="p-4 hover:bg-background transition-colors"
-                            >
-                                <!-- Mobile Card Content -->
-                                <div class="flex items-center justify-between">
-                                    <!-- Left side: Avatar and Name -->
-                                    <div class="flex items-center space-x-3">
-                                        <div
-                                            class="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center"
-                                        >
-                                            <span
-                                                class="text-gray-600 text-sm font-medium"
-                                            >
-                                                {{
-                                                    resident.name
-                                                        .charAt(0)
-                                                        .toUpperCase()
-                                                }}
-                                            </span>
-                                        </div>
-                                        <div>
-                                            <div
-                                                class="text-sm font-medium text-black"
-                                            >
-                                                {{ resident.name }}
-                                            </div>
-                                            <div class="text-xs text-gray-500">
-                                                ID: {{ resident.id }}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Right side: Status and Actions -->
-                                    <div class="flex items-center space-x-2">
-                                        <!-- Status Badge -->
-                                        <span
-                                            :class="{
-                                                'bg-accent text-black':
-                                                    resident.status ===
-                                                    'pending',
-                                                'bg-green-100 text-green-800 border border-green-200':
-                                                    resident.status ===
-                                                    'approved',
-                                                'bg-red-100 text-red-800 border border-red-200':
-                                                    resident.status ===
-                                                    'rejected',
-                                            }"
-                                            class="inline-flex px-2 py-1 text-xs font-semibold rounded-full"
-                                        >
-                                            {{
-                                                resident.status
-                                                    .charAt(0)
-                                                    .toUpperCase() +
-                                                resident.status.slice(1)
-                                            }}
-                                        </span>
-
-                                        <!-- Action Buttons - 2x2 Grid -->
-                                        <div class="grid grid-cols-2 gap-1">
-                                            <!-- View Button -->
-                                            <button
-                                                @click="openModal(resident)"
-                                                class="bg-primary hover:bg-pressed text-white px-2 py-2 rounded text-xs font-medium transition-colors flex items-center justify-center"
-                                            >
-                                                <svg
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                    viewBox="0 0 24 24"
-                                                    fill="currentColor"
-                                                    class="size-4"
-                                                >
-                                                    <path
-                                                        fill-rule="evenodd"
-                                                        d="M15.75 2.25H21a.75.75 0 0 1 .75.75v5.25a.75.75 0 0 1-1.5 0V4.81L8.03 17.03a.75.75 0 0 1-1.06-1.06L19.19 3.75h-3.44a.75.75 0 0 1 0-1.5Zm-10.5 4.5a1.5 1.5 0 0 0-1.5 1.5v10.5a1.5 1.5 0 0 0 1.5 1.5h10.5a1.5 1.5 0 0 0 1.5-1.5V10.5a.75.75 0 0 1 1.5 0v8.25a3 3 0 0 1-3 3H5.25a3 3 0 0 1-3-3V8.25a3 3 0 0 1 3-3h8.25a.75.75 0 0 1 0 1.5H5.25Z"
-                                                        clip-rule="evenodd"
-                                                    />
-                                                </svg>
-                                            </button>
-
-                                            <!-- Edit Button -->
-                                            <button
-                                                @click="
-                                                    editResident(resident.id)
-                                                "
-                                                class="bg-primary hover:bg-pressed text-white px-2 py-2 rounded text-xs font-medium transition-colors flex items-center justify-center"
-                                            >
-                                                <svg
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                    viewBox="0 0 24 24"
-                                                    fill="currentColor"
-                                                    class="size-4"
-                                                >
-                                                    <path
-                                                        d="M21.731 2.269a2.625 2.625 0 0 0-3.712 0l-1.157 1.157 3.712 3.712 1.157-1.157a2.625 2.625 0 0 0 0-3.712ZM19.513 8.199l-3.712-3.712-8.4 8.4a5.25 5.25 0 0 0-1.32 2.214l-.8 2.685a.75.75 0 0 0 .933.933l2.685-.8a5.25 5.25 0 0 0 2.214-1.32l8.4-8.4Z"
-                                                    />
-                                                    <path
-                                                        d="M5.25 5.25a3 3 0 0 0-3 3v10.5a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3V13.5a.75.75 0 0 0-1.5 0v5.25a1.5 1.5 0 0 1-1.5 1.5H5.25a1.5 1.5 0 0 1-1.5-1.5V8.25a1.5 1.5 0 0 1 1.5-1.5h5.25a.75.75 0 0 0 0-1.5H5.25Z"
-                                                    />
-                                                </svg>
-                                            </button>
-
-                                            <!-- Delete Button -->
-                                            <button
-                                                @click="
-                                                    deleteResident(resident.id)
-                                                "
-                                                class="bg-primary hover:bg-red-800 text-white px-2 py-2 rounded text-xs font-medium transition-colors flex items-center justify-center"
-                                            >
-                                                <svg
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                    viewBox="0 0 24 24"
-                                                    fill="currentColor"
-                                                    class="size-4"
-                                                >
-                                                    <path
-                                                        fill-rule="evenodd"
-                                                        d="M16.5 4.478v.227a48.816 48.816 0 0 1 3.878.512.75.75 0 1 1-.256 1.478l-.209-.035-1.005 13.07a3 3 0 0 1-2.991 2.77H8.084a3 3 0 0 1-2.991-2.77L4.087 6.66l-.209.035a.75.75 0 0 1-.256-1.478A48.567 48.567 0 0 1 7.5 4.705v-.227c0-1.564 1.213-2.9 2.816-2.951a52.662 52.662 0 0 1 3.369 0c1.603.051 2.815 1.387 2.815 2.951Zm-6.136-1.452a51.196 51.196 0 0 1 3.273 0C14.39 3.05 15 3.684 15 4.478v.113a49.488 49.488 0 0 0-6 0v-.113c0-.794.609-1.428 1.364-1.452Zm-.355 5.945a.75.75 0 1 0-1.5.058l.347 9a.75.75 0 1 0 1.499-.058l-.346-9Zm5.48.058a.75.75 0 1 0-1.498-.058l-.347 9a.75.75 0 0 0 1.5.058l.345-9Z"
-                                                        clip-rule="evenodd"
-                                                    />
-                                                </svg>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Pagination -->
-                    <div
-                        v-if="pagination.totalPages > 1"
-                        class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6"
-                    >
-                        <div class="flex-1 flex justify-between sm:hidden">
-                            <Link
-                                v-if="pagination.hasPrevPage"
-                                :href="`/admin/residents?page=${pagination.prevPage}`"
-                                class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-                            >
-                                Previous
-                            </Link>
-                            <Link
-                                v-if="pagination.hasNextPage"
-                                :href="`/admin/residents?page=${pagination.nextPage}`"
-                                class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-                            >
-                                Next
-                            </Link>
-                        </div>
-                        <div
-                            class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between"
-                        >
-                            <div>
-                                <p class="text-sm text-gray-700">
-                                    Showing
-                                    <span class="font-medium">{{
-                                        (pagination.currentPage - 1) *
-                                            pagination.perPage +
-                                        1
-                                    }}</span>
-                                    to
-                                    <span class="font-medium">{{
-                                        Math.min(
-                                            pagination.currentPage *
-                                                pagination.perPage,
-                                            pagination.total
-                                        )
-                                    }}</span>
-                                    of
-                                    <span class="font-medium">{{
-                                        pagination.total
-                                    }}</span>
-                                    results
-                                </p>
-                            </div>
-                            <div>
-                                <nav
-                                    class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
-                                    aria-label="Pagination"
-                                >
-                                    <Link
-                                        v-if="pagination.hasPrevPage"
-                                        :href="`/admin/residents?page=${pagination.prevPage}`"
-                                        class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
-                                    >
-                                        <span class="sr-only">Previous</span>
-                                        <svg
-                                            class="h-5 w-5"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            viewBox="0 0 20 20"
-                                            fill="currentColor"
-                                            aria-hidden="true"
-                                        >
-                                            <path
-                                                fill-rule="evenodd"
-                                                d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
-                                                clip-rule="evenodd"
-                                            />
-                                        </svg>
-                                    </Link>
-                                    <template
-                                        v-for="page in getVisiblePages()"
-                                        :key="page"
-                                    >
-                                        <Link
-                                            v-if="page !== '...'"
-                                            :href="`/admin/residents?page=${page}`"
-                                            :class="[
-                                                'relative inline-flex items-center px-4 py-2 border text-sm font-medium',
-                                                page === pagination.currentPage
-                                                    ? 'z-10 bg-primary border-primary text-white'
-                                                    : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50',
-                                            ]"
-                                        >
-                                            {{ page }}
-                                        </Link>
-                                        <span
-                                            v-else
-                                            class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700"
-                                        >
-                                            ...
-                                        </span>
-                                    </template>
-                                    <Link
-                                        v-if="pagination.hasNextPage"
-                                        :href="`/admin/residents?page=${pagination.nextPage}`"
-                                        class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
-                                    >
-                                        <span class="sr-only">Next</span>
-                                        <svg
-                                            class="h-5 w-5"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            viewBox="0 0 20 20"
-                                            fill="currentColor"
-                                            aria-hidden="true"
-                                        >
-                                            <path
-                                                fill-rule="evenodd"
-                                                d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                                                clip-rule="evenodd"
-                                            />
-                                        </svg>
-                                    </Link>
-                                </nav>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -728,6 +601,23 @@ const getVisiblePages = () => {
             :results="flash.results"
             :errors="flash.errors"
             @close="showBatchModal = false"
+        />
+
+        <!-- Edit Resident Modal -->
+        <EditResidentModal
+            :show="showEditModal"
+            :resident="editingResident"
+            @close="closeEditModal"
+            @updated="handleResidentUpdated"
+        />
+
+        <!-- Delete Confirmation Modal -->
+        <DeleteConfirmationModal
+            :show="showDeleteModal"
+            :item="deletingResident"
+            item-type="resident"
+            @close="closeDeleteModal"
+            @deleted="handleResidentDeleted"
         />
     </AppLayout>
 </template>

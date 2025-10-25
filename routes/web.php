@@ -79,8 +79,9 @@ Route::middleware([
         $hasOrganization = DB::select('SELECT id FROM admin WHERE user_id = ?', [$user->id]);
         $needsOrganizationSetup = empty($hasOrganization);
         
-        // Get volunteer applications for this admin's organization
+        // Get volunteer applications and resident count for this admin's organization
         $volunteerApplications = [];
+        $totalResidents = 0;
         if (!$needsOrganizationSetup) {
             $adminRecord = DB::select('SELECT organization_id FROM admin WHERE user_id = ?', [$user->id]);
             if (!empty($adminRecord)) {
@@ -92,6 +93,7 @@ Route::middleware([
                         v.id,
                         v.status,
                         v.application_date,
+                        v.application_notes,
                         u.name,
                         u.email,
                         o.name as organization_name
@@ -101,12 +103,23 @@ Route::middleware([
                     WHERE v.organization_id = ?
                     ORDER BY v.application_date DESC
                 ', [$organizationId]);
+                
+                // Get total residents count
+                $residentsCount = DB::select('
+                    SELECT COUNT(*) as total
+                    FROM resident r
+                    JOIN users u ON r.user_id = u.id
+                    JOIN organization o ON r.organization_id = o.id
+                    WHERE r.organization_id = ?
+                ', [$organizationId]);
+                $totalResidents = $residentsCount[0]->total ?? 0;
             }
         }
         
         return Inertia::render('AdminDashboard', [
             'needsOrganizationSetup' => $needsOrganizationSetup,
-            'volunteerApplications' => $volunteerApplications
+            'volunteerApplications' => $volunteerApplications,
+            'totalResidents' => $totalResidents
         ]);
     })->name('admin.dashboard');
     
@@ -147,11 +160,7 @@ Route::middleware([
                 $statusCountsArray[$status->status] = $status->count;
             }
             
-            // Get paginated residents using raw SQL
-            $page = $request->get('page', 1);
-            $perPage = 10; // 10 residents per page
-            $offset = ($page - 1) * $perPage;
-            
+            // Get all residents (client-side pagination)
             $residents = DB::select('
                 SELECT 
                     r.id,
@@ -160,7 +169,9 @@ Route::middleware([
                     r.room_number,
                     r.floor_number,
                     r.date_of_birth,
+                    r.pin_code,
                     u.name,
+                    u.username,
                     u.email,
                     o.name as organization_name
                 FROM resident r
@@ -168,26 +179,10 @@ Route::middleware([
                 JOIN organization o ON r.organization_id = o.id
                 WHERE r.organization_id = ?
                 ORDER BY r.application_date DESC
-                LIMIT ? OFFSET ?
-            ', [$organizationId, $perPage, $offset]);
-            
-            // Calculate pagination data
-            $totalPages = ceil($totalCount / $perPage);
-            $hasNextPage = $page < $totalPages;
-            $hasPrevPage = $page > 1;
+            ', [$organizationId]);
             
             return Inertia::render('Admin/ResidentManagement', [
                 'residents' => $residents,
-                'pagination' => [
-                    'currentPage' => (int) $page,
-                    'totalPages' => $totalPages,
-                    'perPage' => $perPage,
-                    'total' => $totalCount,
-                    'hasNextPage' => $hasNextPage,
-                    'hasPrevPage' => $hasPrevPage,
-                    'nextPage' => $hasNextPage ? $page + 1 : null,
-                    'prevPage' => $hasPrevPage ? $page - 1 : null,
-                ],
                 'statusCounts' => [
                     'pending' => $statusCountsArray['pending'] ?? 0,
                     'approved' => $statusCountsArray['approved'] ?? 0,
@@ -202,16 +197,6 @@ Route::middleware([
         
         return Inertia::render('Admin/ResidentManagement', [
             'residents' => [],
-            'pagination' => [
-                'currentPage' => 1,
-                'totalPages' => 0,
-                'perPage' => 10,
-                'total' => 0,
-                'hasNextPage' => false,
-                'hasPrevPage' => false,
-                'nextPage' => null,
-                'prevPage' => null,
-            ],
             'statusCounts' => [
                 'pending' => 0,
                 'approved' => 0,
@@ -223,6 +208,77 @@ Route::middleware([
             ]
         ]);
     })->name('admin.residents');
+    
+    // Update resident route
+    Route::put('/admin/residents/{id}', function (Request $request, $id) {
+        $user = auth()->user();
+        
+        // Validate the request
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'room_number' => 'nullable|string|max:10',
+            'floor_number' => 'nullable|string|max:10',
+            'pin_code' => 'required|string|size:6|regex:/^[0-9]{6}$/',
+        ]);
+        
+        // Get the resident
+        $resident = DB::table('resident')
+            ->join('users', 'resident.user_id', '=', 'users.id')
+            ->where('resident.id', $id)
+            ->select('resident.*', 'users.id as user_id')
+            ->first();
+            
+        if (!$resident) {
+            return response()->json(['error' => 'Resident not found'], 404);
+        }
+        
+        // Update user name
+        DB::table('users')
+            ->where('id', $resident->user_id)
+            ->update([
+                'name' => $request->name,
+                'password' => bcrypt($request->pin_code), // Update password with new PIN
+                'updated_at' => now()
+            ]);
+        
+        // Update resident details
+        DB::table('resident')
+            ->where('id', $id)
+            ->update([
+                'room_number' => $request->room_number,
+                'floor_number' => $request->floor_number,
+                'pin_code' => $request->pin_code, // Store plain PIN for admin viewing
+                'updated_at' => now()
+            ]);
+        
+        return redirect()->route('admin.residents')->with('success', 'Resident updated successfully!');
+    })->name('admin.residents.update');
+    
+    // Delete resident route
+    Route::delete('/admin/residents/{id}', function (Request $request, $id) {
+        $user = auth()->user();
+        
+        // Get the resident
+        $resident = DB::table('resident')
+            ->join('users', 'resident.user_id', '=', 'users.id')
+            ->where('resident.id', $id)
+            ->select('resident.*', 'users.id as user_id', 'users.name as user_name')
+            ->first();
+            
+        if (!$resident) {
+            return response()->json(['error' => 'Resident not found'], 404);
+        }
+        
+        $residentName = $resident->user_name;
+        
+        // Delete the resident record
+        DB::table('resident')->where('id', $id)->delete();
+        
+        // Delete the associated user record
+        DB::table('users')->where('id', $resident->user_id)->delete();
+        
+        return redirect()->route('admin.residents')->with('success', "Resident '{$residentName}' has been deleted successfully!");
+    })->name('admin.residents.destroy');
     
     Route::get('/admin/volunteers', function (Request $request) {
         $user = auth()->user();
@@ -270,6 +326,7 @@ Route::middleware([
                     v.id,
                     v.status,
                     v.application_date,
+                    v.application_notes,
                     u.name,
                     u.email,
                     o.name as organization_name

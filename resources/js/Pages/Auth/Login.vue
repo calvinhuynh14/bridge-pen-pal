@@ -21,15 +21,27 @@ const props = defineProps({
 
 const form = useForm({
     email: "",
+    username: "",
     password: "",
     remember: false,
 });
 
 const submit = () => {
-    form.transform((data) => ({
-        ...data,
-        remember: form.remember ? "on" : "",
-    })).post(route("login"), {
+    // For residents, use username; for others, use email
+    const loginData =
+        props.type === "resident"
+            ? {
+                  username: form.username,
+                  password: form.password,
+                  remember: form.remember ? "on" : "",
+              }
+            : {
+                  email: form.email,
+                  password: form.password,
+                  remember: form.remember ? "on" : "",
+              };
+
+    form.transform((data) => loginData).post(route("login"), {
         onFinish: () => form.reset("password"),
     });
 };
@@ -109,7 +121,8 @@ const getSubtitle = (type) => {
                 </Link>
             </div>
 
-            <div class="text-center">
+            <!-- Google sign-in only for non-residents -->
+            <div v-if="type !== 'resident'" class="text-center">
                 <a
                     :href="route('auth.google.redirect', { type: type })"
                     class="block lg:hidden"
@@ -153,8 +166,8 @@ const getSubtitle = (type) => {
 
                 <form @submit.prevent="submit">
                     <div class="space-y-4">
-                        <!-- Email Field -->
-                        <div>
+                        <!-- Email Field (for volunteers and admins) -->
+                        <div v-if="type !== 'resident'">
                             <TextInput
                                 id="email"
                                 v-model="form.email"
@@ -168,6 +181,24 @@ const getSubtitle = (type) => {
                             <InputError
                                 class="mt-2"
                                 :message="form.errors.email"
+                            />
+                        </div>
+
+                        <!-- Username Field (for residents) -->
+                        <div v-if="type === 'resident'">
+                            <TextInput
+                                id="username"
+                                v-model="form.username"
+                                type="text"
+                                class="mt-2 block w-full border-gray-300 rounded-lg focus:border-primary focus:ring-primary"
+                                required
+                                autofocus
+                                autocomplete="username"
+                                placeholder="Enter your username"
+                            />
+                            <InputError
+                                class="mt-2"
+                                :message="form.errors.username"
                             />
                         </div>
 
@@ -227,7 +258,11 @@ const getSubtitle = (type) => {
                     </div>
                 </form>
 
-                <div class="hidden lg:block text-center space-y-4">
+                <!-- Google sign-in only for non-residents -->
+                <div
+                    v-if="type !== 'resident'"
+                    class="hidden lg:block text-center space-y-4"
+                >
                     <!-- Divider line with OR - only visible on small screens -->
                     <div class="relative flex items-center">
                         <div class="flex-grow h-0.5 bg-black"></div>
