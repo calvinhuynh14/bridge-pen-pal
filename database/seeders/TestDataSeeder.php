@@ -176,13 +176,13 @@ class TestDataSeeder extends Seeder
                 'organization_id' => $orgId,
                 'status' => $status,
                 'application_date' => now()->subDays(rand(1, 90)), // Random date within last 90 days
-                // Removed application_notes as column was dropped
+                'application_notes' => $applicationMessages[$i % count($applicationMessages)],
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
         }
 
-        // Create 30 residents
+        // Create 30 residents with proper usernames and PINs
         $residentNames = [
             'Alice Johnson', 'Bob Smith', 'Carol Davis', 'David Wilson', 'Emma Brown',
             'Frank Miller', 'Grace Lee', 'Henry Taylor', 'Ivy Anderson', 'Jack Thomas',
@@ -192,28 +192,38 @@ class TestDataSeeder extends Seeder
             'Zoe Wright', 'Adam Lopez', 'Beth Hill', 'Carl Scott', 'Diana Green'
         ];
 
-        $medicalNotes = [
-            "No known medical conditions. Independent mobility.",
-            "Requires assistance with medication management.",
-            "Mild dementia, needs memory support activities.",
-            "Wheelchair user, requires accessible facilities.",
-            "Diabetes management, regular blood sugar monitoring needed.",
-            "High blood pressure, medication compliance important.",
-            "Arthritis in hands, may need assistance with fine motor tasks.",
-            "Hearing aid user, speak clearly and face resident.",
-            "Vision impaired, large print materials preferred.",
-            "Social isolation concerns, encourage group activities."
-        ];
+        $roomNumbers = ['101', '102', '103', '104', '105', '201', '202', '203', '204', '205', 
+                       '301', '302', '303', '304', '305', '401', '402', '403', '404', '405'];
+        $floorNumbers = ['1', '1', '1', '1', '1', '2', '2', '2', '2', '2', 
+                        '3', '3', '3', '3', '3', '4', '4', '4', '4', '4'];
+        $birthYears = [1930, 1935, 1940, 1945, 1950, 1955, 1960, 1965, 1970, 1975];
 
         for ($i = 0; $i < 30; $i++) {
             $orgId = $organizationIds[array_rand($organizationIds)]; // Random organization
-            $status = ['pending', 'approved', 'rejected'][array_rand(['pending', 'approved', 'rejected'])];
+            $status = ['pending', 'approved'][array_rand(['pending', 'approved'])]; // Mostly approved residents
             $applicationDate = now()->subDays(rand(1, 180)); // Random date in last 6 months
+            
+            // Generate 6-digit resident ID starting from 100000
+            $residentId = 100000 + $i;
+            
+            // Generate 6-digit PIN
+            $pinCode = str_pad(rand(100000, 999999), 6, '0', STR_PAD_LEFT);
+            
+            // Generate birth date
+            $birthYear = $birthYears[array_rand($birthYears)];
+            $birthMonth = rand(1, 12);
+            $birthDay = rand(1, 28); // Safe day for all months
+            $dateOfBirth = $birthYear . '-' . str_pad($birthMonth, 2, '0', STR_PAD_LEFT) . '-' . str_pad($birthDay, 2, '0', STR_PAD_LEFT);
+            
+            // Get room and floor
+            $roomNumber = $roomNumbers[$i % count($roomNumbers)];
+            $floorNumber = $floorNumbers[$i % count($floorNumbers)];
 
             $user_id = DB::table('users')->insertGetId([
                 'name' => $residentNames[$i],
-                'email' => 'resident' . ($i + 1) . '@test.com',
-                'password' => Hash::make('password'),
+                'email' => null, // Residents don't have email
+                'username' => (string)$residentId, // 6-digit username
+                'password' => Hash::make($pinCode), // PIN as password
                 'user_type_id' => $residentTypeId,
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -224,7 +234,10 @@ class TestDataSeeder extends Seeder
                 'organization_id' => $orgId,
                 'status' => $status,
                 'application_date' => $applicationDate,
-                // Removed application_notes and medical_notes as columns were dropped
+                'date_of_birth' => $dateOfBirth,
+                'room_number' => $roomNumber,
+                'floor_number' => $floorNumber,
+                'pin_code' => $pinCode, // Store plain PIN for admin viewing
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
@@ -237,10 +250,26 @@ class TestDataSeeder extends Seeder
         $this->command->info('- 5 Admin Users');
         $this->command->info('- 50 Volunteer Applications');
         $this->command->info('- 30 Residents');
+        $this->command->info('- Interest Categories & Interests');
+        $this->command->info('- Languages');
         $this->command->info('');
-        $this->command->info('Admin Login Credentials:');
+        $this->command->info('Demo Login Credentials:');
+        $this->command->info('Admin Users:');
         for ($i = 1; $i <= 5; $i++) {
-            $this->command->info("Admin {$i}: admin{$i}@test.com / password");
+            $this->command->info("  Admin {$i}: admin{$i}@test.com / password");
+        }
+        $this->command->info('');
+        $this->command->info('Resident Users (Username + PIN):');
+        for ($i = 0; $i < 5; $i++) {
+            $residentId = 100000 + $i;
+            $resident = DB::table('resident')
+                ->join('users', 'resident.user_id', '=', 'users.id')
+                ->where('users.username', $residentId)
+                ->select('users.name', 'resident.pin_code')
+                ->first();
+            if ($resident) {
+                $this->command->info("  {$resident->name}: {$residentId} / {$resident->pin_code}");
+            }
         }
     }
 
