@@ -13,6 +13,7 @@ defineProps({
 
 const page = usePage();
 const showingNavigationDropdown = ref(false);
+const isSidebarOpen = ref(false);
 
 // Check if user is admin
 const isAdmin = computed(() => {
@@ -28,6 +29,10 @@ const isVolunteer = computed(() => {
 const isResident = computed(() => {
     return page.props.auth?.user?.user_type === "resident";
 });
+
+const toggleSidebar = () => {
+    isSidebarOpen.value = !isSidebarOpen.value;
+};
 
 const logout = () => {
     router.post(route("logout"));
@@ -45,7 +50,26 @@ const logout = () => {
                 <!-- Primary Navigation Menu -->
                 <div class="w-full mx-auto px-4 sm:px-6 lg:px-8">
                     <div class="flex justify-between h-20">
-                        <div class="flex">
+                        <div class="flex items-center">
+                            <!-- Sidebar Toggle Button (visible on md+ screens) -->
+                            <button
+                                @click="toggleSidebar"
+                                class="md:flex hidden items-center justify-center p-2 rounded-md text-white hover:bg-hover focus:outline-none transition-colors mr-4"
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 24 24"
+                                    fill="currentColor"
+                                    class="size-6"
+                                >
+                                    <path
+                                        fill-rule="evenodd"
+                                        d="M3 5.25a.75.75 0 0 1 .75-.75h16.5a.75.75 0 0 1 0 1.5H3.75A.75.75 0 0 1 3 5.25Zm0 4.5A.75.75 0 0 1 3.75 9h16.5a.75.75 0 0 1 0 1.5H3.75A.75.75 0 0 1 3 9.75Zm0 4.5a.75.75 0 0 1 .75-.75h16.5a.75.75 0 0 1 0 1.5H3.75a.75.75 0 0 1-.75-.75Zm0 4.5a.75.75 0 0 1 .75-.75h16.5a.75.75 0 0 1 0 1.5H3.75a.75.75 0 0 1-.75-.75Z"
+                                        clip-rule="evenodd"
+                                    />
+                                </svg>
+                            </button>
+
                             <!-- Logo -->
                             <div class="shrink-0 flex items-center">
                                 <Link :href="route('dashboard')">
@@ -120,7 +144,15 @@ const logout = () => {
                         <div class="hidden sm:flex sm:items-center sm:ms-6">
                             <!-- Settings Dropdown -->
                             <div class="ms-3 relative">
-                                <Dropdown align="right" width="48">
+                                <Dropdown
+                                    align="right"
+                                    width="48"
+                                    :content-classes="[
+                                        'py-1',
+                                        'bg-pressed',
+                                        'overflow-hidden',
+                                    ]"
+                                >
                                     <template #trigger>
                                         <button
                                             v-if="
@@ -179,7 +211,10 @@ const logout = () => {
                                         <div class="border-t border-white/20" />
 
                                         <!-- Authentication -->
-                                        <form @submit.prevent="logout">
+                                        <form
+                                            @submit.prevent="logout"
+                                            class="block"
+                                        >
                                             <DropdownLink as="button">
                                                 Log Out
                                             </DropdownLink>
@@ -189,8 +224,8 @@ const logout = () => {
                             </div>
                         </div>
 
-                        <!-- Hamburger -->
-                        <div class="-me-2 flex items-center sm:hidden">
+                        <!-- Hamburger (visible only on portrait mobile, hidden on md+ screens) -->
+                        <div class="-me-2 flex items-center md:hidden">
                             <button
                                 class="inline-flex items-center justify-center p-2 rounded-md text-white hover:text-white hover:bg-hover focus:outline-none focus:bg-hover focus:text-white transition duration-150 ease-in-out"
                                 @click="
@@ -232,72 +267,14 @@ const logout = () => {
                     </div>
                 </div>
 
-                <!-- Responsive Navigation Menu -->
+                <!-- Responsive Navigation Menu (visible only on portrait mobile when hamburger is clicked) -->
                 <div
                     :class="{
                         block: showingNavigationDropdown,
                         hidden: !showingNavigationDropdown,
                     }"
-                    class="sm:hidden"
+                    class="md:hidden"
                 >
-                    <div class="pt-2 pb-3 space-y-1 text-white">
-                        <!-- Admin Navigation -->
-                        <template v-if="isAdmin">
-                            <ResponsiveNavLink
-                                :href="route('admin.dashboard')"
-                                :active="route().current('admin.dashboard')"
-                            >
-                                Dashboard
-                            </ResponsiveNavLink>
-                            <ResponsiveNavLink
-                                :href="route('admin.residents')"
-                                :active="route().current('admin.residents')"
-                            >
-                                Residents
-                            </ResponsiveNavLink>
-                            <ResponsiveNavLink
-                                :href="route('admin.volunteers')"
-                                :active="route().current('admin.volunteers')"
-                            >
-                                Volunteers
-                            </ResponsiveNavLink>
-                            <ResponsiveNavLink
-                                :href="route('admin.reports')"
-                                :active="route().current('admin.reports')"
-                            >
-                                Reports
-                            </ResponsiveNavLink>
-                        </template>
-
-                        <!-- Volunteer/Resident Navigation -->
-                        <template v-else>
-                            <ResponsiveNavLink
-                                :href="route('platform.home')"
-                                :active="route().current('platform.home')"
-                            >
-                                Home
-                            </ResponsiveNavLink>
-                            <ResponsiveNavLink
-                                :href="route('platform.discover')"
-                                :active="route().current('platform.discover')"
-                            >
-                                Discover
-                            </ResponsiveNavLink>
-                            <ResponsiveNavLink
-                                :href="route('platform.write')"
-                                :active="route().current('platform.write')"
-                            >
-                                Write
-                            </ResponsiveNavLink>
-                            <ResponsiveNavLink
-                                :href="route('profile.settings')"
-                                :active="route().current('profile.settings')"
-                            >
-                                Profile
-                            </ResponsiveNavLink>
-                        </template>
-                    </div>
-
                     <!-- Responsive Settings Options -->
                     <div class="pt-4 pb-1 border-t border-white/20 text-white">
                         <div class="flex items-center px-4">
@@ -349,9 +326,20 @@ const logout = () => {
             <main class="flex">
                 <!-- Sidebar Navigation -->
                 <div
-                    class="hidden bg-primary lg:block w-64 text-white min-h-screen"
+                    class="bg-primary text-white min-h-screen transition-all duration-300 ease-in-out overflow-hidden md:block hidden"
+                    :class="{
+                        'w-64': isSidebarOpen,
+                        'w-0': !isSidebarOpen,
+                    }"
                 >
-                    <div class="p-4">
+                    <div
+                        class="p-4 whitespace-nowrap transition-opacity duration-300"
+                        :class="{
+                            'opacity-0 pointer-events-none invisible':
+                                !isSidebarOpen,
+                            'opacity-100 visible': isSidebarOpen,
+                        }"
+                    >
                         <nav class="space-y-2">
                             <!-- Admin Navigation -->
                             <template v-if="isAdmin">
@@ -576,9 +564,9 @@ const logout = () => {
                 </div>
             </main>
 
-            <!-- Mobile Bottom Navigation -->
+            <!-- Mobile Bottom Navigation (hidden on md+ screens) -->
             <div
-                class="lg:hidden fixed bottom-0 left-0 right-0 bg-primary text-white border-t border-gray-600"
+                class="md:hidden fixed bottom-0 left-0 right-0 bg-primary text-white border-t border-gray-600"
             >
                 <div class="flex justify-around items-center py-2">
                     <!-- Admin Navigation -->

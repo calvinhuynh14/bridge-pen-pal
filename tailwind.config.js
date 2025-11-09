@@ -16,7 +16,7 @@ export default {
         extend: {
             colors: {
                 primary: "#B8B8FF",
-                pressed: "#9381FF",
+                pressed: "#9381FF", 
                 hover: "#5E239D",
                 white: "#F1F1F1",
                 background: "#FFF3E7",
