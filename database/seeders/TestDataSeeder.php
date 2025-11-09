@@ -25,11 +25,16 @@ class TestDataSeeder extends Seeder
 
         $organizationIds = [];
         foreach ($organizations as $org) {
+            $existing = DB::table('organization')->where('name', $org['name'])->first();
+            if ($existing) {
+                $orgId = $existing->id;
+            } else {
             $orgId = DB::table('organization')->insertGetId([
                 'name' => $org['name'],
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
+            }
             $organizationIds[] = $orgId;
         }
 
@@ -41,22 +46,34 @@ class TestDataSeeder extends Seeder
         // Create admin users for each organization
         $adminUsers = [];
         foreach ($organizationIds as $index => $orgId) {
+            $email = 'admin' . ($index + 1) . '@test.com';
+            
+            // Check if admin user already exists
+            $existingUser = DB::table('users')->where('email', $email)->first();
+            if ($existingUser) {
+                $adminId = $existingUser->id;
+            } else {
             $adminId = DB::table('users')->insertGetId([
                 'name' => 'Admin ' . ($index + 1),
-                'email' => 'admin' . ($index + 1) . '@test.com',
+                    'email' => $email,
                 'email_verified_at' => now(),
                 'password' => Hash::make('password'),
                 'user_type_id' => $adminTypeId,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
+            }
 
+            // Check if admin record already exists
+            $existingAdmin = DB::table('admin')->where('user_id', $adminId)->first();
+            if (!$existingAdmin) {
             DB::table('admin')->insert([
                 'user_id' => $adminId,
                 'organization_id' => $orgId,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
+            }
 
             $adminUsers[] = $adminId;
         }
@@ -153,20 +170,31 @@ class TestDataSeeder extends Seeder
 
         // Create volunteer users and applications
         for ($i = 0; $i < 50; $i++) {
+            $email = $volunteerEmails[$i];
+            
+            // Check if user already exists
+            $existingUser = DB::table('users')->where('email', $email)->first();
+            if ($existingUser) {
+                $userId = $existingUser->id;
+            } else {
             // Create user
             $userId = DB::table('users')->insertGetId([
                 'name' => $volunteerNames[$i],
-                'email' => $volunteerEmails[$i],
+                    'email' => $email,
                 'email_verified_at' => now(),
                 'password' => Hash::make('password'),
                 'user_type_id' => $volunteerTypeId,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
+            }
 
             // Assign to random organization
             $orgId = $organizationIds[array_rand($organizationIds)];
             
+            // Check if volunteer application already exists
+            $existingVolunteer = DB::table('volunteer')->where('user_id', $userId)->first();
+            if (!$existingVolunteer) {
             // Determine status based on weights
             $status = $this->getWeightedRandomStatus($statuses, $statusWeights);
             
@@ -176,10 +204,11 @@ class TestDataSeeder extends Seeder
                 'organization_id' => $orgId,
                 'status' => $status,
                 'application_date' => now()->subDays(rand(1, 90)), // Random date within last 90 days
-                'application_notes' => $applicationMessages[$i % count($applicationMessages)],
+                    'application_notes' => $applicationMessages[$i % count($applicationMessages)],
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
+            }
         }
 
         // Create 30 residents with proper usernames and PINs
@@ -199,31 +228,37 @@ class TestDataSeeder extends Seeder
         $birthYears = [1930, 1935, 1940, 1945, 1950, 1955, 1960, 1965, 1970, 1975];
 
         for ($i = 0; $i < 30; $i++) {
-            $orgId = $organizationIds[array_rand($organizationIds)]; // Random organization
-            $status = ['pending', 'approved'][array_rand(['pending', 'approved'])]; // Mostly approved residents
-            $applicationDate = now()->subDays(rand(1, 180)); // Random date in last 6 months
-            
             // Generate 6-digit resident ID starting from 100000
             $residentId = 100000 + $i;
+            $username = (string)$residentId;
             
-            // Generate 6-digit PIN
-            $pinCode = str_pad(rand(100000, 999999), 6, '0', STR_PAD_LEFT);
-            
-            // Generate birth date
-            $birthYear = $birthYears[array_rand($birthYears)];
-            $birthMonth = rand(1, 12);
-            $birthDay = rand(1, 28); // Safe day for all months
-            $dateOfBirth = $birthYear . '-' . str_pad($birthMonth, 2, '0', STR_PAD_LEFT) . '-' . str_pad($birthDay, 2, '0', STR_PAD_LEFT);
-            
-            // Get room and floor
-            $roomNumber = $roomNumbers[$i % count($roomNumbers)];
-            $floorNumber = $floorNumbers[$i % count($floorNumbers)];
+            // Check if resident user already exists
+            $existingUser = DB::table('users')->where('username', $username)->first();
+            if ($existingUser) {
+                $user_id = $existingUser->id;
+            } else {
+            $orgId = $organizationIds[array_rand($organizationIds)]; // Random organization
+                $status = ['pending', 'approved'][array_rand(['pending', 'approved'])]; // Mostly approved residents
+            $applicationDate = now()->subDays(rand(1, 180)); // Random date in last 6 months
+                
+                // Generate 6-digit PIN
+                $pinCode = str_pad(rand(100000, 999999), 6, '0', STR_PAD_LEFT);
+                
+                // Generate birth date
+                $birthYear = $birthYears[array_rand($birthYears)];
+                $birthMonth = rand(1, 12);
+                $birthDay = rand(1, 28); // Safe day for all months
+                $dateOfBirth = $birthYear . '-' . str_pad($birthMonth, 2, '0', STR_PAD_LEFT) . '-' . str_pad($birthDay, 2, '0', STR_PAD_LEFT);
+                
+                // Get room and floor
+                $roomNumber = $roomNumbers[$i % count($roomNumbers)];
+                $floorNumber = $floorNumbers[$i % count($floorNumbers)];
 
             $user_id = DB::table('users')->insertGetId([
                 'name' => $residentNames[$i],
-                'email' => null, // Residents don't have email
-                'username' => (string)$residentId, // 6-digit username
-                'password' => Hash::make($pinCode), // PIN as password
+                    'email' => null, // Residents don't have email
+                    'username' => $username, // 6-digit username
+                    'password' => Hash::make($pinCode), // PIN as password
                 'user_type_id' => $residentTypeId,
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -234,15 +269,25 @@ class TestDataSeeder extends Seeder
                 'organization_id' => $orgId,
                 'status' => $status,
                 'application_date' => $applicationDate,
-                'date_of_birth' => $dateOfBirth,
-                'room_number' => $roomNumber,
-                'floor_number' => $floorNumber,
-                'pin_code' => $pinCode, // Store plain PIN for admin viewing
+                    'date_of_birth' => $dateOfBirth,
+                    'room_number' => $roomNumber,
+                    'floor_number' => $floorNumber,
+                    'pin_code' => $pinCode, // Store plain PIN for admin viewing
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
+            }
         }
         $this->command->info('Created 30 Residents.');
+
+        // Create mock letters (only if none exist)
+        $existingLetters = DB::table('letters')->count();
+        if ($existingLetters === 0) {
+            $this->seedLetters($organizationIds);
+            $this->command->info('Created mock letters.');
+        } else {
+            $this->command->info("Skipping letter seeding - {$existingLetters} letters already exist.");
+        }
 
         $this->command->info('Test data seeded successfully!');
         $this->command->info('Created:');
@@ -252,6 +297,7 @@ class TestDataSeeder extends Seeder
         $this->command->info('- 30 Residents');
         $this->command->info('- Interest Categories & Interests');
         $this->command->info('- Languages');
+        $this->command->info('- Mock Letters (open letters, sent letters, etc.)');
         $this->command->info('');
         $this->command->info('Demo Login Credentials:');
         $this->command->info('Admin Users:');
@@ -270,6 +316,172 @@ class TestDataSeeder extends Seeder
             if ($resident) {
                 $this->command->info("  {$resident->name}: {$residentId} / {$resident->pin_code}");
             }
+        }
+    }
+
+    /**
+     * Seed mock letters
+     */
+    private function seedLetters($organizationIds)
+    {
+        // Get approved residents (for open letters)
+        $residents = DB::select("
+            SELECT u.id, u.name, r.organization_id
+            FROM users u
+            JOIN resident r ON u.id = r.user_id
+            WHERE r.status = 'approved'
+            LIMIT 10
+        ");
+
+        // Get approved volunteers (for sent letters)
+        $volunteers = DB::select("
+            SELECT u.id, u.name, v.organization_id
+            FROM users u
+            JOIN volunteer v ON u.id = v.user_id
+            WHERE v.status = 'approved'
+            LIMIT 5
+        ");
+
+        if (empty($residents)) {
+            $this->command->warn('No approved residents found. Skipping letter seeding.');
+            return;
+        }
+
+        $letterContents = [
+            // Open letters from residents
+            "Hello! I'm looking for someone to write to. I love gardening and reading books. Would anyone like to be my pen pal?",
+            "Hi there! I'm a resident here and I'd love to connect with someone through letters. I enjoy talking about history and sharing stories.",
+            "Greetings! I'm hoping to find a pen pal who enjoys conversation. I like discussing current events and learning about different places.",
+            "Hello! I'm interested in making new friends through letter writing. I love cooking and would enjoy sharing recipes!",
+            "Hi! I'm looking for someone to correspond with. I enjoy reading mystery novels and watching classic movies.",
+            "Greetings! I'd love to connect with someone through letters. I'm interested in art, music, and hearing about your experiences.",
+            "Hello! I'm seeking a pen pal for meaningful conversations. I enjoy discussing books, movies, and life experiences.",
+            "Hi there! I'm a resident who loves writing and receiving letters. I'd be happy to share stories and learn about you!",
+            "Greetings! I'm looking for someone to write to regularly. I enjoy talking about family, hobbies, and daily life.",
+            "Hello! I'm interested in finding a pen pal. I love sharing memories and hearing about other people's experiences.",
+            
+            // Regular letters
+            "Thank you for your last letter! I really enjoyed reading about your trip. I'd love to hear more about it.",
+            "I hope this letter finds you well. I wanted to share some exciting news with you!",
+            "It's been wonderful corresponding with you. I wanted to tell you about something that happened recently.",
+            "I'm writing to thank you for your thoughtful letter. Your words really brightened my day!",
+            "Hello! I wanted to reach out and see how you're doing. I've been thinking about our conversation.",
+        ];
+
+        $now = now();
+
+        // Create 8-10 open letters from residents (for Discover page)
+        $openLetterCount = min(10, count($residents));
+        for ($i = 0; $i < $openLetterCount; $i++) {
+            $resident = $residents[array_rand($residents)];
+            $content = $letterContents[$i % count($letterContents)];
+            
+            // Random sent date within last 30 days
+            $sentAt = $now->copy()->subDays(rand(0, 30))->subHours(rand(0, 23));
+            $deliveredAt = $sentAt->copy()->addHours(8); // 8-hour delay
+            
+            // Determine status based on delivery time
+            $status = $deliveredAt->isPast() ? 'delivered' : 'sent';
+
+            DB::table('letters')->insert([
+                'sender_id' => $resident->id,
+                'receiver_id' => null,
+                'content' => $content,
+                'is_open_letter' => true,
+                'parent_letter_id' => null,
+                'status' => $status,
+                'sent_at' => $sentAt,
+                'delivered_at' => $deliveredAt,
+                'read_at' => null,
+                'claimed_by' => null,
+                'created_at' => $sentAt,
+                'updated_at' => $now,
+            ]);
+        }
+
+        // Create 5-7 regular sent letters (between residents and volunteers)
+        if (!empty($volunteers)) {
+            $regularLetterCount = min(7, count($residents));
+            for ($i = 0; $i < $regularLetterCount; $i++) {
+                // Randomly pair a resident with a volunteer
+                $sender = $residents[array_rand($residents)];
+                $receiver = $volunteers[array_rand($volunteers)];
+                
+                // Sometimes reverse the sender/receiver
+                if (rand(0, 1)) {
+                    $temp = $sender;
+                    $sender = $receiver;
+                    $receiver = $temp;
+                }
+                
+                $content = $letterContents[10 + ($i % 5)]; // Use regular letter contents
+                
+                // Random sent date within last 14 days
+                $sentAt = $now->copy()->subDays(rand(0, 14))->subHours(rand(0, 23));
+                $deliveredAt = $sentAt->copy()->addHours(8);
+                
+                // Determine status
+                $status = 'sent';
+                $readAt = null;
+                if ($deliveredAt->isPast()) {
+                    $status = 'delivered';
+                    // Sometimes mark as read
+                    if (rand(0, 1)) {
+                        $readAt = $deliveredAt->copy()->addHours(rand(1, 48));
+                        $status = 'read';
+                    }
+                }
+
+                DB::table('letters')->insert([
+                    'sender_id' => $sender->id,
+                    'receiver_id' => $receiver->id,
+                    'content' => $content,
+                    'is_open_letter' => false,
+                    'parent_letter_id' => null,
+                    'status' => $status,
+                    'sent_at' => $sentAt,
+                    'delivered_at' => $deliveredAt,
+                    'read_at' => $readAt,
+                    'claimed_by' => null,
+                    'created_at' => $sentAt,
+                    'updated_at' => $now,
+                ]);
+            }
+        }
+
+        // Create 2-3 letters between residents
+        $residentLetterCount = min(3, count($residents) - 1);
+        for ($i = 0; $i < $residentLetterCount; $i++) {
+            $residentPair = array_rand($residents, 2);
+            $sender = $residents[$residentPair[0]];
+            $receiver = $residents[$residentPair[1]];
+            
+            $content = $letterContents[10 + ($i % 5)];
+            
+            $sentAt = $now->copy()->subDays(rand(0, 7))->subHours(rand(0, 23));
+            $deliveredAt = $sentAt->copy()->addHours(8);
+            
+            $status = $deliveredAt->isPast() ? 'delivered' : 'sent';
+            $readAt = null;
+            if ($status === 'delivered' && rand(0, 1)) {
+                $readAt = $deliveredAt->copy()->addHours(rand(1, 24));
+                $status = 'read';
+            }
+
+            DB::table('letters')->insert([
+                'sender_id' => $sender->id,
+                'receiver_id' => $receiver->id,
+                'content' => $content,
+                'is_open_letter' => false,
+                'parent_letter_id' => null,
+                'status' => $status,
+                'sent_at' => $sentAt,
+                'delivered_at' => $deliveredAt,
+                'read_at' => $readAt,
+                'claimed_by' => null,
+                'created_at' => $sentAt,
+                'updated_at' => $now,
+            ]);
         }
     }
 

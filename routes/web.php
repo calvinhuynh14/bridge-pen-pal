@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Http\Controllers\GoogleAuthController;
+use App\Http\Controllers\LetterController;
 
 /**
  * Welcome Route
@@ -401,9 +402,65 @@ Route::middleware([
     })->name('platform.home');
     
     // Discover page - for finding open letters
-    Route::get('/platform/discover', function () {
-        return Inertia::render('Platform/Discover');
+    Route::get('/platform/discover', function (Request $request) {
+        $user = auth()->user();
+        $userType = $user->user_type;
+
+        // Base query for open letters
+        $query = "
+            SELECT 
+                l.id,
+                l.content,
+                l.sent_at,
+                l.created_at,
+                l.claimed_by,
+                sender.id as sender_id,
+                sender.name as sender_name,
+                ut.name as sender_type,
+                receiver.id as receiver_id,
+                receiver.name as receiver_name
+            FROM letters l
+            JOIN users sender ON l.sender_id = sender.id
+            JOIN user_types ut ON sender.user_type_id = ut.id
+            LEFT JOIN users receiver ON l.receiver_id = receiver.id
+            WHERE l.is_open_letter = 1
+            AND l.status IN ('sent', 'delivered')
+            AND l.deleted_at IS NULL
+        ";
+
+        $params = [];
+
+        // Filter based on user type
+        if ($userType === 'volunteer') {
+            // Volunteers can only see open letters from residents
+            $query .= " AND ut.name = 'resident'";
+        } elseif ($userType === 'resident') {
+            // Residents can see open letters from other residents
+            $query .= " AND ut.name = 'resident'";
+        }
+
+        // Exclude letters already claimed by current user
+        $query .= " AND (l.claimed_by IS NULL OR l.claimed_by != ?)";
+        $params[] = $user->id;
+
+        // Exclude letters sent by current user
+        $query .= " AND l.sender_id != ?";
+        $params[] = $user->id;
+
+        // Order by most recent first
+        $query .= " ORDER BY l.sent_at DESC, l.created_at DESC";
+
+        $openLetters = DB::select($query, $params);
+
+        return Inertia::render('Platform/Discover', [
+            'openLetters' => $openLetters,
+            'letterCount' => count($openLetters)
+        ]);
     })->name('platform.discover');
+    
+    // Letter routes
+    Route::post('/platform/letters/{id}/claim', [LetterController::class, 'claim'])->name('letters.claim');
+    Route::post('/platform/letters/{id}/report', [LetterController::class, 'report'])->name('letters.report');
     
     // Write page - for writing letters
     Route::get('/platform/write', function () {
