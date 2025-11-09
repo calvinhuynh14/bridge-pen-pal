@@ -9,6 +9,7 @@ import InputLabel from "@/Components/InputLabel.vue";
 import PrimaryButton from "@/Components/PrimaryButton.vue";
 import TextInput from "@/Components/TextInput.vue";
 import CustomButton from "@/Components/CustomButton.vue";
+import SimpleHeader from "@/Components/SimpleHeader.vue";
 
 // Get user type from query parameter, default to 'resident'
 const props = defineProps({
@@ -138,6 +139,9 @@ console.log("Updated form user_type_id:", form.user_type_id);
 
 <template>
     <Head :title="`${getUserTypeDisplay(type)} Registration`" />
+
+    <!-- Header -->
+    <SimpleHeader />
 
     <!-- Main Container -->
     <div

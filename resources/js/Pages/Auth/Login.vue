@@ -8,6 +8,7 @@ import InputLabel from "@/Components/InputLabel.vue";
 import PrimaryButton from "@/Components/PrimaryButton.vue";
 import TextInput from "@/Components/TextInput.vue";
 import CustomButton from "@/Components/CustomButton.vue";
+import SimpleHeader from "@/Components/SimpleHeader.vue";
 
 // Get user type from query parameter, default to 'volunteer'
 const props = defineProps({
@@ -27,11 +28,12 @@ const form = useForm({
 });
 
 const submit = () => {
-    // For residents, use username; for others, use email
+    // For residents, send username as 'email' field (Fortify expects 'email')
+    // For others, use email normally
     const loginData =
         props.type === "resident"
             ? {
-                  username: form.username,
+                  email: form.username, // Send username as email for Fortify compatibility
                   password: form.password,
                   remember: form.remember ? "on" : "",
               }
@@ -77,6 +79,9 @@ const getSubtitle = (type) => {
 
 <template>
     <Head :title="`${getUserTypeDisplay(type)} Login`" />
+
+    <!-- Header -->
+    <SimpleHeader />
 
     <!-- Main Container -->
     <div

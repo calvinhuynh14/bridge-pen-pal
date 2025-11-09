@@ -400,6 +400,15 @@ Route::middleware([
         return Inertia::render('PlatformHome');
     })->name('platform.home');
     
+    // Discover page - for finding open letters
+    Route::get('/platform/discover', function () {
+        return Inertia::render('Platform/Discover');
+    })->name('platform.discover');
+    
+    // Write page - for writing letters
+    Route::get('/platform/write', function () {
+        return Inertia::render('Platform/Write');
+    })->name('platform.write');
     
     // Profile settings for all users
     Route::get('/profile/settings', function () {

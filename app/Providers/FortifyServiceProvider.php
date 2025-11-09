@@ -68,22 +68,24 @@ class FortifyServiceProvider extends ServiceProvider
 
         // Customize authentication to support both email and username
         Fortify::authenticateUsing(function (Request $request) {
-            // Check if username is provided (for residents)
-            if ($request->has('username') && $request->username) {
-                $user = \App\Models\User::where('username', $request->username)->first();
-                
-                if ($user && \Hash::check($request->password, $user->password)) {
-                    return $user;
-                }
+            if (!$request->filled('email') || !$request->filled('password')) {
+                return null;
             }
             
-            // Check if email is provided (for volunteers/admins)
-            if ($request->has('email') && $request->email) {
-                $user = \App\Models\User::where('email', $request->email)->first();
-                
-                if ($user && \Hash::check($request->password, $user->password)) {
-                    return $user;
-                }
+            $loginValue = $request->email;
+            
+            // First, try to find user by email (for volunteers/admins)
+            $user = \App\Models\User::where('email', $loginValue)->first();
+            
+            // If not found by email, try username (for residents)
+            // This handles the case where username is sent as 'email' field
+            if (!$user) {
+                $user = \App\Models\User::where('username', $loginValue)->first();
+            }
+            
+            // Verify password if user found
+            if ($user && \Hash::check($request->password, $user->password)) {
+                return $user;
             }
             
             return null;
@@ -96,6 +98,11 @@ class FortifyServiceProvider extends ServiceProvider
             if ($user) {
                 if ($user->isAdmin()) {
                     return route('admin.dashboard');
+                }
+                
+                // Check if user is a resident
+                if ($user->isResident()) {
+                    return route('dashboard'); // Resident dashboard
                 }
                 
                 // Check volunteer approval status

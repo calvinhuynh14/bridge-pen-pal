@@ -19,6 +19,16 @@ const isAdmin = computed(() => {
     return page.props.auth?.user?.user_type === "admin";
 });
 
+// Check if user is volunteer
+const isVolunteer = computed(() => {
+    return page.props.auth?.user?.user_type === "volunteer";
+});
+
+// Check if user is resident
+const isResident = computed(() => {
+    return page.props.auth?.user?.user_type === "resident";
+});
+
 const logout = () => {
     router.post(route("logout"));
 };
@@ -160,27 +170,10 @@ const logout = () => {
                                     </template>
 
                                     <template #content>
-                                        <!-- Account Management -->
-                                        <div
-                                            class="block px-4 py-2 text-xs text-white/70"
-                                        >
-                                            Manage Account
-                                        </div>
-
                                         <DropdownLink
-                                            :href="route('profile.show')"
+                                            :href="route('profile.settings')"
                                         >
                                             Profile
-                                        </DropdownLink>
-
-                                        <DropdownLink
-                                            v-if="
-                                                $page.props.jetstream
-                                                    .hasApiFeatures
-                                            "
-                                            :href="route('api-tokens.index')"
-                                        >
-                                            API Tokens
                                         </DropdownLink>
 
                                         <div class="border-t border-white/20" />
@@ -285,6 +278,18 @@ const logout = () => {
                                 Home
                             </ResponsiveNavLink>
                             <ResponsiveNavLink
+                                :href="route('platform.discover')"
+                                :active="route().current('platform.discover')"
+                            >
+                                Discover
+                            </ResponsiveNavLink>
+                            <ResponsiveNavLink
+                                :href="route('platform.write')"
+                                :active="route().current('platform.write')"
+                            >
+                                Write
+                            </ResponsiveNavLink>
+                            <ResponsiveNavLink
                                 :href="route('profile.settings')"
                                 :active="route().current('profile.settings')"
                             >
@@ -323,18 +328,10 @@ const logout = () => {
 
                         <div class="mt-3 space-y-1">
                             <ResponsiveNavLink
-                                :href="route('profile.show')"
-                                :active="route().current('profile.show')"
+                                :href="route('profile.settings')"
+                                :active="route().current('profile.settings')"
                             >
                                 Profile
-                            </ResponsiveNavLink>
-
-                            <ResponsiveNavLink
-                                v-if="$page.props.jetstream.hasApiFeatures"
-                                :href="route('api-tokens.index')"
-                                :active="route().current('api-tokens.index')"
-                            >
-                                API Tokens
                             </ResponsiveNavLink>
 
                             <!-- Authentication -->
@@ -348,16 +345,6 @@ const logout = () => {
                 </div>
             </nav>
 
-            <!-- Page Heading -->
-            <header
-                v-if="$slots.header"
-                class="bg-white dark:bg-gray-800 shadow"
-            >
-                <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-                    <slot name="header" />
-                </div>
-            </header>
-
             <!-- Page Content -->
             <main class="flex">
                 <!-- Sidebar Navigation -->
@@ -366,109 +353,219 @@ const logout = () => {
                 >
                     <div class="p-4">
                         <nav class="space-y-2">
-                            <Link
-                                :href="route('admin.dashboard')"
-                                class="flex items-center px-4 py-3 text-base font-medium rounded-md hover:bg-hover transition-colors"
-                                :class="{
-                                    'bg-pressed':
-                                        $page.url.startsWith(
-                                            '/admin/dashboard'
-                                        ),
-                                }"
-                            >
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    viewBox="0 0 24 24"
-                                    fill="currentColor"
-                                    class="size-6 mr-3"
+                            <!-- Admin Navigation -->
+                            <template v-if="isAdmin">
+                                <Link
+                                    :href="route('admin.dashboard')"
+                                    class="flex items-center px-4 py-3 text-base font-medium rounded-md hover:bg-hover transition-colors"
+                                    :class="{
+                                        'bg-pressed':
+                                            $page.url.startsWith(
+                                                '/admin/dashboard'
+                                            ),
+                                    }"
                                 >
-                                    <path
-                                        d="M11.47 3.841a.75.75 0 0 1 1.06 0l8.69 8.69a.75.75 0 1 0 1.06-1.061l-8.689-8.69a2.25 2.25 0 0 0-3.182 0l-8.69 8.69a.75.75 0 1 0 1.061 1.06l8.69-8.689Z"
-                                    />
-                                    <path
-                                        d="m12 5.432 8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 0 1-.75-.75v-4.5a.75.75 0 0 0-.75-.75h-3a.75.75 0 0 0-.75.75V21a.75.75 0 0 1-.75.75H5.625a1.875 1.875 0 0 1-1.875-1.875v-6.198a2.29 2.29 0 0 0 .091-.086L12 5.432Z"
-                                    />
-                                </svg>
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        viewBox="0 0 24 24"
+                                        fill="currentColor"
+                                        class="size-6 mr-3"
+                                    >
+                                        <path
+                                            d="M11.47 3.841a.75.75 0 0 1 1.06 0l8.69 8.69a.75.75 0 1 0 1.06-1.061l-8.689-8.69a2.25 2.25 0 0 0-3.182 0l-8.69 8.69a.75.75 0 1 0 1.061 1.06l8.69-8.689Z"
+                                        />
+                                        <path
+                                            d="m12 5.432 8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 0 1-.75-.75v-4.5a.75.75 0 0 0-.75-.75h-3a.75.75 0 0 0-.75.75V21a.75.75 0 0 1-.75.75H5.625a1.875 1.875 0 0 1-1.875-1.875v-6.198a2.29 2.29 0 0 0 .091-.086L12 5.432Z"
+                                        />
+                                    </svg>
 
-                                Overview
-                            </Link>
+                                    Overview
+                                </Link>
 
-                            <Link
-                                :href="route('admin.residents')"
-                                class="flex items-center px-4 py-3 text-base font-medium rounded-md hover:bg-hover transition-colors"
-                                :class="{
-                                    'bg-pressed':
-                                        $page.url.startsWith(
-                                            '/admin/residents'
-                                        ),
-                                }"
-                            >
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    viewBox="0 0 24 24"
-                                    fill="currentColor"
-                                    class="size-6 mr-3"
+                                <Link
+                                    :href="route('admin.residents')"
+                                    class="flex items-center px-4 py-3 text-base font-medium rounded-md hover:bg-hover transition-colors"
+                                    :class="{
+                                        'bg-pressed':
+                                            $page.url.startsWith(
+                                                '/admin/residents'
+                                            ),
+                                    }"
                                 >
-                                    <path
-                                        fill-rule="evenodd"
-                                        d="M8.25 6.75a3.75 3.75 0 1 1 7.5 0 3.75 3.75 0 0 1-7.5 0ZM15.75 9.75a3 3 0 1 1 6 0 3 3 0 0 1-6 0ZM2.25 9.75a3 3 0 1 1 6 0 3 3 0 0 1-6 0ZM6.31 15.117A6.745 6.745 0 0 1 12 12a6.745 6.745 0 0 1 6.709 7.498.75.75 0 0 1-.372.568A12.696 12.696 0 0 1 12 21.75c-2.305 0-4.47-.612-6.337-1.684a.75.75 0 0 1-.372-.568 6.787 6.787 0 0 1 1.019-4.38Z"
-                                        clip-rule="evenodd"
-                                    />
-                                    <path
-                                        d="M5.082 14.254a8.287 8.287 0 0 0-1.308 5.135 9.687 9.687 0 0 1-1.764-.44l-.115-.04a.563.563 0 0 1-.373-.487l-.01-.121a3.75 3.75 0 0 1 3.57-4.047ZM20.226 19.389a8.287 8.287 0 0 0-1.308-5.135 3.75 3.75 0 0 1 3.57 4.047l-.01.121a.563.563 0 0 1-.373.486l-.115.04c-.567.2-1.156.349-1.764.441Z"
-                                    />
-                                </svg>
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        viewBox="0 0 24 24"
+                                        fill="currentColor"
+                                        class="size-6 mr-3"
+                                    >
+                                        <path
+                                            fill-rule="evenodd"
+                                            d="M8.25 6.75a3.75 3.75 0 1 1 7.5 0 3.75 3.75 0 0 1-7.5 0ZM15.75 9.75a3 3 0 1 1 6 0 3 3 0 0 1-6 0ZM2.25 9.75a3 3 0 1 1 6 0 3 3 0 0 1-6 0ZM6.31 15.117A6.745 6.745 0 0 1 12 12a6.745 6.745 0 0 1 6.709 7.498.75.75 0 0 1-.372.568A12.696 12.696 0 0 1 12 21.75c-2.305 0-4.47-.612-6.337-1.684a.75.75 0 0 1-.372-.568 6.787 6.787 0 0 1 1.019-4.38Z"
+                                            clip-rule="evenodd"
+                                        />
+                                        <path
+                                            d="M5.082 14.254a8.287 8.287 0 0 0-1.308 5.135 9.687 9.687 0 0 1-1.764-.44l-.115-.04a.563.563 0 0 1-.373-.487l-.01-.121a3.75 3.75 0 0 1 3.57-4.047ZM20.226 19.389a8.287 8.287 0 0 0-1.308-5.135 3.75 3.75 0 0 1 3.57 4.047l-.01.121a.563.563 0 0 1-.373.486l-.115.04c-.567.2-1.156.349-1.764.441Z"
+                                        />
+                                    </svg>
 
-                                Residents
-                            </Link>
+                                    Residents
+                                </Link>
 
-                            <Link
-                                :href="route('admin.volunteers')"
-                                class="flex items-center px-4 py-3 text-base font-medium rounded-md hover:bg-hover transition-colors"
-                                :class="{
-                                    'bg-pressed':
-                                        $page.url.startsWith(
-                                            '/admin/volunteers'
-                                        ),
-                                }"
-                            >
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    viewBox="0 0 24 24"
-                                    fill="currentColor"
-                                    class="size-6 mr-3"
+                                <Link
+                                    :href="route('admin.volunteers')"
+                                    class="flex items-center px-4 py-3 text-base font-medium rounded-md hover:bg-hover transition-colors"
+                                    :class="{
+                                        'bg-pressed':
+                                            $page.url.startsWith(
+                                                '/admin/volunteers'
+                                            ),
+                                    }"
                                 >
-                                    <path
-                                        d="M5.25 6.375a4.125 4.125 0 1 1 8.25 0 4.125 4.125 0 0 1-8.25 0ZM2.25 19.125a7.125 7.125 0 0 1 14.25 0v.003l-.001.119a.75.75 0 0 1-.363.63 13.067 13.067 0 0 1-6.761 1.873c-2.472 0-4.786-.684-6.76-1.873a.75.75 0 0 1-.364-.63l-.001-.122ZM18.75 7.5a.75.75 0 0 0-1.5 0v2.25H15a.75.75 0 0 0 0 1.5h2.25v2.25a.75.75 0 0 0 1.5 0v-2.25H21a.75.75 0 0 0 0-1.5h-2.25V7.5Z"
-                                    />
-                                </svg>
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        viewBox="0 0 24 24"
+                                        fill="currentColor"
+                                        class="size-6 mr-3"
+                                    >
+                                        <path
+                                            d="M5.25 6.375a4.125 4.125 0 1 1 8.25 0 4.125 4.125 0 0 1-8.25 0ZM2.25 19.125a7.125 7.125 0 0 1 14.25 0v.003l-.001.119a.75.75 0 0 1-.363.63 13.067 13.067 0 0 1-6.761 1.873c-2.472 0-4.786-.684-6.76-1.873a.75.75 0 0 1-.364-.63l-.001-.122ZM18.75 7.5a.75.75 0 0 0-1.5 0v2.25H15a.75.75 0 0 0 0 1.5h2.25v2.25a.75.75 0 0 0 1.5 0v-2.25H21a.75.75 0 0 0 0-1.5h-2.25V7.5Z"
+                                        />
+                                    </svg>
 
-                                Volunteers
-                            </Link>
+                                    Volunteers
+                                </Link>
 
-                            <Link
-                                :href="route('admin.reports')"
-                                class="flex items-center px-4 py-3 text-base font-medium rounded-md hover:bg-hover transition-colors"
-                                :class="{
-                                    'bg-pressed':
-                                        $page.url.startsWith('/admin/reports'),
-                                }"
-                            >
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    viewBox="0 0 24 24"
-                                    fill="currentColor"
-                                    class="size-6 mr-3"
+                                <Link
+                                    :href="route('admin.reports')"
+                                    class="flex items-center px-4 py-3 text-base font-medium rounded-md hover:bg-hover transition-colors"
+                                    :class="{
+                                        'bg-pressed':
+                                            $page.url.startsWith(
+                                                '/admin/reports'
+                                            ),
+                                    }"
                                 >
-                                    <path
-                                        fill-rule="evenodd"
-                                        d="M3 2.25a.75.75 0 0 1 .75.75v.54l1.838-.46a9.75 9.75 0 0 1 6.725.738l.108.054A8.25 8.25 0 0 0 18 4.524l3.11-.732a.75.75 0 0 1 .917.81 47.784 47.784 0 0 0 .005 10.337.75.75 0 0 1-.574.812l-3.114.733a9.75 9.75 0 0 1-6.594-.77l-.108-.054a8.25 8.25 0 0 0-5.69-.625l-2.202.55V21a.75.75 0 0 1-1.5 0V3A.75.75 0 0 1 3 2.25Z"
-                                        clip-rule="evenodd"
-                                    />
-                                </svg>
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        viewBox="0 0 24 24"
+                                        fill="currentColor"
+                                        class="size-6 mr-3"
+                                    >
+                                        <path
+                                            fill-rule="evenodd"
+                                            d="M3 2.25a.75.75 0 0 1 .75.75v.54l1.838-.46a9.75 9.75 0 0 1 6.725.738l.108.054A8.25 8.25 0 0 0 18 4.524l3.11-.732a.75.75 0 0 1 .917.81 47.784 47.784 0 0 0 .005 10.337.75.75 0 0 1-.574.812l-3.114.733a9.75 9.75 0 0 1-6.594-.77l-.108-.054a8.25 8.25 0 0 0-5.69-.625l-2.202.55V21a.75.75 0 0 1-1.5 0V3A.75.75 0 0 1 3 2.25Z"
+                                            clip-rule="evenodd"
+                                        />
+                                    </svg>
 
-                                Reports
-                            </Link>
+                                    Reports
+                                </Link>
+                            </template>
+
+                            <!-- Volunteer/Resident Navigation -->
+                            <template v-else>
+                                <Link
+                                    :href="route('platform.home')"
+                                    class="flex items-center px-4 py-3 text-base font-medium rounded-md hover:bg-hover transition-colors"
+                                    :class="{
+                                        'bg-pressed':
+                                            $page.url.startsWith(
+                                                '/platform/home'
+                                            ),
+                                    }"
+                                >
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        viewBox="0 0 24 24"
+                                        fill="currentColor"
+                                        class="size-6 mr-3"
+                                    >
+                                        <path
+                                            d="M11.47 3.841a.75.75 0 0 1 1.06 0l8.69 8.69a.75.75 0 1 0 1.06-1.061l-8.689-8.69a2.25 2.25 0 0 0-3.182 0l-8.69 8.69a.75.75 0 1 0 1.061 1.06l8.69-8.689Z"
+                                        />
+                                        <path
+                                            d="m12 5.432 8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 0 1-.75-.75v-4.5a.75.75 0 0 0-.75-.75h-3a.75.75 0 0 0-.75.75V21a.75.75 0 0 1-.75.75H5.625a1.875 1.875 0 0 1-1.875-1.875v-6.198a2.29 2.29 0 0 0 .091-.086L12 5.432Z"
+                                        />
+                                    </svg>
+
+                                    Home
+                                </Link>
+
+                                <Link
+                                    :href="route('platform.discover')"
+                                    class="flex items-center px-4 py-3 text-base font-medium rounded-md hover:bg-hover transition-colors"
+                                    :class="{
+                                        'bg-pressed':
+                                            $page.url.startsWith(
+                                                '/platform/discover'
+                                            ),
+                                    }"
+                                >
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        viewBox="0 0 24 24"
+                                        fill="currentColor"
+                                        class="size-6 mr-3"
+                                    >
+                                        <path
+                                            fill-rule="evenodd"
+                                            d="M10.5 3.75a6.75 6.75 0 1 0 0 13.5 6.75 6.75 0 0 0 0-13.5ZM2.25 10.5a8.25 8.25 0 1 1 14.59 5.28l4.69 4.69a.75.75 0 1 1-1.06 1.06l-4.69-4.69A8.25 8.25 0 0 1 2.25 10.5Z"
+                                            clip-rule="evenodd"
+                                        />
+                                    </svg>
+                                    Discover
+                                </Link>
+
+                                <Link
+                                    :href="route('platform.write')"
+                                    class="flex items-center px-4 py-3 text-base font-medium rounded-md hover:bg-hover transition-colors"
+                                    :class="{
+                                        'bg-pressed':
+                                            $page.url.startsWith(
+                                                '/platform/write'
+                                            ),
+                                    }"
+                                >
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        viewBox="0 0 24 24"
+                                        fill="currentColor"
+                                        class="size-6 mr-3"
+                                    >
+                                        <path
+                                            d="M21.731 2.269a2.625 2.625 0 0 0-3.712 0l-1.157 1.157 3.712 3.712 1.157-1.157a2.625 2.625 0 0 0 0-3.712ZM19.513 8.199l-3.712-3.712-8.4 8.4a5.25 5.25 0 0 0-1.32 2.214l-.8 2.685a.75.75 0 0 0 .933.933l2.685-.8a5.25 5.25 0 0 0 2.214-1.32l8.4-8.4Z"
+                                        />
+                                        <path
+                                            d="M5.25 5.25a3 3 0 0 0-3 3v10.5a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3V13.5a.75.75 0 0 0-1.5 0v5.25a1.5 1.5 0 0 1-1.5 1.5H5.25a1.5 1.5 0 0 1-1.5-1.5V8.25a1.5 1.5 0 0 1 1.5-1.5h5.25a.75.75 0 0 0 0-1.5H5.25Z"
+                                        />
+                                    </svg>
+                                    Write
+                                </Link>
+
+                                <Link
+                                    :href="route('profile.settings')"
+                                    class="flex items-center px-4 py-3 text-base font-medium rounded-md hover:bg-hover transition-colors"
+                                    :class="{
+                                        'bg-pressed':
+                                            $page.url.startsWith('/profile'),
+                                    }"
+                                >
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        viewBox="0 0 24 24"
+                                        fill="currentColor"
+                                        class="size-6 mr-3"
+                                    >
+                                        <path
+                                            fill-rule="evenodd"
+                                            d="M18.685 19.097A9.723 9.723 0 0 0 21.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 0 0 3.065 7.097A9.716 9.716 0 0 0 12 21.75a9.716 9.716 0 0 0 6.685-2.653Zm-12.54-1.285A7.486 7.486 0 0 1 12 15a7.486 7.486 0 0 1 5.855 2.812A8.224 8.224 0 0 1 12 20.25a8.224 8.224 0 0 1-5.855-2.438ZM15.75 9a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z"
+                                            clip-rule="evenodd"
+                                        />
+                                    </svg>
+
+                                    Profile
+                                </Link>
+                            </template>
                         </nav>
                     </div>
                 </div>
@@ -484,103 +581,206 @@ const logout = () => {
                 class="lg:hidden fixed bottom-0 left-0 right-0 bg-primary text-white border-t border-gray-600"
             >
                 <div class="flex justify-around items-center py-2">
-                    <!-- Overview -->
-                    <Link
-                        :href="route('admin.dashboard')"
-                        class="flex flex-col items-center py-2 px-3 rounded-lg transition-colors"
-                        :class="{
-                            'bg-pressed':
-                                $page.url.startsWith('/admin/dashboard'),
-                        }"
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 24 24"
-                            fill="currentColor"
-                            class="size-6 mb-1"
+                    <!-- Admin Navigation -->
+                    <template v-if="isAdmin">
+                        <!-- Overview -->
+                        <Link
+                            :href="route('admin.dashboard')"
+                            class="flex flex-col items-center py-2 px-3 rounded-lg transition-colors"
+                            :class="{
+                                'bg-pressed':
+                                    $page.url.startsWith('/admin/dashboard'),
+                            }"
                         >
-                            <path
-                                d="M11.47 3.841a.75.75 0 0 1 1.06 0l8.69 8.69a.75.75 0 1 0 1.06-1.061l-8.689-8.69a2.25 2.25 0 0 0-3.182 0l-8.69 8.69a.75.75 0 1 0 1.061 1.06l8.69-8.689Z"
-                            />
-                            <path
-                                d="m12 5.432 8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 0 1-.75-.75v-4.5a.75.75 0 0 0-.75-.75h-3a.75.75 0 0 0-.75.75V21a.75.75 0 0 1-.75.75H5.625a1.875 1.875 0 0 1-1.875-1.875v-6.198a2.29 2.29 0 0 0 .091-.086L12 5.432Z"
-                            />
-                        </svg>
-                        <span class="text-xs font-medium">Overview</span>
-                    </Link>
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 24 24"
+                                fill="currentColor"
+                                class="size-6 mb-1"
+                            >
+                                <path
+                                    d="M11.47 3.841a.75.75 0 0 1 1.06 0l8.69 8.69a.75.75 0 1 0 1.06-1.061l-8.689-8.69a2.25 2.25 0 0 0-3.182 0l-8.69 8.69a.75.75 0 1 0 1.061 1.06l8.69-8.689Z"
+                                />
+                                <path
+                                    d="m12 5.432 8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 0 1-.75-.75v-4.5a.75.75 0 0 0-.75-.75h-3a.75.75 0 0 0-.75.75V21a.75.75 0 0 1-.75.75H5.625a1.875 1.875 0 0 1-1.875-1.875v-6.198a2.29 2.29 0 0 0 .091-.086L12 5.432Z"
+                                />
+                            </svg>
+                            <span class="text-xs font-medium">Overview</span>
+                        </Link>
 
-                    <!-- Residents -->
-                    <Link
-                        :href="route('admin.residents')"
-                        class="flex flex-col items-center py-2 px-3 rounded-lg transition-colors"
-                        :class="{
-                            'bg-pressed':
-                                $page.url.startsWith('/admin/residents'),
-                        }"
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 24 24"
-                            fill="currentColor"
-                            class="size-6 mb-1"
+                        <!-- Residents -->
+                        <Link
+                            :href="route('admin.residents')"
+                            class="flex flex-col items-center py-2 px-3 rounded-lg transition-colors"
+                            :class="{
+                                'bg-pressed':
+                                    $page.url.startsWith('/admin/residents'),
+                            }"
                         >
-                            <path
-                                fill-rule="evenodd"
-                                d="M8.25 6.75a3.75 3.75 0 1 1 7.5 0 3.75 3.75 0 0 1-7.5 0ZM15.75 9.75a3 3 0 1 1 6 0 3 3 0 0 1-6 0ZM2.25 9.75a3 3 0 1 1 6 0 3 3 0 0 1-6 0ZM6.31 15.117A6.745 6.745 0 0 1 12 12a6.745 6.745 0 0 1 6.709 7.498.75.75 0 0 1-.372.568A12.696 12.696 0 0 1 12 21.75c-2.305 0-4.47-.612-6.337-1.684a.75.75 0 0 1-.372-.568 6.787 6.787 0 0 1 1.019-4.38Z"
-                                clip-rule="evenodd"
-                            />
-                            <path
-                                d="M5.082 14.254a8.287 8.287 0 0 0-1.308 5.135 9.687 9.687 0 0 1-1.764-.44l-.115-.04a.563.563 0 0 1-.373-.487l-.01-.121a3.75 3.75 0 0 1 3.57-4.047ZM20.226 19.389a8.287 8.287 0 0 0-1.308-5.135 3.75 3.75 0 0 1 3.57 4.047l-.01.121a.563.563 0 0 1-.373.486l-.115.04c-.567.2-1.156.349-1.764.441Z"
-                            />
-                        </svg>
-                        <span class="text-xs font-medium">Residents</span>
-                    </Link>
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 24 24"
+                                fill="currentColor"
+                                class="size-6 mb-1"
+                            >
+                                <path
+                                    fill-rule="evenodd"
+                                    d="M8.25 6.75a3.75 3.75 0 1 1 7.5 0 3.75 3.75 0 0 1-7.5 0ZM15.75 9.75a3 3 0 1 1 6 0 3 3 0 0 1-6 0ZM2.25 9.75a3 3 0 1 1 6 0 3 3 0 0 1-6 0ZM6.31 15.117A6.745 6.745 0 0 1 12 12a6.745 6.745 0 0 1 6.709 7.498.75.75 0 0 1-.372.568A12.696 12.696 0 0 1 12 21.75c-2.305 0-4.47-.612-6.337-1.684a.75.75 0 0 1-.372-.568 6.787 6.787 0 0 1 1.019-4.38Z"
+                                    clip-rule="evenodd"
+                                />
+                                <path
+                                    d="M5.082 14.254a8.287 8.287 0 0 0-1.308 5.135 9.687 9.687 0 0 1-1.764-.44l-.115-.04a.563.563 0 0 1-.373-.487l-.01-.121a3.75 3.75 0 0 1 3.57-4.047ZM20.226 19.389a8.287 8.287 0 0 0-1.308-5.135 3.75 3.75 0 0 1 3.57 4.047l-.01.121a.563.563 0 0 1-.373.486l-.115.04c-.567.2-1.156.349-1.764.441Z"
+                                />
+                            </svg>
+                            <span class="text-xs font-medium">Residents</span>
+                        </Link>
 
-                    <!-- Volunteers -->
-                    <Link
-                        :href="route('admin.volunteers')"
-                        class="flex flex-col items-center py-2 px-3 rounded-lg transition-colors"
-                        :class="{
-                            'bg-pressed':
-                                $page.url.startsWith('/admin/volunteers'),
-                        }"
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 24 24"
-                            fill="currentColor"
-                            class="size-6 mb-1"
+                        <!-- Volunteers -->
+                        <Link
+                            :href="route('admin.volunteers')"
+                            class="flex flex-col items-center py-2 px-3 rounded-lg transition-colors"
+                            :class="{
+                                'bg-pressed':
+                                    $page.url.startsWith('/admin/volunteers'),
+                            }"
                         >
-                            <path
-                                d="M5.25 6.375a4.125 4.125 0 1 1 8.25 0 4.125 4.125 0 0 1-8.25 0ZM2.25 19.125a7.125 7.125 0 0 1 14.25 0v.003l-.001.119a.75.75 0 0 1-.363.63 13.067 13.067 0 0 1-6.761 1.873c-2.472 0-4.786-.684-6.76-1.873a.75.75 0 0 1-.364-.63l-.001-.122ZM18.75 7.5a.75.75 0 0 0-1.5 0v2.25H15a.75.75 0 0 0 0 1.5h2.25v2.25a.75.75 0 0 0 1.5 0v-2.25H21a.75.75 0 0 0 0-1.5h-2.25V7.5Z"
-                            />
-                        </svg>
-                        <span class="text-xs font-medium">Volunteers</span>
-                    </Link>
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 24 24"
+                                fill="currentColor"
+                                class="size-6 mb-1"
+                            >
+                                <path
+                                    d="M5.25 6.375a4.125 4.125 0 1 1 8.25 0 4.125 4.125 0 0 1-8.25 0ZM2.25 19.125a7.125 7.125 0 0 1 14.25 0v.003l-.001.119a.75.75 0 0 1-.363.63 13.067 13.067 0 0 1-6.761 1.873c-2.472 0-4.786-.684-6.76-1.873a.75.75 0 0 1-.364-.63l-.001-.122ZM18.75 7.5a.75.75 0 0 0-1.5 0v2.25H15a.75.75 0 0 0 0 1.5h2.25v2.25a.75.75 0 0 0 1.5 0v-2.25H21a.75.75 0 0 0 0-1.5h-2.25V7.5Z"
+                                />
+                            </svg>
+                            <span class="text-xs font-medium">Volunteers</span>
+                        </Link>
 
-                    <!-- Reports -->
-                    <Link
-                        :href="route('admin.reports')"
-                        class="flex flex-col items-center py-2 px-3 rounded-lg transition-colors"
-                        :class="{
-                            'bg-pressed':
-                                $page.url.startsWith('/admin/reports'),
-                        }"
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 24 24"
-                            fill="currentColor"
-                            class="size-6 mb-1"
+                        <!-- Reports -->
+                        <Link
+                            :href="route('admin.reports')"
+                            class="flex flex-col items-center py-2 px-3 rounded-lg transition-colors"
+                            :class="{
+                                'bg-pressed':
+                                    $page.url.startsWith('/admin/reports'),
+                            }"
                         >
-                            <path
-                                fill-rule="evenodd"
-                                d="M3 2.25a.75.75 0 0 1 .75.75v.54l1.838-.46a9.75 9.75 0 0 1 6.725.738l.108.054A8.25 8.25 0 0 0 18 4.524l3.11-.732a.75.75 0 0 1 .917.81 47.784 47.784 0 0 0 .005 10.337.75.75 0 0 1-.574.812l-3.114.733a9.75 9.75 0 0 1-6.594-.77l-.108-.054a8.25 8.25 0 0 0-5.69-.625l-2.202.55V21a.75.75 0 0 1-1.5 0V3A.75.75 0 0 1 3 2.25Z"
-                                clip-rule="evenodd"
-                            />
-                        </svg>
-                        <span class="text-xs font-medium">Reports</span>
-                    </Link>
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 24 24"
+                                fill="currentColor"
+                                class="size-6 mb-1"
+                            >
+                                <path
+                                    fill-rule="evenodd"
+                                    d="M3 2.25a.75.75 0 0 1 .75.75v.54l1.838-.46a9.75 9.75 0 0 1 6.725.738l.108.054A8.25 8.25 0 0 0 18 4.524l3.11-.732a.75.75 0 0 1 .917.81 47.784 47.784 0 0 0 .005 10.337.75.75 0 0 1-.574.812l-3.114.733a9.75 9.75 0 0 1-6.594-.77l-.108-.054a8.25 8.25 0 0 0-5.69-.625l-2.202.55V21a.75.75 0 0 1-1.5 0V3A.75.75 0 0 1 3 2.25Z"
+                                    clip-rule="evenodd"
+                                />
+                            </svg>
+                            <span class="text-xs font-medium">Reports</span>
+                        </Link>
+                    </template>
+
+                    <!-- Volunteer/Resident Navigation -->
+                    <template v-else>
+                        <!-- Home -->
+                        <Link
+                            :href="route('platform.home')"
+                            class="flex flex-col items-center py-2 px-3 rounded-lg transition-colors"
+                            :class="{
+                                'bg-pressed':
+                                    $page.url.startsWith('/platform/home'),
+                            }"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 24 24"
+                                fill="currentColor"
+                                class="size-6 mb-1"
+                            >
+                                <path
+                                    d="M11.47 3.841a.75.75 0 0 1 1.06 0l8.69 8.69a.75.75 0 1 0 1.06-1.061l-8.689-8.69a2.25 2.25 0 0 0-3.182 0l-8.69 8.69a.75.75 0 1 0 1.061 1.06l8.69-8.689Z"
+                                />
+                                <path
+                                    d="m12 5.432 8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 0 1-.75-.75v-4.5a.75.75 0 0 0-.75-.75h-3a.75.75 0 0 0-.75.75V21a.75.75 0 0 1-.75.75H5.625a1.875 1.875 0 0 1-1.875-1.875v-6.198a2.29 2.29 0 0 0 .091-.086L12 5.432Z"
+                                />
+                            </svg>
+                            <span class="text-xs font-medium">Home</span>
+                        </Link>
+
+                        <!-- Discover -->
+                        <Link
+                            :href="route('platform.discover')"
+                            class="flex flex-col items-center py-2 px-3 rounded-lg transition-colors"
+                            :class="{
+                                'bg-pressed':
+                                    $page.url.startsWith('/platform/discover'),
+                            }"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 24 24"
+                                fill="currentColor"
+                                class="size-6 mb-1"
+                            >
+                                <path
+                                    fill-rule="evenodd"
+                                    d="M10.5 3.75a6.75 6.75 0 1 0 0 13.5 6.75 6.75 0 0 0 0-13.5ZM2.25 10.5a8.25 8.25 0 1 1 14.59 5.28l4.69 4.69a.75.75 0 1 1-1.06 1.06l-4.69-4.69A8.25 8.25 0 0 1 2.25 10.5Z"
+                                    clip-rule="evenodd"
+                                />
+                            </svg>
+                            <span class="text-xs font-medium">Discover</span>
+                        </Link>
+
+                        <!-- Write -->
+                        <Link
+                            :href="route('platform.write')"
+                            class="flex flex-col items-center py-2 px-3 rounded-lg transition-colors"
+                            :class="{
+                                'bg-pressed':
+                                    $page.url.startsWith('/platform/write'),
+                            }"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 24 24"
+                                fill="currentColor"
+                                class="size-6 mb-1"
+                            >
+                                <path
+                                    d="M21.731 2.269a2.625 2.625 0 0 0-3.712 0l-1.157 1.157 3.712 3.712 1.157-1.157a2.625 2.625 0 0 0 0-3.712ZM19.513 8.199l-3.712-3.712-8.4 8.4a5.25 5.25 0 0 0-1.32 2.214l-.8 2.685a.75.75 0 0 0 .933.933l2.685-.8a5.25 5.25 0 0 0 2.214-1.32l8.4-8.4Z"
+                                />
+                                <path
+                                    d="M5.25 5.25a3 3 0 0 0-3 3v10.5a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3V13.5a.75.75 0 0 0-1.5 0v5.25a1.5 1.5 0 0 1-1.5 1.5H5.25a1.5 1.5 0 0 1-1.5-1.5V8.25a1.5 1.5 0 0 1 1.5-1.5h5.25a.75.75 0 0 0 0-1.5H5.25Z"
+                                />
+                            </svg>
+                            <span class="text-xs font-medium">Write</span>
+                        </Link>
+
+                        <!-- Profile -->
+                        <Link
+                            :href="route('profile.settings')"
+                            class="flex flex-col items-center py-2 px-3 rounded-lg transition-colors"
+                            :class="{
+                                'bg-pressed': $page.url.startsWith('/profile'),
+                            }"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 24 24"
+                                fill="currentColor"
+                                class="size-6 mb-1"
+                            >
+                                <path
+                                    fill-rule="evenodd"
+                                    d="M18.685 19.097A9.723 9.723 0 0 0 21.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 0 0 3.065 7.097A9.716 9.716 0 0 0 12 21.75a9.716 9.716 0 0 0 6.685-2.653Zm-12.54-1.285A7.486 7.486 0 0 1 12 15a7.486 7.486 0 0 1 5.855 2.812A8.224 8.224 0 0 1 12 20.25a8.224 8.224 0 0 1-5.855-2.438ZM15.75 9a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z"
+                                    clip-rule="evenodd"
+                                />
+                            </svg>
+                            <span class="text-xs font-medium">Profile</span>
+                        </Link>
+                    </template>
                 </div>
             </div>
         </div>
