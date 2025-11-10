@@ -214,10 +214,12 @@ const submitReport = () => {
                         class="bg-primary rounded-lg p-4 sm:p-6 md:p-8 lg:p-10"
                     >
                         <div
-                            class="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 md:gap-8"
+                            class="flex flex-col md:flex-row items-center md:items-start justify-center md:justify-start gap-4 sm:gap-6 md:gap-8"
                         >
-                            <!-- Profile Picture -->
-                            <div class="flex-shrink-0">
+                            <!-- Profile Picture and Name -->
+                            <div
+                                class="flex-shrink-0 flex flex-col items-center gap-3 sm:gap-4"
+                            >
                                 <div
                                     v-if="storyOfTheWeek.profile_photo_url"
                                     class="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-pressed"
@@ -242,17 +244,19 @@ const submitReport = () => {
                                         }}
                                     </span>
                                 </div>
-                            </div>
-
-                            <!-- Name and Bio -->
-                            <div class="flex-1 min-w-0">
                                 <h3
-                                    class="text-xl sm:text-2xl md:text-3xl font-bold text-pressed mb-3 sm:mb-4"
+                                    class="text-xl sm:text-2xl md:text-3xl font-bold text-pressed text-center"
                                 >
                                     {{ storyOfTheWeek.name }}
                                 </h3>
+                            </div>
+
+                            <!-- Bio -->
+                            <div
+                                class="flex-1 min-w-0 flex flex-col items-center md:items-start"
+                            >
                                 <div
-                                    class="text-sm sm:text-base md:text-lg text-gray-700 leading-relaxed space-y-3"
+                                    class="text-sm sm:text-base md:text-lg text-gray-700 leading-relaxed space-y-3 text-center md:text-left"
                                 >
                                     <p
                                         v-for="(

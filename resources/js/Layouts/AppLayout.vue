@@ -13,7 +13,7 @@ defineProps({
 
 const page = usePage();
 const showingNavigationDropdown = ref(false);
-const isSidebarOpen = ref(false);
+const isSidebarOpen = ref(true);
 
 // Check if user is admin
 const isAdmin = computed(() => {
@@ -46,7 +46,7 @@ const logout = () => {
         <Banner />
 
         <div class="min-h-screen">
-            <nav class="bg-primary">
+            <nav class="bg-primary sticky top-0 z-50 shadow-md">
                 <!-- Primary Navigation Menu -->
                 <div class="w-full mx-auto px-4 sm:px-6 lg:px-8">
                     <div class="flex justify-between h-20">
@@ -155,13 +155,15 @@ const logout = () => {
                                 >
                                     <template #trigger>
                                         <button
-                                            v-if="
-                                                $page.props.jetstream
-                                                    .managesProfilePhotos
-                                            "
                                             class="flex text-sm border-2 border-transparent rounded-full focus:outline-none focus:border-gray-300 transition"
                                         >
                                             <img
+                                                v-if="
+                                                    $page.props.jetstream
+                                                        .managesProfilePhotos &&
+                                                    $page.props.auth.user
+                                                        .profile_photo_url
+                                                "
                                                 class="size-8 rounded-full object-cover"
                                                 :src="
                                                     $page.props.auth.user
@@ -171,41 +173,53 @@ const logout = () => {
                                                     $page.props.auth.user.name
                                                 "
                                             />
-                                        </button>
-
-                                        <span
-                                            v-else
-                                            class="inline-flex rounded-md"
-                                        >
-                                            <button
-                                                type="button"
-                                                class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white !bg-primary hover:!bg-hover focus:outline-none focus:!bg-hover active:!bg-hover transition ease-in-out duration-150"
+                                            <div
+                                                v-else
+                                                class="size-8 rounded-full bg-pressed flex items-center justify-center border-2 border-white"
                                             >
-                                                {{ $page.props.auth.user.name }}
-
-                                                <svg
-                                                    class="ms-2 -me-0.5 size-4"
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                    fill="none"
-                                                    viewBox="0 0 24 24"
-                                                    stroke-width="1.5"
-                                                    stroke="currentColor"
+                                                <span
+                                                    class="text-white text-sm font-medium"
                                                 >
-                                                    <path
-                                                        stroke-linecap="round"
-                                                        stroke-linejoin="round"
-                                                        d="M19.5 8.25l-7.5 7.5-7.5-7.5"
-                                                    />
-                                                </svg>
-                                            </button>
-                                        </span>
+                                                    {{
+                                                        $page.props.auth.user.name
+                                                            .charAt(0)
+                                                            .toUpperCase()
+                                                    }}
+                                                </span>
+                                            </div>
+                                        </button>
                                     </template>
 
                                     <template #content>
+                                        <!-- User Name (non-clickable) -->
+                                        <div
+                                            class="px-4 py-3 text-white border-b border-white/20"
+                                        >
+                                            <p class="text-sm font-medium">
+                                                {{ $page.props.auth.user.name }}
+                                            </p>
+                                        </div>
+
                                         <DropdownLink
                                             :href="route('profile.settings')"
                                         >
-                                            Profile
+                                            <div
+                                                class="flex items-center gap-2"
+                                            >
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    viewBox="0 0 24 24"
+                                                    fill="currentColor"
+                                                    class="size-4"
+                                                >
+                                                    <path
+                                                        fill-rule="evenodd"
+                                                        d="M18.685 19.097A9.723 9.723 0 0 0 21.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 0 0 3.065 7.097A9.716 9.716 0 0 0 12 21.75a9.716 9.716 0 0 0 6.685-2.653Zm-12.54-1.285A7.486 7.486 0 0 1 12 15a7.486 7.486 0 0 1 5.855 2.812A8.224 8.224 0 0 1 12 20.25a8.224 8.224 0 0 1-5.855-2.438ZM15.75 9a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z"
+                                                        clip-rule="evenodd"
+                                                    />
+                                                </svg>
+                                                Profile
+                                            </div>
                                         </DropdownLink>
 
                                         <div class="border-t border-white/20" />
@@ -216,7 +230,23 @@ const logout = () => {
                                             class="block"
                                         >
                                             <DropdownLink as="button">
-                                                Log Out
+                                                <div
+                                                    class="flex items-center gap-2"
+                                                >
+                                                    <svg
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                        viewBox="0 0 24 24"
+                                                        fill="currentColor"
+                                                        class="size-4"
+                                                    >
+                                                        <path
+                                                            fill-rule="evenodd"
+                                                            d="M16.5 3.75a1.5 1.5 0 0 1 1.5 1.5v13.5a1.5 1.5 0 0 1-1.5 1.5h-6a1.5 1.5 0 0 1-1.5-1.5V15a.75.75 0 0 0-1.5 0v3.75a3 3 0 0 0 3 3h6a3 3 0 0 0 3-3V5.25a3 3 0 0 0-3-3h-6a3 3 0 0 0-3 3V9A.75.75 0 1 0 9 9V5.25a1.5 1.5 0 0 1 1.5-1.5h6Zm-5.03 4.72a.75.75 0 0 0 0 1.06l1.72 1.72H2.25a.75.75 0 0 0 0 1.5h10.94l-1.72 1.72a.75.75 0 1 0 1.06 1.06l3-3a.75.75 0 0 0 0-1.06l-3-3a.75.75 0 0 0-1.06 0Z"
+                                                            clip-rule="evenodd"
+                                                        />
+                                                    </svg>
+                                                    Log Out
+                                                </div>
                                             </DropdownLink>
                                         </form>
                                     </template>
@@ -308,13 +338,41 @@ const logout = () => {
                                 :href="route('profile.settings')"
                                 :active="route().current('profile.settings')"
                             >
-                                Profile
+                                <div class="flex items-center gap-2">
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        viewBox="0 0 24 24"
+                                        fill="currentColor"
+                                        class="size-4"
+                                    >
+                                        <path
+                                            fill-rule="evenodd"
+                                            d="M18.685 19.097A9.723 9.723 0 0 0 21.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 0 0 3.065 7.097A9.716 9.716 0 0 0 12 21.75a9.716 9.716 0 0 0 6.685-2.653Zm-12.54-1.285A7.486 7.486 0 0 1 12 15a7.486 7.486 0 0 1 5.855 2.812A8.224 8.224 0 0 1 12 20.25a8.224 8.224 0 0 1-5.855-2.438ZM15.75 9a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z"
+                                            clip-rule="evenodd"
+                                        />
+                                    </svg>
+                                    Profile
+                                </div>
                             </ResponsiveNavLink>
 
                             <!-- Authentication -->
                             <form method="POST" @submit.prevent="logout">
                                 <ResponsiveNavLink as="button">
-                                    Log Out
+                                    <div class="flex items-center gap-2">
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            viewBox="0 0 24 24"
+                                            fill="currentColor"
+                                            class="size-4"
+                                        >
+                                            <path
+                                                fill-rule="evenodd"
+                                                d="M16.5 3.75a1.5 1.5 0 0 1 1.5 1.5v13.5a1.5 1.5 0 0 1-1.5 1.5h-6a1.5 1.5 0 0 1-1.5-1.5V15a.75.75 0 0 0-1.5 0v3.75a3 3 0 0 0 3 3h6a3 3 0 0 0 3-3V5.25a3 3 0 0 0-3-3h-6a3 3 0 0 0-3 3V9A.75.75 0 1 0 9 9V5.25a1.5 1.5 0 0 1 1.5-1.5h6Zm-5.03 4.72a.75.75 0 0 0 0 1.06l1.72 1.72H2.25a.75.75 0 0 0 0 1.5h10.94l-1.72 1.72a.75.75 0 1 0 1.06 1.06l3-3a.75.75 0 0 0 0-1.06l-3-3a.75.75 0 0 0-1.06 0Z"
+                                                clip-rule="evenodd"
+                                            />
+                                        </svg>
+                                        Log Out
+                                    </div>
                                 </ResponsiveNavLink>
                             </form>
                         </div>
@@ -326,7 +384,7 @@ const logout = () => {
             <main class="flex">
                 <!-- Sidebar Navigation -->
                 <div
-                    class="bg-primary text-white min-h-screen transition-all duration-300 ease-in-out overflow-hidden md:block hidden"
+                    class="bg-primary text-white sticky top-20 h-[calc(100vh-5rem)] transition-all duration-300 ease-in-out overflow-y-auto md:block hidden"
                     :class="{
                         'w-64': isSidebarOpen,
                         'w-0': !isSidebarOpen,
