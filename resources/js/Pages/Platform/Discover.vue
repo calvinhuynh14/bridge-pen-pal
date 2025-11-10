@@ -1,5 +1,8 @@
 <script setup>
 import AppLayout from "@/Layouts/AppLayout.vue";
+import OpenLetterCard from "@/Components/OpenLetterCard.vue";
+import LetterViewModal from "@/Components/LetterViewModal.vue";
+import Modal from "@/Components/Modal.vue";
 import { Head, router } from "@inertiajs/vue3";
 import { computed, ref } from "vue";
 import { usePage } from "@inertiajs/vue3";
@@ -14,11 +17,56 @@ const props = defineProps({
         type: Number,
         default: 0,
     },
+    storyOfTheWeek: {
+        type: Object,
+        default: () => null,
+    },
 });
 
 // Get current user from page props
 const page = usePage();
 const user = computed(() => page.props.auth.user);
+
+// Pagination state
+const currentPage = ref(1);
+const itemsPerPage = ref(4); // Show 4 letters per page
+
+// Computed pagination properties
+const totalPages = computed(() =>
+    Math.ceil(props.openLetters.length / itemsPerPage.value)
+);
+
+const paginatedLetters = computed(() => {
+    const start = (currentPage.value - 1) * itemsPerPage.value;
+    const end = start + itemsPerPage.value;
+    return props.openLetters.slice(start, end);
+});
+
+// Pagination methods
+const goToPage = (pageNum) => {
+    if (pageNum >= 1 && pageNum <= totalPages.value) {
+        currentPage.value = pageNum;
+        // Scroll to top of letters section
+        window.scrollTo({
+            top:
+                document.querySelector(".bg-primary.rounded-lg")?.offsetTop -
+                    100 || 0,
+            behavior: "smooth",
+        });
+    }
+};
+
+const nextPage = () => {
+    if (currentPage.value < totalPages.value) {
+        goToPage(currentPage.value + 1);
+    }
+};
+
+const prevPage = () => {
+    if (currentPage.value > 1) {
+        goToPage(currentPage.value - 1);
+    }
+};
 
 // Helper functions to check user type
 const isVolunteer = computed(() => user.value?.user_type === "volunteer");
@@ -29,24 +77,6 @@ const getUserType = () => {
     if (isVolunteer.value) return "Volunteer";
     if (isResident.value) return "Resident";
     return "User";
-};
-
-// Format date helper (date only, no time)
-const formatDate = (dateString) => {
-    if (!dateString) return "N/A";
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-    });
-};
-
-// Truncate content helper
-const truncateContent = (content, maxLength = 150) => {
-    if (!content) return "";
-    if (content.length <= maxLength) return content;
-    return content.substring(0, maxLength).trim() + "...";
 };
 
 // Claim letter function
@@ -73,6 +103,10 @@ const claimLetter = (letterId) => {
     );
 };
 
+// View letter modal
+const showViewModal = ref(false);
+const viewingLetter = ref(null);
+
 // Report letter function
 const reportingLetterId = ref(null);
 const showReportModal = ref(false);
@@ -83,6 +117,36 @@ const openReportModal = (letter) => {
     selectedLetter.value = letter;
     reportReason.value = "";
     showReportModal.value = true;
+    // Close view modal if it's open
+    if (showViewModal.value) {
+        showViewModal.value = false;
+    }
+};
+
+// Handle claim event from OpenLetterCard component
+const handleClaim = (letterId) => {
+    claimLetter(letterId);
+};
+
+// Handle report event from OpenLetterCard component
+const handleReport = (letter) => {
+    openReportModal(letter);
+};
+
+// Handle view event from OpenLetterCard component
+const handleView = (letter) => {
+    viewingLetter.value = letter;
+    showViewModal.value = true;
+};
+
+const closeViewModal = () => {
+    showViewModal.value = false;
+    viewingLetter.value = null;
+};
+
+// Handle reply redirect
+const handleReply = (letterId) => {
+    router.visit(`/platform/write?letterId=${letterId}`);
 };
 
 const closeReportModal = () => {
@@ -137,142 +201,225 @@ const submitReport = () => {
             </h2>
         </template>
 
-        <div class="py-12">
-            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        <div class="py-4">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <!-- Story of the Week Section -->
+                <div v-if="storyOfTheWeek" class="mb-2">
+                    <h2
+                        class="text-xl sm:text-2xl lg:text-3xl font-bold text-pressed mb-1"
+                    >
+                        Story of the Week
+                    </h2>
+                    <div
+                        class="bg-primary rounded-lg p-4 sm:p-6 md:p-8 lg:p-10"
+                    >
+                        <div
+                            class="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 md:gap-8"
+                        >
+                            <!-- Profile Picture -->
+                            <div class="flex-shrink-0">
+                                <div
+                                    v-if="storyOfTheWeek.profile_photo_url"
+                                    class="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-pressed"
+                                >
+                                    <img
+                                        :src="storyOfTheWeek.profile_photo_url"
+                                        :alt="storyOfTheWeek.name"
+                                        class="w-full h-full object-cover"
+                                    />
+                                </div>
+                                <div
+                                    v-else
+                                    class="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 bg-pressed rounded-full flex items-center justify-center border-4 border-white"
+                                >
+                                    <span
+                                        class="text-white text-3xl sm:text-4xl md:text-5xl font-bold"
+                                    >
+                                        {{
+                                            storyOfTheWeek.name
+                                                .charAt(0)
+                                                .toUpperCase()
+                                        }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Name and Bio -->
+                            <div class="flex-1 min-w-0">
+                                <h3
+                                    class="text-xl sm:text-2xl md:text-3xl font-bold text-pressed mb-3 sm:mb-4"
+                                >
+                                    {{ storyOfTheWeek.name }}
+                                </h3>
+                                <div
+                                    class="text-sm sm:text-base md:text-lg text-gray-700 leading-relaxed space-y-3"
+                                >
+                                    <p
+                                        v-for="(
+                                            paragraph, index
+                                        ) in storyOfTheWeek.bio?.split('\n') ||
+                                        []"
+                                        :key="index"
+                                    >
+                                        {{ paragraph }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Page Header -->
-                <div class="mb-8">
-                    <h1 class="text-3xl font-bold text-pressed mb-2">
+                <div class="mb-2">
+                    <h1
+                        class="text-xl sm:text-2xl lg:text-3xl font-bold text-pressed mb-1"
+                    >
                         Open Letters
                     </h1>
                     <p v-if="letterCount > 0" class="text-sm text-gray-600">
                         {{ letterCount }} open
-                        {{ letterCount === 1 ? "letter" : "letters" }} available
+                        {{ letterCount === 1 ? "letter" : "letters" }}
+                        available
                     </p>
                 </div>
 
-                <!-- Open Letters Grid Container with Primary Background -->
+                <!-- Open Letters Grid Container -->
                 <div
                     v-if="openLetters.length > 0"
                     class="bg-primary rounded-lg"
                     style="padding: 2px"
                 >
-                    <div class="p-4 sm:p-6">
+                    <div
+                        class="p-2 sm:p-4 md:p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 items-start justify-items-center"
+                    >
+                        <OpenLetterCard
+                            v-for="letter in paginatedLetters"
+                            :key="letter.id"
+                            :letter="letter"
+                            :is-claiming="claimingLetterId === letter.id"
+                            @claim="handleClaim"
+                            @report="handleReport"
+                            @view="handleView"
+                        />
+                    </div>
+
+                    <!-- Pagination Controls -->
+                    <div
+                        v-if="totalPages > 1"
+                        class="mt-6 bg-white border-t border-gray-200 px-6 py-4 rounded-b-lg"
+                    >
+                        <!-- Simple pagination for mobile -->
                         <div
-                            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 max-w-sm md:max-w-none mx-auto md:mx-0"
+                            class="flex justify-between items-center lg:hidden"
                         >
-                            <!-- Letter Card (Paper-like design) -->
-                            <div
-                                v-for="letter in openLetters"
-                                :key="letter.id"
-                                class="border-2 border-gray-300 rounded-sm p-4 sm:p-6 shadow-md hover:shadow-lg transition-shadow relative flex flex-col"
-                                style="
-                                    background-color: #ffffff;
-                                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1),
-                                        0 1px 2px rgba(0, 0, 0, 0.06);
-                                "
+                            <button
+                                v-if="currentPage > 1"
+                                @click="prevPage"
+                                class="bg-primary hover:bg-pressed text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm"
                             >
-                                <!-- Avatar and Name -->
-                                <div class="flex items-center gap-3 mb-4">
-                                    <div
-                                        class="w-10 h-10 sm:w-12 sm:h-12 bg-primary rounded-full flex items-center justify-center border-2 border-pressed flex-shrink-0"
-                                    >
-                                        <span
-                                            class="text-black text-lg sm:text-xl font-medium"
-                                        >
-                                            {{
-                                                letter.sender_name
-                                                    .charAt(0)
-                                                    .toUpperCase()
-                                            }}
-                                        </span>
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <p
-                                            class="font-semibold text-pressed text-lg sm:text-xl truncate"
-                                        >
-                                            {{ letter.sender_name }}
-                                        </p>
-                                        <p
-                                            class="text-sm sm:text-base text-gray-500"
-                                        >
-                                            {{ formatDate(letter.sent_at) }}
-                                        </p>
-                                    </div>
-                                </div>
+                                Previous
+                            </button>
+                            <span class="text-sm text-black font-medium">
+                                Page {{ currentPage }} of {{ totalPages }}
+                            </span>
+                            <button
+                                v-if="currentPage < totalPages"
+                                @click="nextPage"
+                                class="bg-primary hover:bg-pressed text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm"
+                            >
+                                Next
+                            </button>
+                        </div>
 
-                                <!-- Letter Content Preview -->
-                                <div
-                                    class="flex-1 mb-4 min-h-[100px] sm:min-h-[120px]"
+                        <!-- Full pagination for desktop -->
+                        <div
+                            class="hidden lg:flex lg:items-center lg:justify-between"
+                        >
+                            <div>
+                                <p class="text-sm text-gray-700">
+                                    Showing
+                                    <span class="font-medium">{{
+                                        (currentPage - 1) * itemsPerPage + 1
+                                    }}</span>
+                                    to
+                                    <span class="font-medium">{{
+                                        Math.min(
+                                            currentPage * itemsPerPage,
+                                            openLetters.length
+                                        )
+                                    }}</span>
+                                    of
+                                    <span class="font-medium">{{
+                                        openLetters.length
+                                    }}</span>
+                                    results
+                                </p>
+                            </div>
+                            <div>
+                                <nav
+                                    class="relative z-0 inline-flex rounded-lg shadow-sm -space-x-px"
                                 >
-                                    <p
-                                        class="text-gray-700 text-base sm:text-lg leading-relaxed"
-                                        style="
-                                            display: -webkit-box;
-                                            -webkit-line-clamp: 4;
-                                            -webkit-box-orient: vertical;
-                                            overflow: hidden;
-                                        "
-                                    >
-                                        {{
-                                            truncateContent(letter.content, 150)
-                                        }}
-                                    </p>
-                                </div>
-
-                                <!-- Action Buttons -->
-                                <div
-                                    class="flex items-center justify-between gap-2 mt-auto pt-4 border-t border-gray-200"
-                                >
+                                    <!-- Previous button -->
                                     <button
-                                        @click="claimLetter(letter.id)"
-                                        :disabled="
-                                            claimingLetterId === letter.id
-                                        "
-                                        class="px-4 py-2.5 sm:py-3 bg-primary hover:bg-pressed text-black rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-base sm:text-lg flex-1 flex items-center justify-center gap-2"
+                                        v-if="currentPage > 1"
+                                        @click="prevPage"
+                                        class="relative inline-flex items-center px-3 py-2 rounded-l-lg border-2 border-primary bg-white text-sm font-medium text-primary hover:bg-pressed hover:text-white transition-colors"
                                     >
-                                        <span
-                                            v-if="
-                                                claimingLetterId === letter.id
-                                            "
-                                        >
-                                            Replying...
-                                        </span>
-                                        <span
-                                            v-else
-                                            class="flex items-center gap-2"
-                                        >
-                                            <svg
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                viewBox="0 0 24 24"
-                                                fill="currentColor"
-                                                class="size-5 sm:size-6"
-                                            >
-                                                <path
-                                                    d="M3.478 2.404a.75.75 0 0 0-.926.941l2.432 7.905H13.5a.75.75 0 0 1 0 1.5H4.984l-2.432 7.905a.75.75 0 0 0 .926.94 60.519 60.519 0 0 0 18.445-8.986.75.75 0 0 0 0-1.218A60.517 60.517 0 0 0 3.478 2.404Z"
-                                                />
-                                            </svg>
-                                            Reply
-                                        </span>
-                                    </button>
-                                    <button
-                                        @click="openReportModal(letter)"
-                                        class="px-3 py-2.5 sm:py-3 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg font-medium transition-colors text-base sm:text-lg"
-                                        title="Report this letter"
-                                    >
+                                        <span class="sr-only">Previous</span>
                                         <svg
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            viewBox="0 0 24 24"
+                                            class="h-4 w-4"
                                             fill="currentColor"
-                                            class="size-5 sm:size-6"
+                                            viewBox="0 0 20 20"
                                         >
                                             <path
                                                 fill-rule="evenodd"
-                                                d="M3 2.25a.75.75 0 0 1 .75.75v.54l1.838-.46a9.75 9.75 0 0 1 6.725.738l.108.054A8.25 8.25 0 0 0 18 4.524l3.11-.732a.75.75 0 0 1 .917.81 47.784 47.784 0 0 0 .005 10.337.75.75 0 0 1-.574.812l-3.114.733a9.75 9.75 0 0 1-6.594-.77l-.108-.054a8.25 8.25 0 0 0-5.69-.625l-2.202.55V21a.75.75 0 0 1-1.5 0V3A.75.75 0 0 1 3 2.25Z"
+                                                d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
                                                 clip-rule="evenodd"
                                             />
                                         </svg>
                                     </button>
-                                </div>
+
+                                    <!-- Page numbers -->
+                                    <template
+                                        v-for="page in totalPages"
+                                        :key="page"
+                                    >
+                                        <button
+                                            v-if="page === currentPage"
+                                            @click="goToPage(page)"
+                                            class="relative inline-flex items-center px-4 py-2 border-2 border-primary bg-primary text-sm font-semibold text-white"
+                                        >
+                                            {{ page }}
+                                        </button>
+                                        <button
+                                            v-else
+                                            @click="goToPage(page)"
+                                            class="relative inline-flex items-center px-4 py-2 border-2 border-primary bg-white text-sm font-medium text-primary hover:bg-pressed hover:text-white transition-colors"
+                                        >
+                                            {{ page }}
+                                        </button>
+                                    </template>
+
+                                    <!-- Next button -->
+                                    <button
+                                        v-if="currentPage < totalPages"
+                                        @click="nextPage"
+                                        class="relative inline-flex items-center px-3 py-2 rounded-r-lg border-2 border-primary bg-white text-sm font-medium text-primary hover:bg-pressed hover:text-white transition-colors"
+                                    >
+                                        <span class="sr-only">Next</span>
+                                        <svg
+                                            class="h-4 w-4"
+                                            fill="currentColor"
+                                            viewBox="0 0 20 20"
+                                        >
+                                            <path
+                                                fill-rule="evenodd"
+                                                d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                                                clip-rule="evenodd"
+                                            />
+                                        </svg>
+                                    </button>
+                                </nav>
                             </div>
                         </div>
                     </div>
@@ -280,7 +427,7 @@ const submitReport = () => {
 
                 <!-- Empty State -->
                 <div
-                    v-else
+                    v-if="openLetters.length === 0"
                     class="bg-white border-2 border-primary rounded-lg p-12 text-center"
                 >
                     <svg
@@ -308,21 +455,23 @@ const submitReport = () => {
             </div>
         </div>
 
+        <!-- View Letter Modal -->
+        <LetterViewModal
+            :show="showViewModal"
+            :letter="viewingLetter"
+            @close="closeViewModal"
+            @reply="handleReply"
+            @report="handleReport"
+        />
+
         <!-- Report Modal -->
-        <div
-            v-if="showReportModal"
-            class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-            @click.self="closeReportModal"
-        >
-            <div
-                class="bg-white rounded-lg shadow-xl max-w-md w-full p-6"
-                @click.stop
-            >
+        <Modal :show="showReportModal" @close="closeReportModal" max-width="md">
+            <div class="p-6 bg-pressed">
                 <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-xl font-bold text-black">Report Letter</h3>
+                    <h3 class="text-xl font-bold text-white">Report Letter</h3>
                     <button
                         @click="closeReportModal"
-                        class="text-gray-400 hover:text-gray-600 transition-colors"
+                        class="text-white/80 hover:text-white transition-colors"
                     >
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -342,20 +491,21 @@ const submitReport = () => {
                 </div>
 
                 <div v-if="selectedLetter" class="mb-4">
-                    <p class="text-sm text-gray-600 mb-2">
+                    <p class="text-sm text-white/90 mb-2">
                         Reporting letter from
-                        <span class="font-semibold text-pressed">{{
+                        <span class="font-semibold text-white">{{
                             selectedLetter.sender_name
                         }}</span>
                     </p>
                     <div
-                        class="bg-gray-50 border-2 border-primary rounded-lg p-3 mb-4"
+                        class="bg-white border-2 border-white/30 rounded-lg p-3 mb-4"
                     >
                         <p
-                            class="text-sm text-gray-700"
+                            class="text-sm text-black"
                             style="
                                 display: -webkit-box;
                                 -webkit-line-clamp: 3;
+                                line-clamp: 3;
                                 -webkit-box-orient: vertical;
                                 overflow: hidden;
                             "
@@ -368,7 +518,7 @@ const submitReport = () => {
                 <div class="mb-4">
                     <label
                         for="reportReason"
-                        class="block text-sm font-medium text-black mb-2"
+                        class="block text-sm font-medium text-white mb-2"
                     >
                         Reason for reporting
                     </label>
@@ -376,7 +526,7 @@ const submitReport = () => {
                         id="reportReason"
                         v-model="reportReason"
                         rows="4"
-                        class="w-full px-4 py-2 border-2 border-primary rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
+                        class="w-full px-4 py-2 border-2 border-white/30 bg-white text-black rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/50 resize-none placeholder:text-gray-500"
                         placeholder="Please describe why you are reporting this letter..."
                     ></textarea>
                 </div>
@@ -384,7 +534,7 @@ const submitReport = () => {
                 <div class="flex gap-3 justify-end">
                     <button
                         @click="closeReportModal"
-                        class="px-4 py-2 border-2 border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+                        class="px-4 py-2 bg-white border-2 border-primary text-primary rounded-lg font-medium hover:bg-primary hover:text-black transition-colors"
                     >
                         Cancel
                     </button>
@@ -403,6 +553,6 @@ const submitReport = () => {
                     </button>
                 </div>
             </div>
-        </div>
+        </Modal>
     </AppLayout>
 </template>

@@ -414,6 +414,7 @@ Route::middleware([
                 l.sent_at,
                 l.created_at,
                 l.claimed_by,
+                l.is_open_letter,
                 sender.id as sender_id,
                 sender.name as sender_name,
                 ut.name as sender_type,
@@ -452,9 +453,20 @@ Route::middleware([
 
         $openLetters = DB::select($query, $params);
 
+        // TODO: Fetch story of the week from database
+        // For now, using placeholder data that can be set by admin
+        // Example structure:
+        $storyOfTheWeek = [
+            'name' => 'Margaret Randy',
+            'profile_photo_url' => null, // or URL to profile photo
+            'bio' => "At 82, Margaret has a way with plants—and people. A former flower shop owner, she knows that even a small bouquet can brighten someone's day.\n\nNow, at Willow Creek Retirement Home, she shares her love of nature through the pen pal platform. Her letters are filled with gardening tips, seasonal stories, and hand-drawn flower sketches. In return, volunteers send her pictures of their own plants—some thriving, some... still learning!\n\nFor Margaret, letters are like seeds—small connections that blossom into something beautiful. Would you like to be her next pen pal?"
+        ];
+        // Set to null to hide: $storyOfTheWeek = null;
+
         return Inertia::render('Platform/Discover', [
             'openLetters' => $openLetters,
-            'letterCount' => count($openLetters)
+            'letterCount' => count($openLetters),
+            'storyOfTheWeek' => $storyOfTheWeek
         ]);
     })->name('platform.discover');
     
