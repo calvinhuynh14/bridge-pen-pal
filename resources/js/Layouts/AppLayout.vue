@@ -50,7 +50,7 @@ const logout = () => {
             <nav class="bg-primary sticky top-0 z-50 shadow-md">
                 <!-- Primary Navigation Menu -->
                 <div class="w-full mx-auto px-4 sm:px-6 lg:px-8">
-                    <div class="flex justify-between h-20">
+                    <div class="flex justify-between h-12">
                         <div class="flex items-center">
                             <!-- Sidebar Toggle Button (visible on md+ screens) -->
                             <button
@@ -77,7 +77,7 @@ const logout = () => {
                                     <img
                                         src="/images/logos/logo_name_horizontal_white.svg"
                                         alt="Bridge Pen Pal"
-                                        class="block h-20 w-auto"
+                                        class="block h-12 w-auto"
                                     />
                                 </Link>
                             </div>
@@ -373,7 +373,7 @@ const logout = () => {
             <main class="flex">
                 <!-- Sidebar Navigation -->
                 <div
-                    class="bg-primary text-white sticky top-20 h-[calc(100vh-5rem)] transition-all duration-300 ease-in-out overflow-y-auto md:block hidden"
+                    class="bg-primary text-white sticky top-12 h-[calc(100vh-3rem)] transition-all duration-300 ease-in-out overflow-y-auto md:block hidden"
                     :class="{
                         'w-48': isSidebarOpen,
                         'w-0': !isSidebarOpen,

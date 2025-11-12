@@ -56,7 +56,7 @@ const filterSelectId = computed(
 <template>
     <div class="flex gap-2 flex-wrap">
         <!-- Sort Order -->
-        <div class="flex-1 min-w-[120px]">
+        <div class="flex-1 min-w-[140px]">
             <label :for="sortSelectId" class="sr-only">
                 {{ sortLabel }}
             </label>
@@ -65,7 +65,7 @@ const filterSelectId = computed(
                 :value="sortOrder"
                 @change="emit('update:sortOrder', $event.target.value)"
                 :aria-label="sortLabel"
-                class="w-full bg-white rounded-lg border-2 border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 px-3 py-2 text-sm text-gray-900 focus:outline-none cursor-pointer transition-colors"
+                class="w-full bg-white rounded-lg border-2 border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 pl-3 pr-8 py-2 text-xs sm:text-sm text-gray-900 focus:outline-none cursor-pointer transition-colors"
             >
                 <option
                     v-for="option in sortOptions"
@@ -80,7 +80,7 @@ const filterSelectId = computed(
         <!-- Filter -->
         <div
             v-if="filterOptions && filterOptions.length > 0"
-            class="flex-1 min-w-[120px]"
+            class="flex-1 min-w-[140px]"
         >
             <label :for="filterSelectId" class="sr-only">
                 {{ filterLabel }}
@@ -90,7 +90,7 @@ const filterSelectId = computed(
                 :value="filterValue"
                 @change="emit('update:filterValue', $event.target.value)"
                 :aria-label="filterLabel"
-                class="w-full bg-white rounded-lg border-2 border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 px-3 py-2 text-sm text-gray-900 focus:outline-none cursor-pointer transition-colors"
+                class="w-full bg-white rounded-lg border-2 border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 pl-3 pr-8 py-2 text-xs sm:text-sm text-gray-900 focus:outline-none cursor-pointer transition-colors"
             >
                 <option
                     v-for="option in filterOptions"

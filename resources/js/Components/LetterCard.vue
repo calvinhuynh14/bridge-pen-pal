@@ -1,5 +1,6 @@
 <script setup>
-import { defineProps, defineEmits } from "vue";
+import { defineProps, defineEmits, computed } from "vue";
+import { usePage } from "@inertiajs/vue3";
 import Avatar from "@/Components/Avatar.vue";
 
 const props = defineProps({
@@ -19,6 +20,10 @@ const props = defineProps({
 
 const emit = defineEmits(["claim", "report", "view"]);
 
+// Get current user
+const page = usePage();
+const currentUserId = computed(() => page.props.auth?.user?.id);
+
 // Format date helper (date only, no time)
 const formatDate = (dateString) => {
     if (!dateString) return "N/A";
@@ -36,6 +41,77 @@ const truncateContent = (content, maxLength = 150) => {
     if (content.length <= maxLength) return content;
     return content.substring(0, maxLength).trim() + "...";
 };
+
+// Status icon configuration - perspective-aware
+const statusConfig = computed(() => {
+    const status = props.letter.status || "draft";
+    const isSender = props.letter.sender_id === currentUserId.value;
+    const isReceiver = props.letter.receiver_id === currentUserId.value;
+
+    // Debug logging
+    if (props.letter.id === 67) {
+        console.log("LetterCard statusConfig for letter 67:", {
+            letterId: props.letter.id,
+            status: status,
+            senderId: props.letter.sender_id,
+            receiverId: props.letter.receiver_id,
+            currentUserId: currentUserId.value,
+            isSender: isSender,
+            isReceiver: isReceiver,
+            read_at: props.letter.read_at,
+        });
+    }
+
+    // Determine what status to show based on perspective
+    let displayStatus = status;
+
+    if (isReceiver) {
+        // Receiver perspective:
+        // - If status is "sent" but they can see it, it's been delivered → show "delivered"
+        // - If status is "delivered" → show "delivered" (unread)
+        // - If status is "read" → show "read"
+        if (status === "sent") {
+            // If receiver can see the letter, it's been delivered to them
+            displayStatus = "delivered";
+        }
+        // Otherwise, use the actual status (delivered or read)
+    } else if (isSender) {
+        // Sender perspective: sent → delivered → read
+        // Show the actual status as it reflects the progression
+        // Status already reflects: sent → delivered → read
+    }
+
+    if (props.letter.id === 67) {
+        console.log("LetterCard displayStatus for letter 67:", displayStatus);
+    }
+
+    switch (displayStatus) {
+        case "sent":
+            return {
+                icon: "M3.478 2.404a.75.75 0 0 0-.926.941l2.432 7.905H13.5a.75.75 0 0 1 0 1.5H4.984l-2.432 7.905a.75.75 0 0 0 .926.94 60.519 60.519 0 0 0 18.445-8.986.75.75 0 0 0 0-1.218A60.517 60.517 0 0 0 3.478 2.404Z",
+                color: "text-blue-500",
+                bgColor: "bg-blue-100",
+                title: "Sent",
+            };
+        case "delivered":
+            return {
+                icon: "M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z",
+                color: "text-yellow-500",
+                bgColor: "bg-yellow-100",
+                title: "Delivered",
+            };
+        case "read":
+            return {
+                icon: "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z",
+                icon2: "M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.762 1.762 0 0 1 0-1.113ZM17.25 12a5.25 5.25 0 1 1-10.5 0 5.25 5.25 0 0 1 10.5 0Z",
+                color: "text-green-500",
+                bgColor: "bg-green-100",
+                title: "Read",
+            };
+        default:
+            return null; // Don't show icon for draft
+    }
+});
 
 const handleCardClick = (event) => {
     // Don't emit view if clicking on buttons or their children
@@ -68,6 +144,34 @@ const handleReport = (event) => {
             aspect-ratio: 3 / 4;
         "
     >
+        <!-- Status Icon (Bottom Right) -->
+        <div
+            v-if="statusConfig"
+            class="absolute bottom-1.5 right-1.5 sm:bottom-2 sm:right-2 z-10"
+            :title="statusConfig.title"
+        >
+            <div
+                class="rounded-full p-1 sm:p-1.5"
+                :class="statusConfig.bgColor"
+            >
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                    class="w-3 h-3 sm:w-4 sm:h-4"
+                    :class="statusConfig.color"
+                >
+                    <path :d="statusConfig.icon" />
+                    <path
+                        v-if="statusConfig.icon2"
+                        fill-rule="evenodd"
+                        :d="statusConfig.icon2"
+                        clip-rule="evenodd"
+                    />
+                </svg>
+            </div>
+        </div>
+
         <!-- Avatar and Name -->
         <div class="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-3">
             <div class="flex-shrink-0">

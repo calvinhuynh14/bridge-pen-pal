@@ -474,6 +474,7 @@ Route::middleware([
     Route::post('/platform/letters/{id}/claim', [LetterController::class, 'claim'])->name('letters.claim');
     Route::post('/platform/letters/{id}/report', [LetterController::class, 'report'])->name('letters.report');
     Route::get('/api/letters/received', [LetterController::class, 'getReceived'])->name('api.letters.received');
+    Route::get('/api/letters/{id}', [LetterController::class, 'show'])->name('api.letters.show');
     Route::get('/api/correspondence/{penPalId}', [LetterController::class, 'getCorrespondence'])->name('api.correspondence');
     Route::get('/api/pen-pals', [LetterController::class, 'getPenPals'])->name('api.pen-pals');
     

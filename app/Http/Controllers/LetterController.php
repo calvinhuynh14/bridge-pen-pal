@@ -41,6 +41,7 @@ class LetterController extends Controller
                 l.sent_at,
                 l.created_at,
                 l.claimed_by,
+                l.status,
                 sender.id as sender_id,
                 sender.name as sender_name,
                 sender.user_type as sender_type,
@@ -337,7 +338,6 @@ class LetterController extends Controller
                 l.*,
                 sender.id as sender_id,
                 sender.name as sender_name,
-                sender.user_type as sender_type,
                 receiver.id as receiver_id,
                 receiver.name as receiver_name,
                 claimed_by_user.id as claimed_by_id,
@@ -372,8 +372,24 @@ class LetterController extends Controller
                 WHERE id = ?
             ", [now(), now(), $id]);
 
-            $letter->read_at = now();
-            $letter->status = $letter->status === 'delivered' ? 'read' : $letter->status;
+            // Fetch the updated letter to get the correct status
+            // Use the same query structure as the initial fetch to avoid column issues
+            $letter = DB::selectOne("
+                SELECT 
+                    l.*,
+                    sender.id as sender_id,
+                    sender.name as sender_name,
+                    receiver.id as receiver_id,
+                    receiver.name as receiver_name,
+                    claimed_by_user.id as claimed_by_id,
+                    claimed_by_user.name as claimed_by_name
+                FROM letters l
+                JOIN users sender ON l.sender_id = sender.id
+                LEFT JOIN users receiver ON l.receiver_id = receiver.id
+                LEFT JOIN users claimed_by_user ON l.claimed_by = claimed_by_user.id
+                WHERE l.id = ?
+                AND l.deleted_at IS NULL
+            ", [$id]);
         }
 
         return response()->json(['letter' => $letter]);
@@ -454,12 +470,15 @@ class LetterController extends Controller
                 l.id,
                 l.content,
                 l.sent_at,
+                l.delivered_at,
+                l.read_at,
                 l.created_at,
                 l.sender_id,
                 sender.name as sender_name,
                 l.receiver_id,
                 receiver.name as receiver_name,
-                l.is_open_letter
+                l.is_open_letter,
+                l.status
             FROM letters l
             JOIN users sender ON l.sender_id = sender.id
             JOIN users receiver ON l.receiver_id = receiver.id
@@ -499,18 +518,19 @@ class LetterController extends Controller
     /**
      * Get list of pen pals for the current user
      * Returns users who have sent or received letters with the current user
+     * Supports pagination and search
      */
     public function getPenPals(Request $request)
     {
         $user = Auth::user();
 
-        // Get all unique pen pals (users who have sent or received letters with current user)
-        $penPals = DB::select("
-            SELECT DISTINCT 
-                u.id,
-                u.name,
-                u.email
-            FROM users u
+        // Get pagination parameters
+        $page = $request->input('page', 1);
+        $perPage = $request->input('per_page', 10);
+        $search = $request->input('search', '');
+
+        // Build WHERE clause
+        $whereClause = "
             WHERE u.id IN (
                 SELECT DISTINCT sender_id 
                 FROM letters 
@@ -527,12 +547,80 @@ class LetterController extends Controller
                 AND deleted_at IS NULL
             )
             AND u.id != ?
+        ";
+
+        $params = [$user->id, $user->id, $user->id];
+
+        // Apply search filter
+        if (!empty($search)) {
+            $searchTerm = '%' . $search . '%';
+            $whereClause .= " AND u.name LIKE ?";
+            $params[] = $searchTerm;
+        }
+
+        // Build count query
+        $countQuery = "
+            SELECT COUNT(DISTINCT u.id) as total
+            FROM users u
+            " . $whereClause;
+        
+        $totalResult = DB::selectOne($countQuery, $params);
+        $total = $totalResult->total;
+
+        // Build main query with message status and unread count
+        $query = "
+            SELECT DISTINCT 
+                u.id,
+                u.name,
+                u.email,
+                CASE 
+                    WHEN EXISTS (
+                        SELECT 1 FROM letters l
+                        WHERE ((l.sender_id = u.id AND l.receiver_id = ?) 
+                               OR (l.sender_id = ? AND l.receiver_id = u.id))
+                        AND l.is_open_letter = 0
+                        AND l.deleted_at IS NULL
+                    ) THEN 1
+                    ELSE 0
+                END as has_messages,
+                COALESCE((
+                    SELECT COUNT(*)
+                    FROM letters l
+                    WHERE l.sender_id = u.id
+                    AND l.receiver_id = ?
+                    AND l.is_open_letter = 0
+                    AND l.read_at IS NULL
+                    AND l.deleted_at IS NULL
+                ), 0) as unread_count
+            FROM users u
+            " . $whereClause . "
             ORDER BY u.name ASC
-        ", [$user->id, $user->id, $user->id]);
+        ";
+
+        // Add user ID for has_messages and unread_count checks
+        $paramsWithChecks = array_merge($params, [$user->id, $user->id, $user->id]);
+
+        // Apply pagination
+        $offset = ($page - 1) * $perPage;
+        $query .= " LIMIT ? OFFSET ?";
+        $paramsWithChecks[] = $perPage;
+        $paramsWithChecks[] = $offset;
+
+        // Execute query
+        $penPals = DB::select($query, $paramsWithChecks);
+
+        // Calculate pagination metadata
+        $lastPage = ceil($total / $perPage);
 
         return response()->json([
             'pen_pals' => $penPals,
-            'count' => count($penPals)
+            'pagination' => [
+                'current_page' => (int)$page,
+                'last_page' => $lastPage,
+                'per_page' => (int)$perPage,
+                'total' => $total,
+                'has_more' => $page < $lastPage,
+            ],
         ]);
     }
 }

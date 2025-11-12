@@ -1,6 +1,6 @@
 <script setup>
 import AppLayout from "@/Layouts/AppLayout.vue";
-import OpenLetterCard from "@/Components/OpenLetterCard.vue";
+import LetterCard from "@/Components/LetterCard.vue";
 import LetterViewModal from "@/Components/LetterViewModal.vue";
 import Modal from "@/Components/Modal.vue";
 import Avatar from "@/Components/Avatar.vue";
@@ -124,17 +124,17 @@ const openReportModal = (letter) => {
     }
 };
 
-// Handle claim event from OpenLetterCard component
+// Handle claim event from LetterCard component
 const handleClaim = (letterId) => {
     claimLetter(letterId);
 };
 
-// Handle report event from OpenLetterCard component
+// Handle report event from LetterCard component
 const handleReport = (letter) => {
     openReportModal(letter);
 };
 
-// Handle view event from OpenLetterCard component
+// Handle view event from LetterCard component
 const handleView = (letter) => {
     viewingLetter.value = letter;
     showViewModal.value = true;
@@ -202,7 +202,7 @@ const submitReport = () => {
             </h2>
         </template>
 
-        <div class="py-4">
+        <div class="py-2">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <!-- Story of the Week Section -->
                 <div v-if="storyOfTheWeek" class="mb-2">
@@ -283,7 +283,7 @@ const submitReport = () => {
                     <div
                         class="p-2 sm:p-4 md:p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 items-start justify-items-center"
                     >
-                        <OpenLetterCard
+                        <LetterCard
                             v-for="letter in paginatedLetters"
                             :key="letter.id"
                             :letter="letter"
