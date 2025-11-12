@@ -1,5 +1,6 @@
 <script setup>
 import Modal from "@/Components/Modal.vue";
+import Avatar from "@/Components/Avatar.vue";
 import { ref } from "vue";
 
 const props = defineProps({
@@ -94,13 +95,17 @@ const formatDate = (dateString) => {
             <div v-if="selectedItem" class="space-y-6">
                 <!-- Avatar and Name -->
                 <div class="flex items-center space-x-4">
-                    <div
-                        class="w-16 h-16 bg-primary rounded-full flex items-center justify-center border-2 border-pressed"
-                    >
-                        <span class="text-black text-xl font-medium">
-                            {{ selectedItem.name.charAt(0).toUpperCase() }}
-                        </span>
-                    </div>
+                    <Avatar
+                        :src="
+                            selectedItem.profile_photo_url ||
+                            selectedItem.avatar
+                        "
+                        :name="selectedItem.name"
+                        size="lg"
+                        border-color="pressed"
+                        bg-color="primary"
+                        text-color="black"
+                    />
                     <div>
                         <h4 class="text-xl font-semibold text-black">
                             {{ selectedItem.name }}

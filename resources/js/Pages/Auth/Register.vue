@@ -302,8 +302,10 @@ console.log("Updated form user_type_id:", form.user_type_id);
                             <select
                                 id="organization_id"
                                 v-model="form.organization_id"
-                                class="mt-2 block w-full border-gray-300 rounded-lg focus:border-primary focus:ring-primary"
+                                class="mt-2 block w-full bg-white rounded-lg border-2 border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 px-3 py-2 text-sm text-gray-900 focus:outline-none cursor-pointer transition-colors"
                                 required
+                                aria-required="true"
+                                aria-describedby="organization_id-error"
                             >
                                 <option value="">
                                     Choose an organization...
@@ -317,6 +319,7 @@ console.log("Updated form user_type_id:", form.user_type_id);
                                 </option>
                             </select>
                             <InputError
+                                id="organization_id-error"
                                 class="mt-2"
                                 :message="form.errors.organization_id"
                             />

@@ -378,5 +378,162 @@ class LetterController extends Controller
 
         return response()->json(['letter' => $letter]);
     }
+
+    /**
+     * Get correspondence between current user and a specific pen pal
+     * Supports pagination, search, filter, and sort
+     */
+    public function getCorrespondence(Request $request, $penPalId)
+    {
+        $user = Auth::user();
+        
+        // Validate pen pal ID
+        $penPal = DB::selectOne("SELECT id, name FROM users WHERE id = ?", [$penPalId]);
+        if (!$penPal) {
+            return response()->json(['error' => 'Pen pal not found'], 404);
+        }
+
+        // Get pagination parameters
+        $page = $request->input('page', 1);
+        $perPage = $request->input('per_page', 10);
+        $search = $request->input('search', '');
+        $filter = $request->input('filter', 'all'); // 'all', 'me', 'them'
+        $sort = $request->input('sort', 'newest'); // 'newest', 'oldest'
+
+        // Build WHERE clause
+        $whereClause = "
+            WHERE l.deleted_at IS NULL
+            AND (
+                (l.sender_id = ? AND l.receiver_id = ?)
+                OR (l.sender_id = ? AND l.receiver_id = ?)
+            )
+        ";
+
+        $params = [$user->id, $penPalId, $penPalId, $user->id];
+
+        // Apply sender filter
+        if ($filter === 'me') {
+            $whereClause .= " AND l.sender_id = ?";
+            $params[] = $user->id;
+        } elseif ($filter === 'them') {
+            $whereClause .= " AND l.sender_id = ?";
+            $params[] = $penPalId;
+        }
+
+        // Apply search filter
+        if (!empty($search)) {
+            $searchTerm = '%' . $search . '%';
+            $whereClause .= " AND (
+                l.content LIKE ?
+                OR sender.name LIKE ?
+                OR receiver.name LIKE ?
+                OR DATE_FORMAT(l.sent_at, '%Y-%m-%d') LIKE ?
+                OR DATE_FORMAT(l.sent_at, '%M %d, %Y') LIKE ?
+            )";
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
+        }
+
+        // Build count query for pagination
+        $countQuery = "
+            SELECT COUNT(*) as total
+            FROM letters l
+            JOIN users sender ON l.sender_id = sender.id
+            JOIN users receiver ON l.receiver_id = receiver.id
+            " . $whereClause;
+        
+        $totalResult = DB::selectOne($countQuery, $params);
+        $total = $totalResult->total;
+
+        // Build main query with ORDER BY
+        $query = "
+            SELECT 
+                l.id,
+                l.content,
+                l.sent_at,
+                l.created_at,
+                l.sender_id,
+                sender.name as sender_name,
+                l.receiver_id,
+                receiver.name as receiver_name,
+                l.is_open_letter
+            FROM letters l
+            JOIN users sender ON l.sender_id = sender.id
+            JOIN users receiver ON l.receiver_id = receiver.id
+            " . $whereClause;
+
+        // Apply sort order
+        if ($sort === 'oldest') {
+            $query .= " ORDER BY l.sent_at ASC, l.created_at ASC";
+        } else {
+            $query .= " ORDER BY l.sent_at DESC, l.created_at DESC";
+        }
+
+        // Apply pagination
+        $offset = ($page - 1) * $perPage;
+        $query .= " LIMIT ? OFFSET ?";
+        $params[] = $perPage;
+        $params[] = $offset;
+
+        // Execute query
+        $messages = DB::select($query, $params);
+
+        // Calculate pagination metadata
+        $lastPage = ceil($total / $perPage);
+
+        return response()->json([
+            'messages' => $messages,
+            'pagination' => [
+                'current_page' => (int)$page,
+                'last_page' => $lastPage,
+                'per_page' => (int)$perPage,
+                'total' => $total,
+                'has_more' => $page < $lastPage,
+            ],
+        ]);
+    }
+
+    /**
+     * Get list of pen pals for the current user
+     * Returns users who have sent or received letters with the current user
+     */
+    public function getPenPals(Request $request)
+    {
+        $user = Auth::user();
+
+        // Get all unique pen pals (users who have sent or received letters with current user)
+        $penPals = DB::select("
+            SELECT DISTINCT 
+                u.id,
+                u.name,
+                u.email
+            FROM users u
+            WHERE u.id IN (
+                SELECT DISTINCT sender_id 
+                FROM letters 
+                WHERE receiver_id = ? 
+                AND is_open_letter = 0
+                AND deleted_at IS NULL
+                
+                UNION
+                
+                SELECT DISTINCT receiver_id 
+                FROM letters 
+                WHERE sender_id = ? 
+                AND is_open_letter = 0
+                AND deleted_at IS NULL
+            )
+            AND u.id != ?
+            ORDER BY u.name ASC
+        ", [$user->id, $user->id, $user->id]);
+
+        return response()->json([
+            'pen_pals' => $penPals,
+            'count' => count($penPals)
+        ]);
+    }
 }
 

@@ -6,6 +6,7 @@ import Dropdown from "@/Components/Dropdown.vue";
 import DropdownLink from "@/Components/DropdownLink.vue";
 import NavLink from "@/Components/NavLink.vue";
 import ResponsiveNavLink from "@/Components/ResponsiveNavLink.vue";
+import Avatar from "@/Components/Avatar.vue";
 
 defineProps({
     title: String,
@@ -157,36 +158,23 @@ const logout = () => {
                                         <button
                                             class="flex text-sm border-2 border-transparent rounded-full focus:outline-none focus:border-gray-300 transition"
                                         >
-                                            <img
-                                                v-if="
-                                                    $page.props.jetstream
-                                                        .managesProfilePhotos &&
-                                                    $page.props.auth.user
-                                                        .profile_photo_url
-                                                "
-                                                class="size-8 rounded-full object-cover"
+                                            <Avatar
                                                 :src="
+                                                    $page.props.jetstream
+                                                        ?.managesProfilePhotos &&
                                                     $page.props.auth.user
-                                                        .profile_photo_url
+                                                        ?.profile_photo_url
+                                                        ? $page.props.auth.user
+                                                              .profile_photo_url
+                                                        : null
                                                 "
-                                                :alt="
-                                                    $page.props.auth.user.name
+                                                :name="
+                                                    $page.props.auth.user
+                                                        ?.name || ''
                                                 "
+                                                size="sm"
+                                                border-color="white"
                                             />
-                                            <div
-                                                v-else
-                                                class="size-8 rounded-full bg-pressed flex items-center justify-center border-2 border-white"
-                                            >
-                                                <span
-                                                    class="text-white text-sm font-medium"
-                                                >
-                                                    {{
-                                                        $page.props.auth.user.name
-                                                            .charAt(0)
-                                                            .toUpperCase()
-                                                    }}
-                                                </span>
-                                            </div>
                                         </button>
                                     </template>
 
@@ -308,18 +296,19 @@ const logout = () => {
                     <!-- Responsive Settings Options -->
                     <div class="pt-4 pb-1 border-t border-white/20 text-white">
                         <div class="flex items-center px-4">
-                            <div
-                                v-if="
-                                    $page.props.jetstream.managesProfilePhotos
-                                "
-                                class="shrink-0 me-3"
-                            >
-                                <img
-                                    class="size-10 rounded-full object-cover"
+                            <div class="shrink-0 me-3">
+                                <Avatar
                                     :src="
-                                        $page.props.auth.user.profile_photo_url
+                                        $page.props.jetstream
+                                            ?.managesProfilePhotos &&
+                                        $page.props.auth.user?.profile_photo_url
+                                            ? $page.props.auth.user
+                                                  .profile_photo_url
+                                            : null
                                     "
-                                    :alt="$page.props.auth.user.name"
+                                    :name="$page.props.auth.user?.name || ''"
+                                    size="md"
+                                    border-color="white"
                                 />
                             </div>
 
@@ -386,7 +375,7 @@ const logout = () => {
                 <div
                     class="bg-primary text-white sticky top-20 h-[calc(100vh-5rem)] transition-all duration-300 ease-in-out overflow-y-auto md:block hidden"
                     :class="{
-                        'w-64': isSidebarOpen,
+                        'w-48': isSidebarOpen,
                         'w-0': !isSidebarOpen,
                     }"
                 >

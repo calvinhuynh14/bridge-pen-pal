@@ -289,6 +289,10 @@ class TestDataSeeder extends Seeder
             $this->command->info("Skipping letter seeding - {$existingLetters} letters already exist.");
         }
 
+        // Seed correspondence for resident 100000 (for testing Write page)
+        $this->seedCorrespondenceForResident100000();
+        $this->command->info('Created correspondence data for resident 100000.');
+
         $this->command->info('Test data seeded successfully!');
         $this->command->info('Created:');
         $this->command->info('- 5 Organizations');
@@ -483,6 +487,140 @@ class TestDataSeeder extends Seeder
                 'updated_at' => $now,
             ]);
         }
+    }
+
+    /**
+     * Seed correspondence for resident 100000 (for testing Write page)
+     * Creates multiple pen pals and 25+ messages to test pagination
+     */
+    private function seedCorrespondenceForResident100000()
+    {
+        // Get resident 100000
+        $resident100000 = DB::table('users')
+            ->where('username', '100000')
+            ->first();
+
+        if (!$resident100000) {
+            $this->command->warn('Resident 100000 not found. Skipping correspondence seeding.');
+            return;
+        }
+
+        // Get other approved residents to be pen pals (exclude resident 100000)
+        $penPals = DB::select("
+            SELECT u.id, u.name
+            FROM users u
+            JOIN resident r ON u.id = r.user_id
+            WHERE r.status = 'approved'
+            AND u.id != ?
+            LIMIT 3
+        ", [$resident100000->id]);
+
+        if (empty($penPals)) {
+            $this->command->warn('No other residents found for pen pals. Skipping correspondence seeding.');
+            return;
+        }
+
+        $now = now();
+        $correspondenceMessages = [
+            // Conversation starter messages
+            "Hello! I hope this letter finds you well. I wanted to reach out and share some thoughts with you.",
+            "Thank you for your letter! I really enjoyed reading it and would love to continue our conversation.",
+            "I'm so glad you responded! I've been thinking about what you said and I completely agree. Life has been quite interesting lately, and I'd love to hear more about your experiences.",
+            "That's wonderful to hear! I've been keeping busy with various projects. The weather has been lovely this week, perfect for taking walks in the park. How have you been spending your days?",
+            "I've been reading a fascinating book lately. It's about the history of our city and I'm learning so much. Have you read anything interesting recently?",
+            "That sounds intriguing! I haven't read much lately, but I've been meaning to pick up a new book. What's the title? I might check it out from the library.",
+            "It's called 'The Story of Our Town' by Margaret Johnson. I think you'd really enjoy it. The author has such a beautiful way of describing the places we know so well.",
+            "Thank you for the recommendation! I'll definitely look for it. By the way, I tried that recipe you mentioned in your last letter and it turned out great. My family loved it!",
+            "I'm so happy to hear that! Cooking is one of my favorite hobbies. I'm always experimenting with new recipes. Do you enjoy cooking as well?",
+            "I do enjoy it, though I'm still learning. I'd love to exchange more recipes with you. Maybe we could share our favorites?",
+            "That's a wonderful idea! I'll send you one of my grandmother's recipes in my next letter. She was an amazing cook and I think you'll love her apple pie recipe.",
+            "I can't wait to try it! My grandmother also had some amazing recipes. I'll share one of hers with you too.",
+            "How wonderful! I love hearing about family traditions. Food really brings people together, doesn't it?",
+            "Absolutely! Some of my best memories are from family gatherings around the dinner table. What are some of your favorite family memories?",
+            "I have so many wonderful memories. One that stands out is when my whole family would gather for holidays. The house would be full of laughter and love.",
+            "That sounds beautiful. Family is so important. I'm grateful for the connections I've made here and through letters like this.",
+            "Me too! Writing letters has been such a meaningful way to connect with others. I'm glad we started this correspondence.",
+            "I completely agree. There's something special about taking the time to write and receive letters. It feels more personal than other forms of communication.",
+            "Yes, exactly! I find myself thinking more carefully about what I want to say when I'm writing a letter. It's a nice change of pace.",
+            "I feel the same way. It's given me a chance to reflect on my thoughts and share them in a meaningful way.",
+            "I've really enjoyed our conversations. I hope we can continue writing to each other for a long time.",
+            "I hope so too! It's been wonderful getting to know you through these letters.",
+            "Thank you for being such a thoughtful pen pal. Your letters always brighten my day.",
+            "You're very kind to say that. Your letters do the same for me!",
+            "I'm looking forward to your next letter. Until then, take care!",
+            "Take care as well! I'll write again soon.",
+            "I wanted to share something exciting that happened yesterday. I finally finished that puzzle I've been working on for weeks!",
+            "Congratulations! I know how satisfying it is to complete something you've been working on. What was the picture of?",
+            "It was a beautiful landscape of the mountains. It reminded me of a trip I took years ago with my family.",
+            "That sounds like a wonderful memory. I've always wanted to visit the mountains. Maybe one day I'll get the chance.",
+            "I hope you do! The views are absolutely breathtaking. I'll send you a postcard if I ever go back.",
+            "I'd love that! Speaking of travel, have you ever been to the coast? I've always been drawn to the ocean.",
+            "Yes, I have! There's something so peaceful about watching the waves. I find it very calming.",
+            "I completely understand. Nature has a way of bringing peace to our lives, doesn't it?",
+            "It really does. I try to spend time outside every day, even if it's just sitting in the garden.",
+            "That's a lovely habit. I should try to do the same. What kind of flowers do you have in your garden?",
+            "I have roses, daisies, and some herbs. I love watching them grow and change with the seasons.",
+            "How wonderful! Gardening must be very rewarding. I've always wanted to try growing my own vegetables.",
+            "You should! There's nothing quite like eating something you've grown yourself. I'd be happy to share some tips if you're interested.",
+            "I would love that! Thank you for offering. Maybe we could exchange gardening stories in our letters.",
+            "That sounds like a great idea! I'm always happy to talk about my garden and learn from others too.",
+        ];
+
+        // Find Bob Smith specifically
+        $bobSmith = DB::table('users')
+            ->where('name', 'Bob Smith')
+            ->first();
+
+        // Create correspondence with each pen pal
+        foreach ($penPals as $penPal) {
+            // Bob Smith gets 30 messages, others get 8-10
+            $messageCount = ($bobSmith && $penPal->id == $bobSmith->id) ? 30 : rand(8, 10);
+            
+            for ($i = 0; $i < $messageCount; $i++) {
+                // Alternate sender between resident 100000 and pen pal
+                $senderId = ($i % 2 === 0) ? $resident100000->id : $penPal->id;
+                $receiverId = ($i % 2 === 0) ? $penPal->id : $resident100000->id;
+                
+                // Use different messages for variety
+                $content = $correspondenceMessages[$i % count($correspondenceMessages)];
+                
+                // Create messages over the past 90 days for Bob Smith (to fit 30 messages), 30 days for others
+                $maxDays = ($bobSmith && $penPal->id == $bobSmith->id) ? 90 : 30;
+                $daysAgo = ($i * $maxDays) / $messageCount; // Space messages evenly
+                $sentAt = $now->copy()->subDays($daysAgo)->subHours(rand(0, 23));
+                $deliveredAt = $sentAt->copy()->addHours(8);
+                
+                // Determine status
+                $status = 'delivered';
+                $readAt = null;
+                if ($deliveredAt->isPast()) {
+                    // Sometimes mark as read
+                    if (rand(0, 2) > 0) { // 66% chance of being read
+                        $readAt = $deliveredAt->copy()->addHours(rand(1, 48));
+                        $status = 'read';
+                    }
+                } else {
+                    $status = 'sent';
+                }
+
+                DB::table('letters')->insert([
+                    'sender_id' => $senderId,
+                    'receiver_id' => $receiverId,
+                    'content' => $content,
+                    'is_open_letter' => false,
+                    'parent_letter_id' => null,
+                    'status' => $status,
+                    'sent_at' => $sentAt,
+                    'delivered_at' => $deliveredAt,
+                    'read_at' => $readAt,
+                    'claimed_by' => null,
+                    'created_at' => $sentAt,
+                    'updated_at' => $now,
+                ]);
+            }
+        }
+
+        $this->command->info("Created correspondence for resident 100000 with " . count($penPals) . " pen pal(s).");
     }
 
     /**

@@ -3,6 +3,7 @@ import AppLayout from "@/Layouts/AppLayout.vue";
 import OpenLetterCard from "@/Components/OpenLetterCard.vue";
 import LetterViewModal from "@/Components/LetterViewModal.vue";
 import Modal from "@/Components/Modal.vue";
+import Avatar from "@/Components/Avatar.vue";
 import { Head, router } from "@inertiajs/vue3";
 import { computed, ref } from "vue";
 import { usePage } from "@inertiajs/vue3";
@@ -220,30 +221,16 @@ const submitReport = () => {
                             <div
                                 class="flex-shrink-0 flex flex-col items-center gap-3 sm:gap-4"
                             >
-                                <div
-                                    v-if="storyOfTheWeek.profile_photo_url"
-                                    class="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-pressed"
-                                >
-                                    <img
-                                        :src="storyOfTheWeek.profile_photo_url"
-                                        :alt="storyOfTheWeek.name"
-                                        class="w-full h-full object-cover"
-                                    />
-                                </div>
-                                <div
-                                    v-else
-                                    class="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 bg-pressed rounded-full flex items-center justify-center border-4 border-white"
-                                >
-                                    <span
-                                        class="text-white text-3xl sm:text-4xl md:text-5xl font-bold"
-                                    >
-                                        {{
-                                            storyOfTheWeek.name
-                                                .charAt(0)
-                                                .toUpperCase()
-                                        }}
-                                    </span>
-                                </div>
+                                <Avatar
+                                    :src="storyOfTheWeek.profile_photo_url"
+                                    :name="storyOfTheWeek.name"
+                                    size="custom"
+                                    custom-size="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40"
+                                    custom-text-size="text-3xl sm:text-4xl md:text-5xl"
+                                    border-color="pressed"
+                                    border-width="4"
+                                    text-color="white"
+                                />
                                 <h3
                                     class="text-xl sm:text-2xl md:text-3xl font-bold text-pressed text-center"
                                 >

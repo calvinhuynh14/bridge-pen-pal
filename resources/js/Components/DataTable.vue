@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed } from "vue";
 import { Link } from "@inertiajs/vue3";
+import Avatar from "@/Components/Avatar.vue";
 
 const props = defineProps({
     items: {
@@ -315,15 +316,14 @@ const formatDate = (dateString) => {
                                 v-if="column.key === 'avatar'"
                                 class="flex justify-center"
                             >
-                                <div
-                                    class="w-10 h-10 bg-primary rounded-full flex items-center justify-center border-2 border-pressed"
-                                >
-                                    <span
-                                        class="text-black text-lg font-medium"
-                                    >
-                                        {{ item.name.charAt(0).toUpperCase() }}
-                                    </span>
-                                </div>
+                                <Avatar
+                                    :src="item.profile_photo_url || item.avatar"
+                                    :name="item.name"
+                                    size="md"
+                                    border-color="pressed"
+                                    bg-color="primary"
+                                    text-color="black"
+                                />
                             </div>
 
                             <!-- Name -->
