@@ -49,6 +49,13 @@ const correspondenceSearchQuery = ref("");
 const sortOrder = ref("newest"); // "newest" or "oldest"
 const filterBySender = ref("all"); // "all", "me", or "them"
 
+// Writing interface state
+const showWritingInterface = ref(false);
+const selectedRecipient = ref(null); // null = open letter, or pen pal ID
+const letterContent = ref("");
+const isSending = ref(false);
+const sendError = ref(null);
+
 // Pagination state
 const currentPage = ref(1);
 const hasMorePages = ref(false);
@@ -537,8 +544,133 @@ const handleReply = (letterId) => {
 
 // Handle write new letter
 const handleWriteNew = () => {
-    // TODO: Navigate to compose letter page for selected pen pal
-    console.log("Write new letter to:", selectedPenPal.value);
+    // If viewing correspondence, pre-fill the recipient
+    if (selectedPenPal.value) {
+        selectedRecipient.value = selectedPenPal.value.id;
+    } else {
+        // Default to open letter if no pen pal selected
+        selectedRecipient.value = null;
+    }
+    showWritingInterface.value = true;
+};
+
+// Handle cancel/back from writing interface
+const handleCancelWrite = () => {
+    showWritingInterface.value = false;
+    letterContent.value = "";
+    selectedRecipient.value = null;
+    sendError.value = null;
+};
+
+// Character count computed
+const characterCount = computed(() => letterContent.value.length);
+const maxCharacters = 1000;
+const isOverLimit = computed(() => characterCount.value > maxCharacters);
+
+// Recipient options for dropdown (Open Letter + pen pals)
+const recipientOptions = computed(() => {
+    const options = [{ value: null, label: "Open Letter", isOpenLetter: true }];
+
+    // Add pen pals
+    penPals.value.forEach((pal) => {
+        options.push({
+            value: pal.id,
+            label: pal.name,
+            isOpenLetter: false,
+        });
+    });
+
+    return options;
+});
+
+// Handle content input with character limit
+const handleContentInput = (event) => {
+    const value = event.target.value;
+    if (value.length <= maxCharacters) {
+        letterContent.value = value;
+    } else {
+        // Prevent typing past limit
+        letterContent.value = value.substring(0, maxCharacters);
+        event.target.value = letterContent.value;
+    }
+    sendError.value = null; // Clear error on input
+};
+
+// Handle send letter
+const handleSendLetter = async () => {
+    // Validation
+    if (!letterContent.value.trim()) {
+        sendError.value = "Message is required";
+        return;
+    }
+
+    if (isOverLimit.value) {
+        sendError.value = `Message cannot exceed ${maxCharacters} characters`;
+        return;
+    }
+
+    isSending.value = true;
+    sendError.value = null;
+
+    try {
+        const isOpenLetter = selectedRecipient.value === null;
+        const payload = {
+            content: letterContent.value.trim(),
+            is_open_letter: isOpenLetter,
+        };
+
+        // Add receiver_id only if it's not an open letter
+        if (!isOpenLetter && selectedRecipient.value) {
+            payload.receiver_id = selectedRecipient.value;
+        }
+
+        const response = await axios.post("/api/letters", payload);
+
+        // Success - handle based on recipient type
+        if (isOpenLetter) {
+            // Open letter - just close the interface
+            handleCancelWrite();
+            // Optionally show a success message or refresh the discover page
+        } else {
+            // Pen pal letter - select the pen pal and show correspondence
+            const recipientPal = penPals.value.find(
+                (pal) => pal.id === selectedRecipient.value
+            );
+
+            if (recipientPal) {
+                // Close the writing interface first
+                showWritingInterface.value = false;
+                letterContent.value = "";
+                selectedRecipient.value = null;
+                sendError.value = null;
+
+                // Select the pen pal (this will load correspondence and show the new message)
+                selectPenPal(recipientPal);
+            } else {
+                // Pen pal not found in list, just close
+                handleCancelWrite();
+            }
+        }
+    } catch (error) {
+        console.error("Error sending letter:", error);
+        if (error.response?.data?.errors) {
+            // Validation errors from API
+            const errors = error.response.data.errors;
+            if (errors.content) {
+                sendError.value = errors.content[0];
+            } else if (errors.receiver_id) {
+                sendError.value = errors.receiver_id[0];
+            } else {
+                sendError.value = "Failed to send letter. Please try again.";
+            }
+        } else {
+            sendError.value =
+                error.response?.data?.message ||
+                "Failed to send letter. Please try again.";
+        }
+    } finally {
+        isSending.value = false;
+    }
 };
 
 // Report letter functions
@@ -648,9 +780,12 @@ onUnmounted(() => {
         <div class="py-2">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex gap-6 justify-center lg:justify-start">
-                    <!-- Correspondence Sidebar/List (Search, Incoming, Pen Pals) - Mobile: hidden when pen pal selected, Desktop: always visible -->
+                    <!-- Correspondence Sidebar/List (Search, Incoming, Pen Pals) - Mobile: hidden when pen pal selected or writing, Desktop: always visible unless writing -->
                     <div
-                        v-if="!selectedPenPal || windowWidth >= 1024"
+                        v-if="
+                            (!selectedPenPal && !showWritingInterface) ||
+                            (windowWidth >= 1024 && !showWritingInterface)
+                        "
                         class="flex-shrink-0 transition-all duration-300 w-full max-w-md lg:max-w-[280px] mx-auto lg:mx-0"
                     >
                         <!-- Incoming Letters Section - Hidden on mobile -->
@@ -896,9 +1031,136 @@ onUnmounted(() => {
                         </div>
                     </div>
 
+                    <!-- Writing Interface - Mobile: replaces main content, Desktop: replaces search/filters/messages -->
+                    <div
+                        v-if="showWritingInterface"
+                        class="flex-1 transition-all duration-300 w-full"
+                    >
+                        <!-- Mobile Back Button -->
+                        <div
+                            class="lg:hidden flex items-center gap-2 pb-2 px-2 border-b border-gray-200"
+                        >
+                            <button
+                                @click="handleCancelWrite"
+                                class="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                                aria-label="Cancel writing"
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 24 24"
+                                    fill="currentColor"
+                                    class="size-6 text-hover"
+                                >
+                                    <path
+                                        fill-rule="evenodd"
+                                        d="M9.53 2.47a.75.75 0 0 1 0 1.06L4.81 8.25H15a6.75 6.75 0 0 1 0 13.5h-3a.75.75 0 0 1 0-1.5h3a5.25 5.25 0 1 0 0-10.5H4.81l4.72 4.72a.75.75 0 1 1-1.06 1.06l-6-6a.75.75 0 0 1 0-1.06l6-6a.75.75 0 0 1 1.06 0Z"
+                                        clip-rule="evenodd"
+                                    />
+                                </svg>
+                            </button>
+                            <h3 class="text-lg font-bold text-pressed">
+                                Write Letter
+                            </h3>
+                        </div>
+
+                        <!-- Desktop Header -->
+                        <div
+                            class="hidden lg:block mb-3 pb-2 border-b border-gray-200"
+                        >
+                            <div class="flex items-center gap-2">
+                                <button
+                                    @click="handleCancelWrite"
+                                    class="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                                    aria-label="Cancel writing"
+                                >
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        viewBox="0 0 24 24"
+                                        fill="currentColor"
+                                        class="size-5 text-hover"
+                                    >
+                                        <path
+                                            fill-rule="evenodd"
+                                            d="M9.53 2.47a.75.75 0 0 1 0 1.06L4.81 8.25H15a6.75 6.75 0 0 1 0 13.5h-3a.75.75 0 0 1 0-1.5h3a5.25 5.25 0 1 0 0-10.5H4.81l4.72 4.72a.75.75 0 1 1-1.06 1.06l-6-6a.75.75 0 0 1 0-1.06l6-6a.75.75 0 0 1 1.06 0Z"
+                                            clip-rule="evenodd"
+                                        />
+                                    </svg>
+                                </button>
+                                <h3 class="text-lg font-bold text-pressed">
+                                    Write Letter
+                                </h3>
+                            </div>
+                        </div>
+
+                        <!-- Writing Form -->
+                        <div class="space-y-4">
+                            <!-- To Field (Recipient Dropdown) -->
+                            <div>
+                                <label
+                                    for="recipient"
+                                    class="block text-sm font-medium text-gray-700 mb-2"
+                                >
+                                    To:
+                                </label>
+                                <select
+                                    id="recipient"
+                                    v-model="selectedRecipient"
+                                    class="w-full bg-white rounded-lg border-2 border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 px-3 py-2 text-sm text-gray-900 focus:outline-none cursor-pointer transition-colors"
+                                >
+                                    <option
+                                        v-for="option in recipientOptions"
+                                        :key="
+                                            option.value === null
+                                                ? 'open-letter'
+                                                : option.value
+                                        "
+                                        :value="option.value"
+                                    >
+                                        {{ option.label }}
+                                    </option>
+                                </select>
+                            </div>
+
+                            <!-- Message Content -->
+                            <div>
+                                <label
+                                    for="letterContent"
+                                    class="block text-sm font-medium text-gray-700 mb-2"
+                                >
+                                    Message:
+                                </label>
+                                <textarea
+                                    id="letterContent"
+                                    :value="letterContent"
+                                    @input="handleContentInput"
+                                    rows="12"
+                                    class="w-full px-4 py-3 border-2 border-gray-300 bg-white text-black rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none placeholder:text-gray-500"
+                                    placeholder="Write your message here..."
+                                    :maxlength="maxCharacters"
+                                ></textarea>
+
+                                <!-- Character Counter -->
+                                <div
+                                    class="mt-1 flex justify-between items-center"
+                                >
+                                    <p
+                                        v-if="sendError"
+                                        class="text-sm text-red-600"
+                                    >
+                                        {{ sendError }}
+                                    </p>
+                                    <p v-else class="text-sm text-gray-500">
+                                        {{ characterCount }} /
+                                        {{ maxCharacters }} characters
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Message Section (Correspondence View) - Mobile: replaces main content, Desktop: takes remaining space -->
                     <div
-                        v-if="selectedPenPal"
+                        v-else-if="selectedPenPal"
                         class="flex-1 transition-all duration-300 w-full"
                     >
                         <!-- Mobile Back Button -->
@@ -1104,8 +1366,9 @@ onUnmounted(() => {
                 </div>
             </div>
 
-            <!-- Floating Write Button - Always visible, positioned outside containers -->
+            <!-- Floating Write Button - Hidden when writing interface is open -->
             <button
+                v-if="!showWritingInterface"
                 @click="handleWriteNew"
                 class="fixed bottom-20 right-4 lg:bottom-4 bg-accent hover:bg-pressed text-hover rounded-full p-4 lg:p-6 transition-colors flex items-center justify-center z-50 w-fit shadow-lg"
                 aria-label="Write new letter"
@@ -1121,6 +1384,42 @@ onUnmounted(() => {
                     />
                     <path
                         d="M5.25 5.25a3 3 0 0 0-3 3v10.5a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3V13.5a.75.75 0 0 0-1.5 0v5.25a1.5 1.5 0 0 1-1.5 1.5H5.25a1.5 1.5 0 0 1-1.5-1.5V8.25a1.5 1.5 0 0 1 1.5-1.5h5.25a.75.75 0 0 0 0-1.5H5.25Z"
+                    />
+                </svg>
+            </button>
+
+            <!-- Floating Send Button - Only visible when writing interface is open -->
+            <button
+                v-if="showWritingInterface"
+                @click="handleSendLetter"
+                :disabled="isSending || !letterContent.trim() || isOverLimit"
+                class="fixed bottom-20 right-4 lg:bottom-4 bg-accent hover:bg-pressed text-hover rounded-full p-4 lg:p-6 transition-colors flex items-center justify-center z-50 w-fit shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label="Send letter"
+            >
+                <svg
+                    v-if="isSending"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    class="size-6 lg:size-8 animate-spin"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"
+                    />
+                </svg>
+                <svg
+                    v-else
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                    class="size-6 lg:size-8"
+                >
+                    <path
+                        d="M3.478 2.404a.75.75 0 0 0-.926.941l2.432 7.905H13.5a.75.75 0 0 1 0 1.5H4.984l-2.432 7.905a.75.75 0 0 0 .926.94 60.519 60.519 0 0 0 18.445-8.986.75.75 0 0 0 0-1.218A60.517 60.517 0 0 0 3.478 2.404Z"
                     />
                 </svg>
             </button>

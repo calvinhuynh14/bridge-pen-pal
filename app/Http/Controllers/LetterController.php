@@ -44,11 +44,12 @@ class LetterController extends Controller
                 l.status,
                 sender.id as sender_id,
                 sender.name as sender_name,
-                sender.user_type as sender_type,
+                ut.name as sender_type,
                 receiver.id as receiver_id,
                 receiver.name as receiver_name
             FROM letters l
             JOIN users sender ON l.sender_id = sender.id
+            JOIN user_types ut ON sender.user_type_id = ut.id
             LEFT JOIN users receiver ON l.receiver_id = receiver.id
             WHERE l.is_open_letter = 1
             AND l.status IN ('sent', 'delivered')
@@ -60,17 +61,17 @@ class LetterController extends Controller
         // Filter based on user type
         if ($userType === 'volunteer') {
             // Volunteers can only see open letters from residents
-            $query .= " AND sender.user_type = 'resident'";
+            $query .= " AND ut.name = 'resident'";
         } elseif ($userType === 'resident') {
             // Residents can see open letters from other residents
-            $query .= " AND sender.user_type = 'resident'";
+            $query .= " AND ut.name = 'resident'";
         }
 
         // Exclude letters already claimed by current user
         $query .= " AND (l.claimed_by IS NULL OR l.claimed_by != ?)";
         $params[] = $user->id;
 
-        // Exclude letters sent by current user
+        // Exclude letters sent by current user (users cannot see their own open letters)
         $query .= " AND l.sender_id != ?";
         $params[] = $user->id;
 
