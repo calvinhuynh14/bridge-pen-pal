@@ -48,6 +48,38 @@ const submit = () => {
     });
 };
 
+// Helper function to get error message from form errors
+const getErrorMessage = () => {
+    // Check various error fields and return the first available message
+    if (form.errors.email) {
+        return Array.isArray(form.errors.email)
+            ? form.errors.email[0]
+            : form.errors.email;
+    }
+    if (form.errors.password) {
+        return Array.isArray(form.errors.password)
+            ? form.errors.password[0]
+            : form.errors.password;
+    }
+    if (form.errors.message) {
+        return Array.isArray(form.errors.message)
+            ? form.errors.message[0]
+            : form.errors.message;
+    }
+    if (form.errors.error) {
+        return Array.isArray(form.errors.error)
+            ? form.errors.error[0]
+            : form.errors.error;
+    }
+    // Get first error from any field
+    const firstErrorKey = Object.keys(form.errors)[0];
+    if (firstErrorKey) {
+        const firstError = form.errors[firstErrorKey];
+        return Array.isArray(firstError) ? firstError[0] : firstError;
+    }
+    return "These credentials do not match our records.";
+};
+
 // Get display text based on user type
 const getUserTypeDisplay = (type) => {
     const types = {
@@ -85,11 +117,22 @@ const getSubtitle = (type) => {
 
     <!-- Main Container -->
     <div
-        class="flex flex-col md:flex-row lg:flex-row min-h-screen bg-background items-center justify-center p-4 gap-4"
+        :class="[
+            'flex flex-col lg:flex-row',
+            'min-h-screen bg-background items-center justify-center',
+            type === 'resident'
+                ? 'pt-2 pb-2 px-2 lg:p-4 gap-2 lg:gap-4'
+                : 'p-2 lg:p-4 gap-4',
+        ]"
     >
         <!-- Hero Section -->
         <section
-            class="flex flex-col max-w-7xl bg-background rounded-lg lg:m-8 lg:p-8 lg:gap-8 text-center items-center justify-center"
+            :class="[
+                'flex flex-col max-w-7xl bg-background rounded-lg lg:m-8 lg:p-8 lg:gap-8 text-center',
+                type === 'resident'
+                    ? 'items-center justify-center lg:pt-0'
+                    : 'items-center justify-center',
+            ]"
         >
             <div class="flex-1">
                 <h1
@@ -105,19 +148,24 @@ const getSubtitle = (type) => {
             </div>
 
             <div
-                class="flex items-center justify-center w-3/4 md:w-3/5 lg:w-1/2"
+                class="flex lg:flex items-center justify-center w-2/3 lg:w-1/2"
             >
                 <img
                     src="/images/logos/logo-with-name-purple.svg"
                     alt="Bridge Logo"
-                    class="w-full h-full object-contain md:w-1/2 lg:w-full"
+                    class="w-full h-auto object-contain max-w-[280px] lg:max-w-none lg:w-full"
                 />
             </div>
 
-            <!-- Sign Up Section -->
-            <div class="text-center mb-4">
-                <p class="text-hover font-bold text-lg">Not a volunteer?</p>
-                <Link :href="route('register', { type: 'volunteer' })">
+            <!-- Sign Up Section - for desktop only -->
+            <div
+                v-if="type !== 'resident'"
+                class="hidden lg:block text-center mb-4"
+            >
+                <p class="text-hover font-bold text-lg">
+                    Not a {{ type === "admin" ? "admin" : "volunteer" }}?
+                </p>
+                <Link :href="route('register', { type: type })">
                     <CustomButton
                         text="Sign Up"
                         preset="neutral"
@@ -125,38 +173,13 @@ const getSubtitle = (type) => {
                     />
                 </Link>
             </div>
-
-            <!-- Google sign-in only for non-residents -->
-            <div v-if="type !== 'resident'" class="text-center">
-                <a
-                    :href="route('auth.google.redirect', { type: type })"
-                    class="block lg:hidden"
-                >
-                    <img
-                        src="/images/logos/web_neutral_rd_SU.svg"
-                        alt="Sign in with Google"
-                        class="h-10 mx-auto"
-                    />
-                </a>
-
-                <!-- Divider line with OR - only visible on small screens -->
-                <div class="md:hidden mt-4">
-                    <div class="relative flex items-center">
-                        <div class="flex-grow h-0.5 bg-gray-300"></div>
-                        <span class="px-3 text-gray-500 text-sm bg-background"
-                            >OR</span
-                        >
-                        <div class="flex-grow h-0.5 bg-gray-300"></div>
-                    </div>
-                </div>
-            </div>
         </section>
 
         <!-- Login Form Section -->
         <section
-            class="flex flex-col mx-8 lg:bg-primary md:w-full justify-center lg:items-center lg:rounded-lg lg:py-16 lg:px-8"
+            class="flex flex-col mx-2 lg:mx-8 lg:bg-primary lg:w-full justify-center lg:items-center lg:rounded-lg lg:py-16 lg:px-8"
         >
-            <div class="flex-1 mb-8">
+            <div class="flex-1 mb-8 text-center">
                 <h1
                     class="hidden lg:block text-white text-2xl lg:text-4xl xl:text-6xl"
                 >
@@ -164,9 +187,29 @@ const getSubtitle = (type) => {
                 </h1>
             </div>
             <!-- Login Form -->
-            <div class="rounded-lg px-8 max-w-md mx-auto space-y-4">
-                <div v-if="status" class="font-medium text-sm text-green-600">
+            <div class="rounded-lg px-4 lg:px-4 max-w-md mx-auto space-y-4">
+                <!-- "Log in to Bridge" heading for mobile (all user types) -->
+                <div class="flex lg:hidden mb-2 text-center">
+                    <h1 class="text-primary text-2xl font-bold w-full">
+                        Log in to Bridge
+                    </h1>
+                </div>
+
+                <div
+                    v-if="status"
+                    class="font-medium text-sm text-green-600 mb-4"
+                >
                     {{ status }}
+                </div>
+
+                <!-- Authentication Error Message -->
+                <div
+                    v-if="Object.keys(form.errors).length > 0"
+                    class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg"
+                >
+                    <p class="text-sm text-red-600 font-medium">
+                        {{ getErrorMessage() }}
+                    </p>
                 </div>
 
                 <form @submit.prevent="submit">
@@ -199,8 +242,14 @@ const getSubtitle = (type) => {
                                 required
                                 autofocus
                                 autocomplete="username"
-                                placeholder="Enter your username"
+                                placeholder="Enter your 6-digit username"
+                                maxlength="6"
+                                pattern="[0-9]{6}"
+                                inputmode="numeric"
                             />
+                            <p class="mt-1 text-xs text-gray-500">
+                                6 digits only
+                            </p>
                             <InputError
                                 class="mt-2"
                                 :message="form.errors.username"
@@ -216,8 +265,25 @@ const getSubtitle = (type) => {
                                 class="mt-2 block w-full border-gray-300 rounded-lg focus:border-primary focus:ring-primary"
                                 required
                                 autocomplete="current-password"
-                                placeholder="Enter your password"
+                                :placeholder="
+                                    type === 'resident'
+                                        ? 'Enter your 6-digit PIN'
+                                        : 'Enter your password'
+                                "
+                                :maxlength="type === 'resident' ? 6 : undefined"
+                                :pattern="
+                                    type === 'resident' ? '[0-9]{6}' : undefined
+                                "
+                                :inputmode="
+                                    type === 'resident' ? 'numeric' : undefined
+                                "
                             />
+                            <p
+                                v-if="type === 'resident'"
+                                class="mt-1 text-xs text-gray-500"
+                            >
+                                6 digits only
+                            </p>
                             <InputError
                                 class="mt-2"
                                 :message="form.errors.password"
@@ -233,7 +299,7 @@ const getSubtitle = (type) => {
                             />
                             <label
                                 for="remember"
-                                class="ml-2 text-md text-white font-bold dark:text-white"
+                                class="ml-2 text-md text-hover font-bold"
                             >
                                 Remember me
                             </label>
@@ -263,12 +329,41 @@ const getSubtitle = (type) => {
                     </div>
                 </form>
 
-                <!-- Google sign-in only for non-residents -->
+                <!-- Google sign-in for mobile (non-residents) -->
                 <div
                     v-if="type !== 'resident'"
-                    class="hidden lg:block text-center space-y-4"
+                    class="lg:hidden text-center space-y-4 mt-4"
                 >
-                    <!-- Divider line with OR - only visible on small screens -->
+                    <!-- Divider line with OR -->
+                    <div class="relative flex items-center">
+                        <div class="flex-grow h-0.5 bg-gray-300"></div>
+                        <span class="px-3 text-gray-500 text-sm bg-background"
+                            >OR</span
+                        >
+                        <div class="flex-grow h-0.5 bg-gray-300"></div>
+                    </div>
+
+                    <div class="flex items-center justify-center">
+                        <a
+                            :href="
+                                route('auth.google.redirect', { type: type })
+                            "
+                        >
+                            <img
+                                src="/images/logos/web_neutral_sq_ctn.svg"
+                                alt="Continue with Google"
+                                class="h-10"
+                            />
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Google sign-in for desktop (non-residents) -->
+                <div
+                    v-if="type !== 'resident'"
+                    class="hidden lg:block text-center space-y-4 mt-4"
+                >
+                    <!-- Divider line with OR -->
                     <div class="relative flex items-center">
                         <div class="flex-grow h-0.5 bg-black"></div>
                         <span class="px-3 text-black text-md">OR</span>
@@ -291,5 +386,15 @@ const getSubtitle = (type) => {
                 </div>
             </div>
         </section>
+
+        <!-- Sign Up Section - at bottom for mobile -->
+        <div v-if="type !== 'resident'" class="lg:hidden text-center mt-4 mb-4">
+            <p class="text-hover font-bold text-lg">
+                Not a {{ type === "admin" ? "admin" : "volunteer" }}?
+            </p>
+            <Link :href="route('register', { type: type })">
+                <CustomButton text="Sign Up" preset="neutral" size="small" />
+            </Link>
+        </div>
     </div>
 </template>

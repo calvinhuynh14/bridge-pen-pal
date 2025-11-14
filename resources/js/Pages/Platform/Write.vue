@@ -1,8 +1,8 @@
 <script setup>
 import AppLayout from "@/Layouts/AppLayout.vue";
 import { Head } from "@inertiajs/vue3";
-import { computed, ref, onMounted, onUnmounted, watch } from "vue";
-import { usePage } from "@inertiajs/vue3";
+import { computed, ref, onMounted, onUnmounted, watch, nextTick } from "vue";
+import { usePage, useRoute } from "@inertiajs/vue3";
 import { router } from "@inertiajs/vue3";
 import axios from "axios";
 import LetterCard from "@/Components/LetterCard.vue";
@@ -10,6 +10,7 @@ import LetterViewModal from "@/Components/LetterViewModal.vue";
 import Modal from "@/Components/Modal.vue";
 import SearchBar from "@/Components/SearchBar.vue";
 import FilterControls from "@/Components/FilterControls.vue";
+import Select from "@/Components/Select.vue";
 import Avatar from "@/Components/Avatar.vue";
 import LoadingSpinner from "@/Components/LoadingSpinner.vue";
 
@@ -126,7 +127,7 @@ const loadPenPals = async (page = 1, append = false) => {
             penPals.value = [
                 ...penPals.value,
                 ...pen_pals.map((pal) => ({
-                    id: pal.id,
+                    id: Number(pal.id), // Ensure ID is a number
                     name: pal.name,
                     avatar: null, // Can be added later if avatars are stored
                     has_messages:
@@ -137,7 +138,7 @@ const loadPenPals = async (page = 1, append = false) => {
         } else {
             // Replace pen pals
             penPals.value = pen_pals.map((pal) => ({
-                id: pal.id,
+                id: Number(pal.id), // Ensure ID is a number
                 name: pal.name,
                 avatar: null, // Can be added later if avatars are stored
                 has_messages:
@@ -536,10 +537,58 @@ const closeViewModal = () => {
     viewingLetter.value = null;
 };
 
-// Handle reply
-const handleReply = (letterId) => {
-    // TODO: Navigate to compose letter page
-    console.log("Reply to letter:", letterId);
+// Handle reply - fetch letter and open writing interface
+const handleReply = async (letterId) => {
+    try {
+        // Fetch letter details
+        const response = await axios.get(`/api/letters/${letterId}`);
+        const letter = response.data.letter;
+
+        if (!letter || !letter.sender_id) {
+            console.error("Invalid letter data:", letter);
+            alert("Failed to load letter. Invalid data received.");
+            return;
+        }
+
+        // Ensure pen pals are loaded first
+        if (penPals.value.length === 0) {
+            await loadPenPals(1, false);
+        }
+
+        // Convert sender_id to number for consistent comparison
+        const senderId = Number(letter.sender_id);
+
+        // Check if sender is already in pen pals list
+        let senderPenPal = penPals.value.find(
+            (pal) => Number(pal.id) === senderId
+        );
+
+        // If not found, add sender to pen pals list
+        if (!senderPenPal) {
+            senderPenPal = {
+                id: senderId,
+                name: letter.sender_name || "Unknown",
+                avatar: null,
+                has_messages: false,
+                unread_count: 0,
+            };
+            penPals.value.push(senderPenPal);
+        }
+
+        // Wait for Vue to update the reactive state (recipientOptions computed)
+        await nextTick();
+        // Small additional delay to ensure Select component updates
+        await new Promise((resolve) => setTimeout(resolve, 50));
+
+        // Pre-select the sender as recipient (ensure it's a number)
+        selectedRecipient.value = senderId;
+
+        // Open writing interface
+        showWritingInterface.value = true;
+    } catch (error) {
+        console.error("Error loading letter for reply:", error);
+        alert("Failed to load letter. Please try again.");
+    }
 };
 
 // Handle write new letter
@@ -735,13 +784,26 @@ const updateWindowWidth = () => {
     windowWidth.value = window.innerWidth;
 };
 
-onMounted(() => {
+onMounted(async () => {
     if (typeof window !== "undefined") {
         window.addEventListener("resize", updateWindowWidth);
     }
     // Load data when component mounts
     loadIncomingLetters();
-    loadPenPals(1, false);
+    await loadPenPals(1, false);
+
+    // Check for letterId query parameter for reply functionality
+    const urlParams = new URLSearchParams(window.location.search);
+    const letterId = urlParams.get("letterId");
+    if (letterId) {
+        // Remove the query parameter from URL
+        const url = new URL(window.location.href);
+        url.searchParams.delete("letterId");
+        window.history.replaceState({}, "", url);
+
+        // Handle reply
+        await handleReply(letterId);
+    }
 });
 
 onUnmounted(() => {
@@ -1102,23 +1164,11 @@ onUnmounted(() => {
                                 >
                                     To:
                                 </label>
-                                <select
+                                <Select
                                     id="recipient"
                                     v-model="selectedRecipient"
-                                    class="w-full bg-white rounded-lg border-2 border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 px-3 py-2 text-sm text-gray-900 focus:outline-none cursor-pointer transition-colors"
-                                >
-                                    <option
-                                        v-for="option in recipientOptions"
-                                        :key="
-                                            option.value === null
-                                                ? 'open-letter'
-                                                : option.value
-                                        "
-                                        :value="option.value"
-                                    >
-                                        {{ option.label }}
-                                    </option>
-                                </select>
+                                    :options="recipientOptions"
+                                />
                             </div>
 
                             <!-- Message Content -->

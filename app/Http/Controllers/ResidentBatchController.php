@@ -24,8 +24,18 @@ class ResidentBatchController extends Controller
     {
         $user = auth()->user();
         
+        // Ensure user is admin and has organization
+        if (!$user || !$user->isAdmin()) {
+            abort(403, 'Unauthorized');
+        }
+        
         // Get admin's organization
         $adminRecord = DB::select('SELECT organization_id FROM admin WHERE user_id = ?', [$user->id]);
+        
+        if (empty($adminRecord)) {
+            return redirect()->route('admin.dashboard');
+        }
+        
         $organizationId = $adminRecord[0]->organization_id ?? null;
         
         return Inertia::render('Admin/ResidentBatchUpload', [
@@ -44,8 +54,18 @@ class ResidentBatchController extends Controller
         
         $user = auth()->user();
         
+        // Ensure user is admin and has organization
+        if (!$user || !$user->isAdmin()) {
+            abort(403, 'Unauthorized');
+        }
+        
         // Get admin's organization
         $adminRecord = DB::select('SELECT organization_id FROM admin WHERE user_id = ?', [$user->id]);
+        
+        if (empty($adminRecord)) {
+            return redirect()->route('admin.dashboard')->withErrors(['error' => 'Organization setup required']);
+        }
+        
         $organizationId = $adminRecord[0]->organization_id ?? null;
         
         if (!$organizationId) {

@@ -20,6 +20,8 @@ return Application::configure(basePath: dirname(__DIR__))
         // Register custom middleware
         $middleware->alias([
             'volunteer.approved' => \App\Http\Middleware\CheckVolunteerApproval::class,
+            'admin.has.organization' => \App\Http\Middleware\EnsureAdminHasOrganization::class,
+            'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

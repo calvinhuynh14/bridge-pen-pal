@@ -33,13 +33,20 @@ class CreateNewUser implements CreatesNewUsers
         }
         $userTypeName = $userType->name;
         
+        // Check if this is a Google OAuth user
+        $isGoogleUser = session()->has('google_user');
+        
         // Define validation rules based on user type
         $rules = [
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'password' => $this->passwordRules(),
             'user_type_id' => ['required', 'integer', 'exists:user_types,id'],
             'terms' => Jetstream::hasTermsAndPrivacyPolicyFeature() ? ['accepted', 'required'] : '',
         ];
+        
+        // Password is only required for non-Google users
+        if (!$isGoogleUser) {
+            $rules['password'] = $this->passwordRules();
+        }
 
         // Add type-specific validation rules
         switch ($userTypeName) {
@@ -50,7 +57,7 @@ class CreateNewUser implements CreatesNewUsers
                 $rules['first_name'] = ['required', 'string', 'max:255'];
                 $rules['last_name'] = ['required', 'string', 'max:255'];
                 $rules['organization_id'] = ['required', 'integer', 'exists:organization,id'];
-                // Removed application_notes validation as column was dropped
+                $rules['application_notes'] = ['nullable', 'string', 'max:2000'];
                 break;
             case 'admin':
                 $rules['organization_name'] = ['required', 'string', 'max:255'];
@@ -60,15 +67,22 @@ class CreateNewUser implements CreatesNewUsers
         Validator::make($input, $rules)->validate();
 
         // Determine the name field based on user type
-        $name = match ($userTypeName) {
-            'resident' => $input['name'],
-            'volunteer' => $input['first_name'] . ' ' . $input['last_name'],
-            'admin' => $input['organization_name'],
-            default => $input['name'] ?? 'User',
+        // Sanitize all text inputs to prevent XSS attacks
+        $sanitizeText = function($text) {
+            if (empty($text)) {
+                return $text;
+            }
+            // Strip HTML tags and trim whitespace
+            return trim(strip_tags($text));
         };
-
-        // Check if this is a Google OAuth user
-        $isGoogleUser = session()->has('google_user');
+        
+        // Sanitize name fields based on user type
+        $name = match ($userTypeName) {
+            'resident' => $sanitizeText($input['name']),
+            'volunteer' => $sanitizeText($input['first_name']) . ' ' . $sanitizeText($input['last_name']),
+            'admin' => $sanitizeText($input['organization_name']),
+            default => $sanitizeText($input['name'] ?? 'User'),
+        };
         
         // Create the user
         $user = User::create([
@@ -81,15 +95,19 @@ class CreateNewUser implements CreatesNewUsers
         /**
          * Use raw SQL queries
          */
+        
         // Handle user type specific logic
         if ($userTypeName === 'admin') {
             // Create organization and admin record
-            DB::transaction(function () use ($user, $input) {
+            DB::transaction(function () use ($user, $input, $sanitizeText) {
+                // Sanitize organization name
+                $organizationName = $sanitizeText($input['organization_name']);
+                
                 // Create organization using raw SQL
                 DB::insert(
                     'INSERT INTO organization (name, created_at, updated_at) VALUES (?, ?, ?)',
                     [
-                        $input['organization_name'],
+                        $organizationName,
                         now(),
                         now()
                     ]
@@ -111,14 +129,25 @@ class CreateNewUser implements CreatesNewUsers
             });
         } elseif ($userTypeName === 'volunteer') {
             // Create volunteer application record
-            DB::transaction(function () use ($user, $input) {
+            DB::transaction(function () use ($user, $input, $sanitizeText) {
+                // Sanitize application_notes to prevent XSS attacks
+                $applicationNotes = null;
+                if (!empty($input['application_notes'])) {
+                    $applicationNotes = $sanitizeText($input['application_notes']);
+                    // If empty after sanitization, set to null
+                    if (empty($applicationNotes)) {
+                        $applicationNotes = null;
+                    }
+                }
+                
                 DB::insert(
-                    'INSERT INTO volunteer (user_id, organization_id, status, application_date, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
+                    'INSERT INTO volunteer (user_id, organization_id, status, application_date, application_notes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
                     [
                         $user->id,
                         $input['organization_id'],
                         'pending',
                         now(),
+                        $applicationNotes,
                         now(),
                         now()
                     ]
@@ -130,6 +159,14 @@ class CreateNewUser implements CreatesNewUsers
         if ($isGoogleUser) {
             session()->forget('google_user');
         }
+
+        \Log::info('CreateNewUser - User created successfully', [
+            'user_id' => $user->id,
+            'email' => $user->email,
+            'user_type' => $userTypeName,
+            'is_google_user' => $isGoogleUser,
+            'volunteer_created' => $userTypeName === 'volunteer'
+        ]);
 
         return $user;
     }

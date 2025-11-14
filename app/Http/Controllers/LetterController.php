@@ -125,12 +125,25 @@ class LetterController extends Controller
 
         // Check user type restrictions
         $sender = DB::selectOne("
-            SELECT user_type
-            FROM users
-            WHERE id = ?
+            SELECT u.id, ut.name as user_type
+            FROM users u
+            JOIN user_types ut ON u.user_type_id = ut.id
+            WHERE u.id = ?
         ", [$letter->sender_id]);
 
-        if ($user->user_type === 'volunteer' && $sender->user_type === 'volunteer') {
+        if (!$sender) {
+            return response()->json(['error' => 'Sender not found'], 404);
+        }
+
+        // Get current user's user type
+        $currentUserType = DB::selectOne("
+            SELECT ut.name as user_type
+            FROM users u
+            JOIN user_types ut ON u.user_type_id = ut.id
+            WHERE u.id = ?
+        ", [$user->id]);
+
+        if ($currentUserType->user_type === 'volunteer' && $sender->user_type === 'volunteer') {
             return response()->json(['error' => 'Volunteers cannot claim letters from other volunteers'], 400);
         }
 

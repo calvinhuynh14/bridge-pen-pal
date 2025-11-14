@@ -47,13 +47,6 @@ const paginatedLetters = computed(() => {
 const goToPage = (pageNum) => {
     if (pageNum >= 1 && pageNum <= totalPages.value) {
         currentPage.value = pageNum;
-        // Scroll to top of letters section
-        window.scrollTo({
-            top:
-                document.querySelector(".bg-primary.rounded-lg")?.offsetTop -
-                    100 || 0,
-            behavior: "smooth",
-        });
     }
 };
 
@@ -291,6 +284,7 @@ const submitReport = () => {
                             @claim="handleClaim"
                             @report="handleReport"
                             @view="handleView"
+                            @reply="handleReply"
                         />
                     </div>
 

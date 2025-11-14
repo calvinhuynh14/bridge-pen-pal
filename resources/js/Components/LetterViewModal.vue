@@ -12,7 +12,7 @@ const props = defineProps({
     },
 });
 
-const emit = defineEmits(["close"]);
+const emit = defineEmits(["close", "reply"]);
 
 // Format date helper (date only, no time)
 const formatDate = (dateString) => {

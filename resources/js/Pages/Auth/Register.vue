@@ -8,6 +8,7 @@ import InputError from "@/Components/InputError.vue";
 import InputLabel from "@/Components/InputLabel.vue";
 import PrimaryButton from "@/Components/PrimaryButton.vue";
 import TextInput from "@/Components/TextInput.vue";
+import Select from "@/Components/Select.vue";
 import CustomButton from "@/Components/CustomButton.vue";
 import SimpleHeader from "@/Components/SimpleHeader.vue";
 
@@ -59,7 +60,7 @@ const form = useForm({
     first_name: props.googleUser?.name?.split(" ")[0] || "",
     last_name: props.googleUser?.name?.split(" ").slice(1).join(" ") || "",
     organization_id: "",
-    // Removed application_notes as column was dropped
+    application_notes: "",
 
     // Admin fields
     organization_name: "",
@@ -78,7 +79,12 @@ const submit = () => {
     console.log("========================");
 
     form.post(route("register"), {
-        onFinish: () =>
+        onSuccess: (page) => {
+            // Fortify will handle the redirect automatically
+            // But we can also manually redirect if needed
+            console.log("Registration successful", page);
+
+            // Reset form fields
             form.reset(
                 "password",
                 "password_confirmation",
@@ -86,9 +92,16 @@ const submit = () => {
                 "first_name",
                 "last_name",
                 "organization_id",
-                // Removed application_notes as column was dropped
+                "application_notes",
                 "organization_name"
-            ),
+            );
+        },
+        onError: (errors) => {
+            console.error("Registration errors:", errors);
+        },
+        onFinish: () => {
+            // This runs after success or error
+        },
     });
 };
 
@@ -123,6 +136,23 @@ const getSubtitle = (type) => {
 // Check if this is a Google OAuth user
 const isGoogleUser = computed(() => {
     return props.google === "true" && props.googleUser;
+});
+
+// Convert organizations to Select component format
+const organizationOptions = computed(() => {
+    return props.organizations.map((org) => ({
+        value: org.id,
+        label: org.name,
+    }));
+});
+
+// Character limit for application notes
+const APPLICATION_NOTES_MAX_LENGTH = 2000;
+const applicationNotesLength = computed(() => {
+    return form.application_notes?.length || 0;
+});
+const applicationNotesRemaining = computed(() => {
+    return APPLICATION_NOTES_MAX_LENGTH - applicationNotesLength.value;
 });
 
 // Log component initialization
@@ -188,7 +218,7 @@ console.log("Updated form user_type_id:", form.user_type_id);
                 </Link>
             </div>
 
-            <div class="text-center">
+            <div v-if="type === 'resident'" class="text-center">
                 <button
                     class="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors lg:hidden"
                 >
@@ -227,7 +257,7 @@ console.log("Updated form user_type_id:", form.user_type_id);
                 </h1>
             </div>
             <!-- Registration Form -->
-            <div class="rounded-lg px-8 max-w-md mx-auto space-y-4">
+            <div class="rounded-lg px-0 lg:px-8 max-w-md mx-auto space-y-4">
                 <form @submit.prevent="submit">
                     <!-- Hidden field for user type -->
                     <input
@@ -299,25 +329,16 @@ console.log("Updated form user_type_id:", form.user_type_id);
                                 for="organization_id"
                                 value="Select Organization"
                             />
-                            <select
+                            <Select
                                 id="organization_id"
                                 v-model="form.organization_id"
-                                class="mt-2 block w-full bg-white rounded-lg border-2 border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 px-3 py-2 text-sm text-gray-900 focus:outline-none cursor-pointer transition-colors"
+                                :options="organizationOptions"
+                                placeholder="Select..."
+                                class="mt-2"
                                 required
                                 aria-required="true"
                                 aria-describedby="organization_id-error"
-                            >
-                                <option value="">
-                                    Choose an organization...
-                                </option>
-                                <option
-                                    v-for="org in organizations"
-                                    :key="org.id"
-                                    :value="org.id"
-                                >
-                                    {{ org.name }}
-                                </option>
-                            </select>
+                            />
                             <InputError
                                 id="organization_id-error"
                                 class="mt-2"
@@ -325,7 +346,49 @@ console.log("Updated form user_type_id:", form.user_type_id);
                             />
                         </div>
 
-                        <!-- Removed application_notes field as column was dropped -->
+                        <!-- Volunteer: Application Notes -->
+                        <div v-if="type === 'volunteer'">
+                            <div class="flex justify-between items-center">
+                                <InputLabel
+                                    for="application_notes"
+                                    value="Message for Administrators (Optional)"
+                                />
+                                <span
+                                    class="text-sm"
+                                    :class="{
+                                        'text-gray-500':
+                                            applicationNotesRemaining > 100,
+                                        'text-yellow-600':
+                                            applicationNotesRemaining <= 100 &&
+                                            applicationNotesRemaining > 0,
+                                        'text-red-600':
+                                            applicationNotesRemaining <= 0,
+                                    }"
+                                >
+                                    {{ applicationNotesLength }} /
+                                    {{ APPLICATION_NOTES_MAX_LENGTH }}
+                                </span>
+                            </div>
+                            <textarea
+                                id="application_notes"
+                                v-model="form.application_notes"
+                                rows="4"
+                                :maxlength="APPLICATION_NOTES_MAX_LENGTH"
+                                class="mt-2 block w-full border-gray-300 rounded-lg focus:border-primary focus:ring-primary resize-y min-h-[100px]"
+                                :class="{
+                                    'border-yellow-500':
+                                        applicationNotesRemaining <= 100 &&
+                                        applicationNotesRemaining > 0,
+                                    'border-red-500':
+                                        applicationNotesRemaining <= 0,
+                                }"
+                                placeholder="Tell us why you'd like to volunteer and any relevant experience..."
+                            ></textarea>
+                            <InputError
+                                class="mt-2"
+                                :message="form.errors.application_notes"
+                            />
+                        </div>
 
                         <!-- Admin: Organization Name Field -->
                         <div v-if="type === 'admin'">
@@ -352,6 +415,10 @@ console.log("Updated form user_type_id:", form.user_type_id);
                                 v-model="form.email"
                                 type="email"
                                 class="mt-2 block w-full border-gray-300 rounded-lg focus:border-primary focus:ring-primary"
+                                :class="{
+                                    'bg-gray-100 cursor-not-allowed opacity-75':
+                                        isGoogleUser,
+                                }"
                                 :disabled="isGoogleUser"
                                 required
                                 autocomplete="email"
@@ -481,25 +548,6 @@ console.log("Updated form user_type_id:", form.user_type_id);
                         </button>
                     </div>
                 </form>
-
-                <div class="hidden lg:block text-center space-y-4">
-                    <!-- Divider line with OR - only visible on small screens -->
-                    <div class="relative flex items-center">
-                        <div class="flex-grow h-0.5 bg-black"></div>
-                        <span class="px-3 text-black text-md">OR</span>
-                        <div class="flex-grow h-0.5 bg-black"></div>
-                    </div>
-                </div>
-
-                <div class="flex items-center justify-center">
-                    <a :href="route('auth.google.redirect', { type: type })">
-                        <img
-                            src="/images/logos/web_neutral_sq_ctn.svg"
-                            alt="Continue with Google"
-                            class="h-10"
-                        />
-                    </a>
-                </div>
             </div>
         </section>
     </div>

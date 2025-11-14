@@ -72,8 +72,10 @@ Route::middleware([
         return redirect()->route('platform.home');
     })->name('dashboard');
     
-    // Admin dashboard
-    Route::get('/admin/dashboard', function () {
+    // Admin routes (require admin user type)
+    Route::middleware(['admin'])->group(function () {
+        // Admin dashboard
+        Route::get('/admin/dashboard', function () {
         $user = auth()->user();
         
         // Check if admin has an organization
@@ -124,8 +126,9 @@ Route::middleware([
         ]);
     })->name('admin.dashboard');
     
-    // Admin management routes
-    Route::get('/admin/residents', function (Request $request) {
+    // Admin management routes (require organization setup)
+    Route::middleware(['admin.has.organization'])->group(function () {
+        Route::get('/admin/residents', function (Request $request) {
         $user = auth()->user();
         
         // Get residents for this admin's organization
@@ -395,6 +398,136 @@ Route::middleware([
     Route::get('/admin/reports', function () {
         return Inertia::render('Admin/ReportManagement');
     })->name('admin.reports');
+    });
+    
+    // Organization routes (only accessible to admins)
+    Route::post('/organization', [App\Http\Controllers\OrganizationController::class, 'store']);
+    Route::get('/organization/check', [App\Http\Controllers\OrganizationController::class, 'check']);
+    
+    // Admin management routes (require organization setup) - Volunteer application actions
+    Route::middleware(['admin.has.organization'])->group(function () {
+        Route::post('/admin/volunteers/{id}/approve', function ($id) {
+            $user = auth()->user();
+            
+            // Verify admin has access to this volunteer
+            $adminRecord = DB::select('SELECT organization_id FROM admin WHERE user_id = ?', [$user->id]);
+            if (empty($adminRecord)) {
+                return back()->withErrors(['error' => 'Unauthorized']);
+            }
+            
+            $organizationId = $adminRecord[0]->organization_id;
+            
+            // Get volunteer name before updating
+            $volunteer = DB::select('
+                SELECT u.name 
+                FROM volunteer v 
+                JOIN users u ON v.user_id = u.id 
+                WHERE v.id = ? AND v.organization_id = ?
+            ', [$id, $organizationId]);
+            
+            if (empty($volunteer)) {
+                return back()->withErrors(['error' => 'Volunteer application not found']);
+            }
+            
+            $volunteerName = $volunteer[0]->name;
+            
+            // Update volunteer status to approved
+            $updated = DB::update('
+                UPDATE volunteer 
+                SET status = ?, updated_at = ? 
+                WHERE id = ? AND organization_id = ?
+            ', ['approved', now(), $id, $organizationId]);
+            
+            if ($updated) {
+                return redirect()->route('admin.volunteers')->with('success', "Volunteer application for {$volunteerName} approved successfully");
+            } else {
+                return back()->withErrors(['error' => 'Volunteer application not found or already processed']);
+            }
+        })->name('admin.volunteers.approve');
+        
+        Route::post('/admin/volunteers/{id}/reject', function ($id) {
+        $user = auth()->user();
+        
+        // Verify admin has access to this volunteer
+        $adminRecord = DB::select('SELECT organization_id FROM admin WHERE user_id = ?', [$user->id]);
+        if (empty($adminRecord)) {
+            return back()->withErrors(['error' => 'Unauthorized']);
+        }
+        
+        $organizationId = $adminRecord[0]->organization_id;
+        
+        // Get volunteer name before updating
+        $volunteer = DB::select('
+            SELECT u.name 
+            FROM volunteer v 
+            JOIN users u ON v.user_id = u.id 
+            WHERE v.id = ? AND v.organization_id = ?
+        ', [$id, $organizationId]);
+        
+        if (empty($volunteer)) {
+            return back()->withErrors(['error' => 'Volunteer application not found']);
+        }
+        
+        $volunteerName = $volunteer[0]->name;
+        
+        // Update volunteer status to rejected
+        $updated = DB::update('
+            UPDATE volunteer 
+            SET status = ?, updated_at = ? 
+            WHERE id = ? AND organization_id = ?
+        ', ['rejected', now(), $id, $organizationId]);
+        
+        if ($updated) {
+            return redirect()->route('admin.volunteers')->with('success', "Volunteer application for {$volunteerName} rejected successfully");
+        } else {
+            return back()->withErrors(['error' => 'Volunteer application not found or already processed']);
+        }
+    })->name('admin.volunteers.reject');
+    
+    Route::delete('/admin/volunteers/{id}/delete', function ($id) {
+        $user = auth()->user();
+        
+        // Verify admin has access to this volunteer
+        $adminRecord = DB::select('SELECT organization_id FROM admin WHERE user_id = ?', [$user->id]);
+        if (empty($adminRecord)) {
+            return back()->withErrors(['error' => 'Unauthorized']);
+        }
+        
+        $organizationId = $adminRecord[0]->organization_id;
+        
+        // Get volunteer name before deleting
+        $volunteer = DB::select('
+            SELECT u.name 
+            FROM volunteer v 
+            JOIN users u ON v.user_id = u.id 
+            WHERE v.id = ? AND v.organization_id = ?
+        ', [$id, $organizationId]);
+        
+        if (empty($volunteer)) {
+            return back()->withErrors(['error' => 'Volunteer application not found']);
+        }
+        
+        $volunteerName = $volunteer[0]->name;
+        
+        // Delete volunteer application
+        $deleted = DB::delete('
+            DELETE FROM volunteer 
+            WHERE id = ? AND organization_id = ?
+        ', [$id, $organizationId]);
+        
+        if ($deleted) {
+            return redirect()->route('admin.volunteers')->with('success', "Volunteer application for {$volunteerName} deleted successfully");
+        } else {
+            return back()->withErrors(['error' => 'Volunteer application not found']);
+        }
+    })->name('admin.volunteers.delete');
+    
+        // Resident batch management routes
+        Route::get('/admin/residents/batch', [App\Http\Controllers\ResidentBatchController::class, 'index'])->name('admin.residents.batch');
+        Route::post('/admin/residents/batch/upload', [App\Http\Controllers\ResidentBatchController::class, 'upload'])->name('admin.residents.batch.upload');
+        Route::get('/admin/residents/batch/template', [App\Http\Controllers\ResidentBatchController::class, 'downloadTemplate'])->name('admin.residents.batch.template');
+    });
+    });
     
     // Platform home for residents and volunteers
     Route::get('/platform/home', function () {
@@ -488,130 +621,4 @@ Route::middleware([
     Route::get('/profile/settings', function () {
         return Inertia::render('ProfileSettings');
     })->name('profile.settings');
-    
-    // Organization routes
-    Route::post('/organization', [App\Http\Controllers\OrganizationController::class, 'store']);
-    Route::get('/organization/check', [App\Http\Controllers\OrganizationController::class, 'check']);
-    
-    // Resident batch management routes
-    Route::get('/admin/residents/batch', [App\Http\Controllers\ResidentBatchController::class, 'index'])->name('admin.residents.batch');
-    Route::post('/admin/residents/batch/upload', [App\Http\Controllers\ResidentBatchController::class, 'upload'])->name('admin.residents.batch.upload');
-    Route::get('/admin/residents/batch/template', [App\Http\Controllers\ResidentBatchController::class, 'downloadTemplate'])->name('admin.residents.batch.template');
-    
-    // Volunteer application actions
-    Route::post('/admin/volunteers/{id}/approve', function ($id) {
-        $user = auth()->user();
-        
-        // Verify admin has access to this volunteer
-        $adminRecord = DB::select('SELECT organization_id FROM admin WHERE user_id = ?', [$user->id]);
-        if (empty($adminRecord)) {
-            return back()->withErrors(['error' => 'Unauthorized']);
-        }
-        
-        $organizationId = $adminRecord[0]->organization_id;
-        
-        // Get volunteer name before updating
-        $volunteer = DB::select('
-            SELECT u.name 
-            FROM volunteer v 
-            JOIN users u ON v.user_id = u.id 
-            WHERE v.id = ? AND v.organization_id = ?
-        ', [$id, $organizationId]);
-        
-        if (empty($volunteer)) {
-            return back()->withErrors(['error' => 'Volunteer application not found']);
-        }
-        
-        $volunteerName = $volunteer[0]->name;
-        
-        // Update volunteer status to approved
-        $updated = DB::update('
-            UPDATE volunteer 
-            SET status = ?, updated_at = ? 
-            WHERE id = ? AND organization_id = ?
-        ', ['approved', now(), $id, $organizationId]);
-        
-        if ($updated) {
-            return redirect()->route('admin.volunteers')->with('success', "Volunteer application for {$volunteerName} approved successfully");
-        } else {
-            return back()->withErrors(['error' => 'Volunteer application not found or already processed']);
-        }
-    })->name('admin.volunteers.approve');
-    
-    Route::post('/admin/volunteers/{id}/reject', function ($id) {
-        $user = auth()->user();
-        
-        // Verify admin has access to this volunteer
-        $adminRecord = DB::select('SELECT organization_id FROM admin WHERE user_id = ?', [$user->id]);
-        if (empty($adminRecord)) {
-            return back()->withErrors(['error' => 'Unauthorized']);
-        }
-        
-        $organizationId = $adminRecord[0]->organization_id;
-        
-        // Get volunteer name before updating
-        $volunteer = DB::select('
-            SELECT u.name 
-            FROM volunteer v 
-            JOIN users u ON v.user_id = u.id 
-            WHERE v.id = ? AND v.organization_id = ?
-        ', [$id, $organizationId]);
-        
-        if (empty($volunteer)) {
-            return back()->withErrors(['error' => 'Volunteer application not found']);
-        }
-        
-        $volunteerName = $volunteer[0]->name;
-        
-        // Update volunteer status to rejected
-        $updated = DB::update('
-            UPDATE volunteer 
-            SET status = ?, updated_at = ? 
-            WHERE id = ? AND organization_id = ?
-        ', ['rejected', now(), $id, $organizationId]);
-        
-        if ($updated) {
-            return redirect()->route('admin.volunteers')->with('success', "Volunteer application for {$volunteerName} rejected successfully");
-        } else {
-            return back()->withErrors(['error' => 'Volunteer application not found or already processed']);
-        }
-    })->name('admin.volunteers.reject');
-    
-    Route::delete('/admin/volunteers/{id}/delete', function ($id) {
-        $user = auth()->user();
-        
-        // Verify admin has access to this volunteer
-        $adminRecord = DB::select('SELECT organization_id FROM admin WHERE user_id = ?', [$user->id]);
-        if (empty($adminRecord)) {
-            return back()->withErrors(['error' => 'Unauthorized']);
-        }
-        
-        $organizationId = $adminRecord[0]->organization_id;
-        
-        // Get volunteer name before deleting
-        $volunteer = DB::select('
-            SELECT u.name 
-            FROM volunteer v 
-            JOIN users u ON v.user_id = u.id 
-            WHERE v.id = ? AND v.organization_id = ?
-        ', [$id, $organizationId]);
-        
-        if (empty($volunteer)) {
-            return back()->withErrors(['error' => 'Volunteer application not found']);
-        }
-        
-        $volunteerName = $volunteer[0]->name;
-        
-        // Delete volunteer application
-        $deleted = DB::delete('
-            DELETE FROM volunteer 
-            WHERE id = ? AND organization_id = ?
-        ', [$id, $organizationId]);
-        
-        if ($deleted) {
-            return redirect()->route('admin.volunteers')->with('success', "Volunteer application for {$volunteerName} deleted successfully");
-        } else {
-            return back()->withErrors(['error' => 'Volunteer application not found']);
-        }
-    })->name('admin.volunteers.delete');
 });

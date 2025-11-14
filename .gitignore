@@ -61,3 +61,10 @@ jspm_packages/
 .env.development.local
 .env.test.local
 .env.production.local
+Sync Setup/DEPLOYMENT_SYNC.md
+Sync Setup/push-both.sh
+Sync Setup/QUICK_SETUP.md
+Sync Setup/setup-git-alias.sh
+Sync Setup/setup-personal-remote.sh
+Sync Setup/sync-to-personal.sh
+.gitignore

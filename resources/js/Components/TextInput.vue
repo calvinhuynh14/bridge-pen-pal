@@ -1,7 +1,7 @@
 <script setup>
-import { onMounted, ref } from "vue";
+import { onMounted, ref, useAttrs } from "vue";
 
-defineProps({
+const props = defineProps({
     modelValue: String,
     placeholder: {
         type: String,
@@ -11,6 +11,7 @@ defineProps({
 
 defineEmits(["update:modelValue"]);
 
+const attrs = useAttrs();
 const input = ref(null);
 
 onMounted(() => {
@@ -28,6 +29,7 @@ defineExpose({ focus: () => input.value.focus() });
         class="border-primary dark:border-gray-700 dark:bg-inputField dark:text-black focus:border-hover dark:focus:border-hover focus:ring-hover dark:focus:ring-hover rounded-md shadow-sm"
         :value="modelValue"
         :placeholder="placeholder"
+        v-bind="$attrs"
         @input="$emit('update:modelValue', $event.target.value)"
     />
 </template>

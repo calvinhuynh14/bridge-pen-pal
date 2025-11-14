@@ -19,6 +19,11 @@ class OrganizationController extends Controller
 
         $user = Auth::user();
 
+        // Ensure user is an admin
+        if (!$user || !$user->isAdmin()) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
         // Check if user already has an organization
         $existingAdmin = DB::select('SELECT id FROM admin WHERE user_id = ?', [$user->id]);
         
@@ -66,6 +71,11 @@ class OrganizationController extends Controller
     public function check()
     {
         $user = Auth::user();
+        
+        // Ensure user is an admin
+        if (!$user || !$user->isAdmin()) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
         
         $admin = DB::select('SELECT id FROM admin WHERE user_id = ?', [$user->id]);
         

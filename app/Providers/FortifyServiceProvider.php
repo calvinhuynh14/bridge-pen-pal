@@ -6,6 +6,7 @@ use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
 use App\Actions\Fortify\UpdateUserPassword;
 use App\Actions\Fortify\UpdateUserProfileInformation;
+use App\Http\Responses\FailedLoginResponse;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -14,6 +15,7 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Laravel\Fortify\Actions\RedirectIfTwoFactorAuthenticatable;
+use Laravel\Fortify\Contracts\FailedLoginResponse as FailedLoginResponseContract;
 use Laravel\Fortify\Fortify;
 
 class FortifyServiceProvider extends ServiceProvider
@@ -36,11 +38,24 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::updateUserPasswordsUsing(UpdateUserPassword::class);
         Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
         Fortify::redirectUserForTwoFactorAuthenticationUsing(RedirectIfTwoFactorAuthenticatable::class);
+        
+        // Customize failed login response for Inertia
+        $this->app->singleton(FailedLoginResponseContract::class, FailedLoginResponse::class);
 
         // Customize the register view to pass user type
         Fortify::registerView(function (Request $request) {
             $userType = $request->query('type', 'resident');
             $organizations = [];
+            
+            \Log::info('Fortify registerView - Called', [
+                'user_type' => $userType,
+                'google_param' => $request->query('google'),
+                'has_google_user_session' => session()->has('google_user'),
+                'google_user_data' => session('google_user'),
+                'session_id' => session()->getId(),
+                'request_url' => $request->fullUrl(),
+                'query_params' => $request->query()
+            ]);
             
             // Fetch organizations for volunteer registration
             if ($userType === 'volunteer') {
@@ -120,19 +135,44 @@ class FortifyServiceProvider extends ServiceProvider
         });
 
         // Customize the redirect after registration based on user type
-        Fortify::redirects('register', function () {
+        Fortify::redirects('register', function (Request $request) {
             $user = auth()->user();
+            
+            \Log::info('Fortify register redirect - Called', [
+                'user_id' => $user?->id,
+                'user_email' => $user?->email,
+                'user_type' => $user?->userType?->name,
+                'is_admin' => $user?->isAdmin(),
+                'is_volunteer' => $user?->isVolunteer(),
+                'is_resident' => $user?->isResident(),
+                'session_id' => session()->getId(),
+                'is_inertia_request' => $request->header('X-Inertia') !== null
+            ]);
             
             if ($user) {
                 if ($user->isAdmin()) {
-                    return route('admin.dashboard');
+                    $redirectUrl = route('admin.dashboard');
+                    \Log::info('Fortify register redirect - Redirecting admin', ['url' => $redirectUrl]);
+                    return $redirectUrl;
                 } elseif ($user->isVolunteer()) {
-                    return route('application.submitted');
+                    $redirectUrl = route('application.submitted');
+                    \Log::info('Fortify register redirect - Redirecting volunteer to application submitted', [
+                        'url' => $redirectUrl,
+                        'full_url' => url($redirectUrl)
+                    ]);
+                    // For Inertia requests, return the full URL
+                    if ($request->header('X-Inertia')) {
+                        return url($redirectUrl);
+                    }
+                    return $redirectUrl;
                 } else {
-                    return route('dashboard');
+                    $redirectUrl = route('dashboard');
+                    \Log::info('Fortify register redirect - Redirecting other user type', ['url' => $redirectUrl]);
+                    return $redirectUrl;
                 }
             }
             
+            \Log::warning('Fortify register redirect - No authenticated user, redirecting to dashboard');
             return route('dashboard');
         });
 

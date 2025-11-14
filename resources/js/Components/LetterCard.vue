@@ -18,7 +18,7 @@ const props = defineProps({
     },
 });
 
-const emit = defineEmits(["claim", "report", "view"]);
+const emit = defineEmits(["claim", "report", "view", "reply"]);
 
 // Get current user
 const page = usePage();
@@ -127,6 +127,11 @@ const handleClaim = (event) => {
     emit("claim", props.letter.id);
 };
 
+const handleReply = (event) => {
+    event.stopPropagation();
+    emit("reply", props.letter.id);
+};
+
 const handleReport = (event) => {
     event.stopPropagation();
     emit("report", props.letter);
@@ -225,7 +230,7 @@ const handleReport = (event) => {
         >
             <button
                 v-if="showReplyButton"
-                @click="handleClaim"
+                @click="handleReply"
                 :disabled="isClaiming"
                 class="px-1.5 py-1 sm:px-3 sm:py-2 bg-primary hover:bg-pressed text-black rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm md:text-base flex-1 flex items-center justify-center gap-0.5 sm:gap-1 min-h-[28px] sm:min-h-0 max-w-[100px] sm:max-w-none mx-auto"
             >
