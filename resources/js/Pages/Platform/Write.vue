@@ -2,7 +2,7 @@
 import AppLayout from "@/Layouts/AppLayout.vue";
 import { Head } from "@inertiajs/vue3";
 import { computed, ref, onMounted, onUnmounted, watch, nextTick } from "vue";
-import { usePage, useRoute } from "@inertiajs/vue3";
+import { usePage } from "@inertiajs/vue3";
 import { router } from "@inertiajs/vue3";
 import axios from "axios";
 import LetterCard from "@/Components/LetterCard.vue";

@@ -4,6 +4,7 @@ namespace App\Actions\Fortify;
 
 use App\Models\User;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Laravel\Fortify\Contracts\UpdatesUserProfileInformation;
@@ -17,24 +18,59 @@ class UpdateUserProfileInformation implements UpdatesUserProfileInformation
      */
     public function update(User $user, array $input): void
     {
-        Validator::make($input, [
+        // Determine validation rules based on user type
+        $rules = [
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
             'photo' => ['nullable', 'mimes:jpg,jpeg,png', 'max:1024'],
-        ])->validateWithBag('updateProfileInformation');
-
-        if (isset($input['photo'])) {
-            $user->updateProfilePhoto($input['photo']);
-        }
-
-        if ($input['email'] !== $user->email &&
-            $user instanceof MustVerifyEmail) {
-            $this->updateVerifiedUser($user, $input);
+        ];
+        
+        // Residents cannot update any profile information
+        if ($user->isResident()) {
+            // Residents cannot update their profile information
+            // Return early without making any changes
+            return;
         } else {
-            $user->forceFill([
-                'name' => $input['name'],
-                'email' => $input['email'],
-            ])->save();
+            // Volunteers and admins can update name and email
+            $rules['email'] = ['required', 'email', 'max:255', Rule::unique('users')->ignore($user->id)];
+            
+            // Admins can also update organization name
+            if ($user->isAdmin()) {
+                $rules['organization_name'] = ['required', 'string', 'max:255'];
+            }
+            
+            Validator::make($input, $rules)->validateWithBag('updateProfileInformation');
+
+            if (isset($input['photo'])) {
+                $user->updateProfilePhoto($input['photo']);
+            }
+
+            // Update organization name for admins
+            if ($user->isAdmin() && isset($input['organization_name'])) {
+                // Get the admin's organization ID
+                $admin = DB::selectOne('SELECT organization_id FROM admin WHERE user_id = ?', [$user->id]);
+                
+                if ($admin) {
+                    // Update organization name using raw SQL
+                    DB::update(
+                        'UPDATE organization SET name = ?, updated_at = ? WHERE id = ?',
+                        [
+                            strip_tags(trim($input['organization_name'])), // Sanitize input
+                            now(),
+                            $admin->organization_id
+                        ]
+                    );
+                }
+            }
+
+            if ($input['email'] !== $user->email &&
+                $user instanceof MustVerifyEmail) {
+                $this->updateVerifiedUser($user, $input);
+            } else {
+                $user->forceFill([
+                    'name' => $input['name'],
+                    'email' => $input['email'],
+                ])->save();
+            }
         }
     }
 
