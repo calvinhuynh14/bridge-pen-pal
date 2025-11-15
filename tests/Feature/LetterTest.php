@@ -114,6 +114,91 @@ class LetterTest extends TestCase
     }
 
     /**
+     * Test that content cannot be only whitespace (FAIL)
+     */
+    public function test_user_cannot_send_letter_with_only_whitespace(): void
+    {
+        $this->seedUserTypes();
+        $sender = $this->createResident('Alice Johnson', '100000', '137912');
+        $this->actingAs($sender);
+
+        $response = $this->postJson('/api/letters', [
+            'content' => '   \n\t   ', // Only whitespace
+            'is_open_letter' => true,
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['content']);
+    }
+
+    /**
+     * Test that content can be exactly 1000 characters (PASS)
+     */
+    public function test_user_can_send_letter_with_exactly_1000_characters(): void
+    {
+        $this->seedUserTypes();
+        $sender = $this->createResident('Alice Johnson', '100000', '137912');
+        $this->actingAs($sender);
+
+        $exactContent = str_repeat('a', 1000); // Exactly 1000 characters
+
+        $response = $this->postJson('/api/letters', [
+            'content' => $exactContent,
+            'is_open_letter' => true,
+        ]);
+
+        $response->assertStatus(201);
+        $this->assertDatabaseHas('letters', [
+            'sender_id' => $sender->id,
+            'content' => $exactContent,
+        ]);
+    }
+
+    /**
+     * Test that letter status is 'sent' when created (PASS)
+     */
+    public function test_letter_status_is_sent_when_created(): void
+    {
+        $this->seedUserTypes();
+        $sender = $this->createResident('Alice Johnson', '100000', '137912');
+        $this->actingAs($sender);
+
+        $response = $this->postJson('/api/letters', [
+            'content' => 'Test letter',
+            'is_open_letter' => true,
+        ]);
+
+        $response->assertStatus(201);
+        $this->assertDatabaseHas('letters', [
+            'sender_id' => $sender->id,
+            'status' => 'sent',
+        ]);
+    }
+
+    /**
+     * Test that letter has sent_at timestamp (PASS)
+     */
+    public function test_letter_has_sent_at_timestamp(): void
+    {
+        $this->seedUserTypes();
+        $sender = $this->createResident('Alice Johnson', '100000', '137912');
+        $this->actingAs($sender);
+
+        $response = $this->postJson('/api/letters', [
+            'content' => 'Test letter',
+            'is_open_letter' => true,
+        ]);
+
+        $response->assertStatus(201);
+        
+        $letter = DB::table('letters')
+            ->where('sender_id', $sender->id)
+            ->first();
+        
+        $this->assertNotNull($letter->sent_at);
+    }
+
+    /**
      * Test that receiver_id is required for non-open letters
      */
     public function test_receiver_id_required_for_pen_pal_letter(): void
