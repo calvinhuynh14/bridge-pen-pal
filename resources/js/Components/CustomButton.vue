@@ -37,7 +37,7 @@ const presetClasses = {
     accent: "bg-accent text-black hover:bg-primary hover:text-white",
     neutral:
         "bg-white text-pressed hover:bg-hover hover:text-white border-4 border-primary",
-    success: "bg-accent text-black hover:bg-primary hover:text-white",
+    success: "bg-green-600 text-white hover:bg-green-700 hover:text-white",
     warning: "bg-accent text-black hover:bg-primary hover:text-white",
     error: "bg-hover text-white hover:bg-pressed hover:text-white",
 };

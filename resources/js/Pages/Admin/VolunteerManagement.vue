@@ -166,18 +166,8 @@ const handleDelete = (application) => {
 
                 <!-- Volunteer Applications Table -->
                 <div
-                    class="bg-white overflow-hidden shadow-lg rounded-lg border-2 border-primary"
+                    class="bg-white overflow-hidden shadow-lg rounded-lg border-2 border-primary p-6"
                 >
-                    <div class="px-6 py-4 bg-primary">
-                        <h3 class="text-2xl font-semibold text-black">
-                            Volunteer Applications
-                        </h3>
-                        <p class="text-medium text-black opacity-90">
-                            Review and manage volunteer applications for your
-                            organization
-                        </p>
-                    </div>
-
                     <!-- DataTable Component -->
                     <DataTable
                         :items="volunteerApplications"

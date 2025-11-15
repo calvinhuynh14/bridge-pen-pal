@@ -167,14 +167,21 @@ class LetterController extends Controller
      */
     public function report(Request $request, $id)
     {
-        $validator = Validator::make($request->all(), [
-            'reason' => 'required|string|min:10|max:500',
+        // Sanitize and validate the reason
+        $sanitizedReason = strip_tags(trim($request->reason ?? ''));
+        
+        $validator = Validator::make([
+            'reason' => $sanitizedReason,
+        ], [
+            'reason' => 'required|string|min:20|max:500',
+        ], [
+            'reason.required' => 'Please provide a reason for reporting this letter.',
+            'reason.min' => 'The reason must be at least 20 characters.',
+            'reason.max' => 'The reason must not exceed 500 characters.',
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'errors' => $validator->errors()
-            ], 422);
+            return back()->withErrors($validator->errors());
         }
 
         $user = Auth::user();
@@ -191,25 +198,12 @@ class LetterController extends Controller
         ", [$id]);
 
         if (!$letter) {
-            return response()->json(['error' => 'Letter not found'], 404);
+            return back()->withErrors(['message' => 'Letter not found.']);
         }
 
         // Prevent users from reporting their own letters
         if ($letter->sender_id == $user->id) {
-            return response()->json(['error' => 'You cannot report your own letter'], 400);
-        }
-
-        // Check if user has already reported this letter
-        $existingReport = DB::selectOne("
-            SELECT id
-            FROM reports
-            WHERE reporter_id = ?
-            AND reported_letter_id = ?
-            AND status = 'pending'
-        ", [$user->id, $id]);
-
-        if ($existingReport) {
-            return response()->json(['error' => 'You have already reported this letter'], 400);
+            return back()->withErrors(['message' => 'You cannot report your own letter.']);
         }
 
         // Create the report
@@ -217,15 +211,13 @@ class LetterController extends Controller
             'reporter_id' => $user->id,
             'reported_user_id' => $letter->sender_id,
             'reported_letter_id' => $id,
-            'reason' => $request->reason,
+            'reason' => $sanitizedReason, // Use sanitized reason
             'status' => 'pending',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
 
-        return response()->json([
-            'message' => 'Letter reported successfully. Our team will review it shortly.'
-        ]);
+        return back()->with('success', 'Letter reported successfully. Our team will review it shortly.');
     }
 
     /**

@@ -424,10 +424,6 @@ console.log("Updated form user_type_id:", form.user_type_id);
                                 autocomplete="email"
                                 placeholder="Enter your email address"
                             />
-                            <InputError
-                                class="mt-2"
-                                :message="form.errors.email"
-                            />
                         </div>
 
                         <!-- Google OAuth Message -->

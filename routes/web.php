@@ -187,6 +187,7 @@ Route::middleware([
             
             return Inertia::render('Admin/ResidentManagement', [
                 'residents' => $residents,
+                'organizationId' => $organizationId,
                 'statusCounts' => [
                     'pending' => $statusCountsArray['pending'] ?? 0,
                     'approved' => $statusCountsArray['approved'] ?? 0,
@@ -201,6 +202,7 @@ Route::middleware([
         
         return Inertia::render('Admin/ResidentManagement', [
             'residents' => [],
+            'organizationId' => null,
             'statusCounts' => [
                 'pending' => 0,
                 'approved' => 0,
@@ -213,7 +215,141 @@ Route::middleware([
         ]);
     })->name('admin.residents');
     
+    // API endpoint to get next sequential resident ID
+    Route::get('/api/admin/residents/next-id', function (Request $request) {
+        $user = auth()->user();
+        $organizationId = $request->query('organization_id');
+        
+        if (!$organizationId) {
+            return response()->json(['error' => 'Organization ID is required'], 400);
+        }
+        
+        // Convert to integer for comparison
+        $organizationId = (int)$organizationId;
+        
+        // Verify the admin belongs to this organization
+        $adminRecord = DB::selectOne('SELECT organization_id FROM admin WHERE user_id = ?', [$user->id]);
+        if (!$adminRecord) {
+            return response()->json(['error' => 'Admin not found'], 403);
+        }
+        
+        // Compare as integers
+        if ((int)$adminRecord->organization_id !== $organizationId) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+        
+        // Find all existing resident usernames for this organization
+        // Format: {orgId}XXXXX (6 digits total, where first digit(s) are orgId and rest are sequential)
+        $existingResidents = DB::select("
+            SELECT u.username
+            FROM users u
+            JOIN resident r ON u.id = r.user_id
+            WHERE r.organization_id = ?
+            AND u.username IS NOT NULL
+            AND u.username != ''
+        ", [$organizationId]);
+        
+        // Extract the numeric part from existing usernames and find the maximum
+        // Username format: {orgId}XXXXX (6 digits total, where first digit(s) are orgId)
+        $maxNumber = 0;
+        $orgIdStr = (string)$organizationId;
+        $orgIdLength = strlen($orgIdStr);
+        
+        // Ensure organization ID doesn't exceed 5 digits (to leave room for sequential part)
+        if ($orgIdLength >= 6) {
+            return response()->json(['error' => 'Organization ID is too long for 6-digit format'], 400);
+        }
+        
+        foreach ($existingResidents as $resident) {
+            $username = $resident->username;
+            // Check if username is numeric, exactly 6 digits, and starts with organization ID
+            if ($username && is_numeric($username) && strlen($username) == 6) {
+                // Check if it starts with the organization ID
+                $usernamePrefix = substr($username, 0, $orgIdLength);
+                if ($usernamePrefix === $orgIdStr) {
+                    // Extract the sequential part (everything after org ID)
+                    $sequentialPart = substr($username, $orgIdLength);
+                    if ($sequentialPart !== '') {
+                        $number = (int)$sequentialPart;
+                        if ($number > $maxNumber) {
+                            $maxNumber = $number;
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Generate next sequential ID (increment by 1)
+        $nextNumber = $maxNumber + 1;
+        // Pad the sequential part to maintain 6-digit total
+        $sequentialPadded = str_pad($nextNumber, 6 - $orgIdLength, '0', STR_PAD_LEFT);
+        $nextId = $orgIdStr . $sequentialPadded;
+        
+        return response()->json(['next_id' => $nextId]);
+    });
+    
     // Update resident route
+    // Create resident route
+    Route::post('/admin/residents', function (Request $request) {
+        $user = auth()->user();
+        
+        // Validate the request
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'username' => 'required|string|size:6|regex:/^[0-9]{6}$/',
+            'date_of_birth' => 'required|date|date_format:Y-m-d',
+            'room_number' => 'nullable|string|max:10',
+            'floor_number' => 'nullable|string|max:10',
+            'pin_code' => 'required|string|size:6|regex:/^[0-9]{6}$/',
+        ]);
+        
+        // Get admin's organization
+        $adminRecord = DB::selectOne('SELECT organization_id FROM admin WHERE user_id = ?', [$user->id]);
+        if (!$adminRecord) {
+            return response()->json(['error' => 'Admin organization not found'], 404);
+        }
+        $organizationId = $adminRecord->organization_id;
+        
+        // Check if username already exists
+        $existingUser = DB::table('users')->where('username', $request->username)->first();
+        if ($existingUser) {
+            return back()->withErrors(['username' => 'This resident ID is already in use. Please regenerate.'])->withInput();
+        }
+        
+        // Get resident user type ID
+        $residentType = DB::selectOne('SELECT id FROM user_types WHERE name = ?', ['resident']);
+        if (!$residentType) {
+            return response()->json(['error' => 'Resident user type not found'], 500);
+        }
+        
+        // Create user record
+        $userId = DB::table('users')->insertGetId([
+            'name' => $request->name,
+            'username' => $request->username, // Store 6-digit ID as username
+            'email' => null, // Residents don't have email
+            'password' => bcrypt($request->pin_code),
+            'user_type_id' => $residentType->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        
+        // Create resident record
+        DB::table('resident')->insert([
+            'user_id' => $userId,
+            'organization_id' => $organizationId,
+            'date_of_birth' => $request->date_of_birth,
+            'room_number' => $request->room_number,
+            'floor_number' => $request->floor_number,
+            'pin_code' => $request->pin_code, // Store plain PIN for admin viewing
+            'status' => 'approved', // New residents are approved by default
+            'application_date' => now(), // Set application date to current date and time
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        
+        return redirect()->route('admin.residents')->with('success', 'Resident created successfully!');
+    })->name('admin.residents.store');
+    
     Route::put('/admin/residents/{id}', function (Request $request, $id) {
         $user = auth()->user();
         
@@ -395,9 +531,312 @@ Route::middleware([
         ]);
     })->name('admin.volunteers');
     
-    Route::get('/admin/reports', function () {
-        return Inertia::render('Admin/ReportManagement');
+    Route::get('/admin/reports', function (Request $request) {
+        $user = Auth::user();
+        $admin = DB::selectOne('SELECT organization_id FROM admin WHERE user_id = ?', [$user->id]);
+        
+        if (!$admin) {
+            return redirect()->route('admin.dashboard');
+        }
+        
+        // Get filter and search parameters
+        $statusFilter = $request->query('status', 'all');
+        $search = $request->query('search', '');
+        
+        // Build query to get reports for this admin's organization
+        // Reports are linked through users who belong to the organization
+        $query = "
+            SELECT 
+                r.id,
+                r.reason,
+                r.status,
+                r.created_at,
+                r.resolved_at,
+                r.admin_notes,
+                reporter.name as reporter_name,
+                reporter.id as reporter_id,
+                reported_user.name as reported_user_name,
+                reported_user.id as reported_user_id,
+                l.id as reported_letter_id,
+                resolved_by.name as resolved_by_name
+            FROM reports r
+            LEFT JOIN users reporter ON r.reporter_id = reporter.id
+            LEFT JOIN users reported_user ON r.reported_user_id = reported_user.id
+            LEFT JOIN letters l ON r.reported_letter_id = l.id
+            LEFT JOIN users resolved_by ON r.resolved_by = resolved_by.id
+            WHERE 1=1
+        ";
+        
+        $params = [];
+        
+        // Filter by organization (through reporter or reported user)
+        $query .= " AND (
+            reporter.id IN (
+                SELECT user_id FROM volunteer WHERE organization_id = ?
+                UNION
+                SELECT user_id FROM resident WHERE organization_id = ?
+                UNION
+                SELECT user_id FROM admin WHERE organization_id = ?
+            )
+            OR reported_user.id IN (
+                SELECT user_id FROM volunteer WHERE organization_id = ?
+                UNION
+                SELECT user_id FROM resident WHERE organization_id = ?
+                UNION
+                SELECT user_id FROM admin WHERE organization_id = ?
+            )
+        )";
+        $params = array_merge($params, [$admin->organization_id, $admin->organization_id, $admin->organization_id, $admin->organization_id, $admin->organization_id, $admin->organization_id]);
+        
+        // Apply status filter
+        if ($statusFilter !== 'all') {
+            $query .= " AND r.status = ?";
+            $params[] = $statusFilter;
+        }
+        
+        // Apply search filter
+        if (!empty($search)) {
+            $query .= " AND (
+                reporter.name LIKE ? 
+                OR reported_user.name LIKE ?
+                OR r.reason LIKE ?
+            )";
+            $searchParam = "%{$search}%";
+            $params = array_merge($params, [$searchParam, $searchParam, $searchParam]);
+        }
+        
+        // Order by date (newest first)
+        $query .= " ORDER BY r.created_at DESC";
+        
+        $reports = DB::select($query, $params);
+        
+        // Get statistics
+        $totalReports = DB::selectOne("
+            SELECT COUNT(*) as count
+            FROM reports r
+            LEFT JOIN users reporter ON r.reporter_id = reporter.id
+            LEFT JOIN users reported_user ON r.reported_user_id = reported_user.id
+            WHERE (
+                reporter.id IN (
+                    SELECT user_id FROM volunteer WHERE organization_id = ?
+                    UNION
+                    SELECT user_id FROM resident WHERE organization_id = ?
+                    UNION
+                    SELECT user_id FROM admin WHERE organization_id = ?
+                )
+                OR reported_user.id IN (
+                    SELECT user_id FROM volunteer WHERE organization_id = ?
+                    UNION
+                    SELECT user_id FROM resident WHERE organization_id = ?
+                    UNION
+                    SELECT user_id FROM admin WHERE organization_id = ?
+                )
+            )
+        ", [$admin->organization_id, $admin->organization_id, $admin->organization_id, $admin->organization_id, $admin->organization_id, $admin->organization_id]);
+        
+        $pendingReports = DB::selectOne("
+            SELECT COUNT(*) as count
+            FROM reports r
+            LEFT JOIN users reporter ON r.reporter_id = reporter.id
+            LEFT JOIN users reported_user ON r.reported_user_id = reported_user.id
+            WHERE r.status = 'pending'
+            AND (
+                reporter.id IN (
+                    SELECT user_id FROM volunteer WHERE organization_id = ?
+                    UNION
+                    SELECT user_id FROM resident WHERE organization_id = ?
+                    UNION
+                    SELECT user_id FROM admin WHERE organization_id = ?
+                )
+                OR reported_user.id IN (
+                    SELECT user_id FROM volunteer WHERE organization_id = ?
+                    UNION
+                    SELECT user_id FROM resident WHERE organization_id = ?
+                    UNION
+                    SELECT user_id FROM admin WHERE organization_id = ?
+                )
+            )
+        ", [$admin->organization_id, $admin->organization_id, $admin->organization_id, $admin->organization_id, $admin->organization_id, $admin->organization_id]);
+        
+        $resolvedReports = DB::selectOne("
+            SELECT COUNT(*) as count
+            FROM reports r
+            LEFT JOIN users reporter ON r.reporter_id = reporter.id
+            LEFT JOIN users reported_user ON r.reported_user_id = reported_user.id
+            WHERE r.status = 'resolved'
+            AND (
+                reporter.id IN (
+                    SELECT user_id FROM volunteer WHERE organization_id = ?
+                    UNION
+                    SELECT user_id FROM resident WHERE organization_id = ?
+                    UNION
+                    SELECT user_id FROM admin WHERE organization_id = ?
+                )
+                OR reported_user.id IN (
+                    SELECT user_id FROM volunteer WHERE organization_id = ?
+                    UNION
+                    SELECT user_id FROM resident WHERE organization_id = ?
+                    UNION
+                    SELECT user_id FROM admin WHERE organization_id = ?
+                )
+            )
+        ", [$admin->organization_id, $admin->organization_id, $admin->organization_id, $admin->organization_id, $admin->organization_id, $admin->organization_id]);
+        
+        return Inertia::render('Admin/ReportManagement', [
+            'reports' => $reports,
+            'statistics' => [
+                'total' => $totalReports->count ?? 0,
+                'pending' => $pendingReports->count ?? 0,
+                'resolved' => $resolvedReports->count ?? 0,
+            ],
+            'filters' => [
+                'status' => $statusFilter,
+                'search' => $search,
+            ],
+        ]);
     })->name('admin.reports');
+    
+    // Report action routes
+    Route::post('/admin/reports/{id}/resolve', function (Request $request, $id) {
+        $user = Auth::user();
+        $admin = DB::selectOne('SELECT organization_id FROM admin WHERE user_id = ?', [$user->id]);
+        
+        if (!$admin) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+        
+        // Verify report belongs to admin's organization
+        $report = DB::selectOne("
+            SELECT r.id, r.status
+            FROM reports r
+            LEFT JOIN users reporter ON r.reporter_id = reporter.id
+            LEFT JOIN users reported_user ON r.reported_user_id = reported_user.id
+            WHERE r.id = ?
+            AND (
+                reporter.id IN (
+                    SELECT user_id FROM volunteer WHERE organization_id = ?
+                    UNION
+                    SELECT user_id FROM resident WHERE organization_id = ?
+                    UNION
+                    SELECT user_id FROM admin WHERE organization_id = ?
+                )
+                OR reported_user.id IN (
+                    SELECT user_id FROM volunteer WHERE organization_id = ?
+                    UNION
+                    SELECT user_id FROM resident WHERE organization_id = ?
+                    UNION
+                    SELECT user_id FROM admin WHERE organization_id = ?
+                )
+            )
+        ", [$id, $admin->organization_id, $admin->organization_id, $admin->organization_id, $admin->organization_id, $admin->organization_id, $admin->organization_id]);
+        
+        if (!$report) {
+            return response()->json(['error' => 'Report not found'], 404);
+        }
+        
+        DB::update(
+            'UPDATE reports SET status = ?, resolved_by = ?, resolved_at = ?, updated_at = ? WHERE id = ?',
+            ['resolved', $user->id, now(), now(), $id]
+        );
+        
+        return redirect()->route('admin.reports')->with('success', 'Report resolved successfully');
+    })->name('admin.reports.resolve');
+    
+    Route::post('/admin/reports/{id}/dismiss', function (Request $request, $id) {
+        $user = Auth::user();
+        $admin = DB::selectOne('SELECT organization_id FROM admin WHERE user_id = ?', [$user->id]);
+        
+        if (!$admin) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+        
+        // Verify report belongs to admin's organization
+        $report = DB::selectOne("
+            SELECT r.id, r.status
+            FROM reports r
+            LEFT JOIN users reporter ON r.reporter_id = reporter.id
+            LEFT JOIN users reported_user ON r.reported_user_id = reported_user.id
+            WHERE r.id = ?
+            AND (
+                reporter.id IN (
+                    SELECT user_id FROM volunteer WHERE organization_id = ?
+                    UNION
+                    SELECT user_id FROM resident WHERE organization_id = ?
+                    UNION
+                    SELECT user_id FROM admin WHERE organization_id = ?
+                )
+                OR reported_user.id IN (
+                    SELECT user_id FROM volunteer WHERE organization_id = ?
+                    UNION
+                    SELECT user_id FROM resident WHERE organization_id = ?
+                    UNION
+                    SELECT user_id FROM admin WHERE organization_id = ?
+                )
+            )
+        ", [$id, $admin->organization_id, $admin->organization_id, $admin->organization_id, $admin->organization_id, $admin->organization_id, $admin->organization_id]);
+        
+        if (!$report) {
+            return response()->json(['error' => 'Report not found'], 404);
+        }
+        
+        DB::update(
+            'UPDATE reports SET status = ?, resolved_by = ?, resolved_at = ?, updated_at = ? WHERE id = ?',
+            ['dismissed', $user->id, now(), now(), $id]
+        );
+        
+        return redirect()->route('admin.reports')->with('success', 'Report dismissed successfully');
+    })->name('admin.reports.dismiss');
+    
+    Route::post('/admin/reports/{id}/ban', function (Request $request, $id) {
+        $user = Auth::user();
+        $admin = DB::selectOne('SELECT organization_id FROM admin WHERE user_id = ?', [$user->id]);
+        
+        if (!$admin) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+        
+        // Verify report belongs to admin's organization and get reported user
+        $report = DB::selectOne("
+            SELECT r.id, r.status, r.reported_user_id
+            FROM reports r
+            LEFT JOIN users reporter ON r.reporter_id = reporter.id
+            LEFT JOIN users reported_user ON r.reported_user_id = reported_user.id
+            WHERE r.id = ?
+            AND (
+                reporter.id IN (
+                    SELECT user_id FROM volunteer WHERE organization_id = ?
+                    UNION
+                    SELECT user_id FROM resident WHERE organization_id = ?
+                    UNION
+                    SELECT user_id FROM admin WHERE organization_id = ?
+                )
+                OR reported_user.id IN (
+                    SELECT user_id FROM volunteer WHERE organization_id = ?
+                    UNION
+                    SELECT user_id FROM resident WHERE organization_id = ?
+                    UNION
+                    SELECT user_id FROM admin WHERE organization_id = ?
+                )
+            )
+        ", [$id, $admin->organization_id, $admin->organization_id, $admin->organization_id, $admin->organization_id, $admin->organization_id, $admin->organization_id]);
+        
+        if (!$report) {
+            return response()->json(['error' => 'Report not found'], 404);
+        }
+        
+        if (!$report->reported_user_id) {
+            return response()->json(['error' => 'No user to ban'], 400);
+        }
+        
+        // TODO: Implement ban functionality (create user_blocks table entry or similar)
+        // For now, just mark report as resolved
+        DB::update(
+            'UPDATE reports SET status = ?, resolved_by = ?, resolved_at = ?, updated_at = ? WHERE id = ?',
+            ['resolved', $user->id, now(), now(), $id]
+        );
+        
+        return redirect()->route('admin.reports')->with('success', 'User banned and report resolved');
+    })->name('admin.reports.ban');
     });
     
     // Organization routes (only accessible to admins)

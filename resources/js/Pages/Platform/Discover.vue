@@ -2,7 +2,7 @@
 import AppLayout from "@/Layouts/AppLayout.vue";
 import LetterCard from "@/Components/LetterCard.vue";
 import LetterViewModal from "@/Components/LetterViewModal.vue";
-import Modal from "@/Components/Modal.vue";
+import ReportModal from "@/Components/ReportModal.vue";
 import Avatar from "@/Components/Avatar.vue";
 import { Head, router } from "@inertiajs/vue3";
 import { computed, ref } from "vue";
@@ -102,14 +102,11 @@ const showViewModal = ref(false);
 const viewingLetter = ref(null);
 
 // Report letter function
-const reportingLetterId = ref(null);
 const showReportModal = ref(false);
 const selectedLetter = ref(null);
-const reportReason = ref("");
 
 const openReportModal = (letter) => {
     selectedLetter.value = letter;
-    reportReason.value = "";
     showReportModal.value = true;
     // Close view modal if it's open
     if (showViewModal.value) {
@@ -146,40 +143,6 @@ const handleReply = (letterId) => {
 const closeReportModal = () => {
     showReportModal.value = false;
     selectedLetter.value = null;
-    reportReason.value = "";
-    reportingLetterId.value = null;
-};
-
-const submitReport = () => {
-    if (!reportReason.value.trim()) {
-        alert("Please provide a reason for reporting this letter.");
-        return;
-    }
-
-    if (reportingLetterId.value) return; // Prevent double-submit
-
-    reportingLetterId.value = selectedLetter.value.id;
-
-    router.post(
-        `/platform/letters/${selectedLetter.value.id}/report`,
-        {
-            reason: reportReason.value,
-        },
-        {
-            onSuccess: () => {
-                alert(
-                    "Letter reported successfully. Thank you for helping keep our community safe."
-                );
-                closeReportModal();
-                // Optionally refresh the page to remove the reported letter
-                router.reload({ only: ["openLetters", "letterCount"] });
-            },
-            onError: (errors) => {
-                alert(errors.message || "Failed to report letter");
-                reportingLetterId.value = null;
-            },
-        }
-    );
 };
 </script>
 
@@ -450,94 +413,10 @@ const submitReport = () => {
         />
 
         <!-- Report Modal -->
-        <Modal :show="showReportModal" @close="closeReportModal" max-width="md">
-            <div class="p-6 bg-pressed">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-xl font-bold text-white">Report Letter</h3>
-                    <button
-                        @click="closeReportModal"
-                        class="text-white/80 hover:text-white transition-colors"
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke-width="1.5"
-                            stroke="currentColor"
-                            class="w-6 h-6"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                d="M6 18L18 6M6 6l12 12"
-                            />
-                        </svg>
-                    </button>
-                </div>
-
-                <div v-if="selectedLetter" class="mb-4">
-                    <p class="text-sm text-white/90 mb-2">
-                        Reporting letter from
-                        <span class="font-semibold text-white">{{
-                            selectedLetter.sender_name
-                        }}</span>
-                    </p>
-                    <div
-                        class="bg-white border-2 border-white/30 rounded-lg p-3 mb-4"
-                    >
-                        <p
-                            class="text-sm text-black"
-                            style="
-                                display: -webkit-box;
-                                -webkit-line-clamp: 3;
-                                line-clamp: 3;
-                                -webkit-box-orient: vertical;
-                                overflow: hidden;
-                            "
-                        >
-                            {{ selectedLetter.content }}
-                        </p>
-                    </div>
-                </div>
-
-                <div class="mb-4">
-                    <label
-                        for="reportReason"
-                        class="block text-sm font-medium text-white mb-2"
-                    >
-                        Reason for reporting
-                    </label>
-                    <textarea
-                        id="reportReason"
-                        v-model="reportReason"
-                        rows="4"
-                        class="w-full px-4 py-2 border-2 border-white/30 bg-white text-black rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/50 resize-none placeholder:text-gray-500"
-                        placeholder="Please describe why you are reporting this letter..."
-                    ></textarea>
-                </div>
-
-                <div class="flex gap-3 justify-end">
-                    <button
-                        @click="closeReportModal"
-                        class="px-4 py-2 bg-white border-2 border-primary text-primary rounded-lg font-medium hover:bg-primary hover:text-black transition-colors"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        @click="submitReport"
-                        :disabled="
-                            !reportReason.trim() ||
-                            reportingLetterId === selectedLetter?.id
-                        "
-                        class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        <span v-if="reportingLetterId === selectedLetter?.id">
-                            Submitting...
-                        </span>
-                        <span v-else> Submit Report </span>
-                    </button>
-                </div>
-            </div>
-        </Modal>
+        <ReportModal
+            :show="showReportModal"
+            :letter="selectedLetter"
+            @close="closeReportModal"
+        />
     </AppLayout>
 </template>

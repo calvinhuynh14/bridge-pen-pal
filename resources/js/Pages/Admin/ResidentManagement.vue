@@ -5,6 +5,7 @@ import { ref, computed } from "vue";
 import ResidentBatchModal from "@/Components/ResidentBatchModal.vue";
 import ViewDetailsModal from "@/Components/ViewDetailsModal.vue";
 import EditResidentModal from "@/Components/EditResidentModal.vue";
+import CreateResidentModal from "@/Components/CreateResidentModal.vue";
 import DeleteConfirmationModal from "@/Components/DeleteConfirmationModal.vue";
 import DataTable from "@/Components/DataTable.vue";
 
@@ -12,6 +13,10 @@ const props = defineProps({
     residents: {
         type: Array,
         default: () => [],
+    },
+    organizationId: {
+        type: Number,
+        default: null,
     },
     statusCounts: {
         type: Object,
@@ -33,17 +38,11 @@ const props = defineProps({
 const showModal = ref(false);
 const selectedResident = ref(null);
 const showBatchModal = ref(false);
+const showCreateModal = ref(false);
 const showEditModal = ref(false);
 const editingResident = ref(null);
 const showDeleteModal = ref(false);
 const deletingResident = ref(null);
-
-// PIN code visibility state
-const visiblePins = ref(new Set());
-
-// Sorting state
-const sortField = ref("name");
-const sortDirection = ref("asc");
 
 // Computed properties for total counts from backend
 const pendingCount = computed(() => {
@@ -61,8 +60,6 @@ const rejectedCount = computed(() => {
 const totalCount = computed(() => {
     return pendingCount.value + approvedCount.value + rejectedCount.value;
 });
-
-// Sorting is handled by the DataTable component
 
 // Modal functions
 const openModal = (resident) => {
@@ -91,68 +88,6 @@ const handleDelete = (resident) => {
     showDeleteModal.value = true;
 };
 
-// PIN toggle functions
-const togglePinVisibility = (residentId) => {
-    if (visiblePins.value.has(residentId)) {
-        visiblePins.value.delete(residentId);
-    } else {
-        visiblePins.value.add(residentId);
-    }
-};
-
-const isPinVisible = (residentId) => {
-    return visiblePins.value.has(residentId);
-};
-
-// Sorting functions
-const handleSort = (field) => {
-    if (sortField.value === field) {
-        sortDirection.value = sortDirection.value === "asc" ? "desc" : "asc";
-    } else {
-        sortField.value = field;
-        sortDirection.value = "asc";
-    }
-};
-
-const getSortIcon = (field) => {
-    if (sortField.value !== field) return "↕";
-    return sortDirection.value === "asc" ? "↑" : "↓";
-};
-
-// Computed property for sorted residents
-const sortedResidents = computed(() => {
-    const residents = [...props.residents];
-
-    return residents.sort((a, b) => {
-        let aValue, bValue;
-
-        switch (sortField.value) {
-            case "name":
-                aValue = a.name.toLowerCase();
-                bValue = b.name.toLowerCase();
-                break;
-            case "id":
-                aValue = parseInt(a.id);
-                bValue = parseInt(b.id);
-                break;
-            case "status":
-                aValue = a.status.toLowerCase();
-                bValue = b.status.toLowerCase();
-                break;
-            default:
-                return 0;
-        }
-
-        if (aValue < bValue) {
-            return sortDirection.value === "asc" ? -1 : 1;
-        }
-        if (aValue > bValue) {
-            return sortDirection.value === "asc" ? 1 : -1;
-        }
-        return 0;
-    });
-});
-
 // Action methods
 const editResident = (residentId) => {
     // TODO: Implement edit functionality
@@ -165,8 +100,16 @@ const deleteResident = (residentId) => {
 };
 
 const createResident = () => {
-    // TODO: Implement create functionality
-    console.log("Create resident");
+    showCreateModal.value = true;
+};
+
+const closeCreateModal = () => {
+    showCreateModal.value = false;
+};
+
+const handleResidentCreated = () => {
+    // Refresh the page to show new resident
+    window.location.reload();
 };
 
 const openBatchModal = () => {
@@ -280,307 +223,16 @@ const handleResidentDeleted = () => {
 
                 <!-- Residents Table -->
                 <div
-                    class="bg-white overflow-hidden shadow-lg rounded-lg border-2 border-primary"
+                    class="bg-white overflow-hidden shadow-lg rounded-lg border-2 border-primary p-6"
                 >
-                    <div class="px-6 py-4 bg-primary">
-                        <h3 class="text-2xl font-semibold text-black">
-                            Residents
-                        </h3>
-                        <p class="text-medium text-black opacity-90">
-                            Manage residents in your organization
-                        </p>
-                    </div>
-
-                    <!-- Simplified DataTable -->
-                    <!-- Mobile Cards -->
-                    <div class="lg:hidden">
-                        <div
-                            v-if="residents.length === 0"
-                            class="p-6 text-center text-gray-500"
-                        >
-                            No residents found
-                        </div>
-                        <div v-else class="divide-y divide-gray-200">
-                            <div
-                                v-for="resident in sortedResidents"
-                                :key="resident.id"
-                                class="p-4 hover:bg-background transition-colors"
-                            >
-                                <div class="flex items-center justify-between">
-                                    <!-- Left side: Avatar and Name -->
-                                    <div class="flex items-center space-x-3">
-                                        <div
-                                            class="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center"
-                                        >
-                                            <span
-                                                class="text-gray-600 text-sm font-medium"
-                                            >
-                                                {{
-                                                    resident.name
-                                                        .charAt(0)
-                                                        .toUpperCase()
-                                                }}
-                                            </span>
-                                        </div>
-                                        <div>
-                                            <div
-                                                class="text-sm font-medium text-black"
-                                            >
-                                                {{ resident.name }}
-                                            </div>
-                                            <div class="text-xs text-gray-500">
-                                                ID:
-                                                {{
-                                                    resident.username ||
-                                                    resident.id
-                                                }}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Right side: Actions -->
-                                    <div class="flex items-center space-x-2">
-                                        <!-- Action Buttons -->
-                                        <div class="flex space-x-1">
-                                            <!-- View Button -->
-                                            <button
-                                                @click="handleView(resident)"
-                                                class="bg-primary hover:bg-pressed text-white px-2 py-1 rounded text-xs font-medium transition-colors flex items-center justify-center"
-                                                title="View"
-                                            >
-                                                <svg
-                                                    class="w-4 h-4"
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    viewBox="0 0 24 24"
-                                                >
-                                                    <path
-                                                        stroke-linecap="round"
-                                                        stroke-linejoin="round"
-                                                        stroke-width="2"
-                                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                                                    ></path>
-                                                    <path
-                                                        stroke-linecap="round"
-                                                        stroke-linejoin="round"
-                                                        stroke-width="2"
-                                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                                                    ></path>
-                                                </svg>
-                                            </button>
-
-                                            <!-- Edit Button -->
-                                            <button
-                                                @click="handleEdit(resident)"
-                                                class="bg-primary hover:bg-pressed text-white px-2 py-1 rounded text-xs font-medium transition-colors flex items-center justify-center"
-                                                title="Edit"
-                                            >
-                                                <svg
-                                                    class="w-4 h-4"
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    viewBox="0 0 24 24"
-                                                >
-                                                    <path
-                                                        stroke-linecap="round"
-                                                        stroke-linejoin="round"
-                                                        stroke-width="2"
-                                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                                    ></path>
-                                                </svg>
-                                            </button>
-
-                                            <!-- Delete Button -->
-                                            <button
-                                                @click="handleDelete(resident)"
-                                                class="bg-primary hover:bg-red-800 text-white px-2 py-1 rounded text-xs font-medium transition-colors flex items-center justify-center"
-                                                title="Delete"
-                                            >
-                                                <svg
-                                                    class="w-4 h-4"
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    viewBox="0 0 24 24"
-                                                >
-                                                    <path
-                                                        stroke-linecap="round"
-                                                        stroke-linejoin="round"
-                                                        stroke-width="2"
-                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                                    ></path>
-                                                </svg>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Desktop Table -->
-                    <div class="hidden lg:block overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-primary">
-                                <tr>
-                                    <th
-                                        class="px-6 py-3 text-center text-xs font-medium text-white uppercase tracking-wider cursor-pointer hover:bg-pressed transition-colors"
-                                        @click="handleSort('name')"
-                                    >
-                                        <div
-                                            class="flex items-center justify-center gap-1"
-                                        >
-                                            Name
-                                            <span class="text-sm">{{
-                                                getSortIcon("name")
-                                            }}</span>
-                                        </div>
-                                    </th>
-                                    <th
-                                        class="px-6 py-3 text-center text-xs font-medium text-white uppercase tracking-wider cursor-pointer hover:bg-pressed transition-colors"
-                                        @click="handleSort('id')"
-                                    >
-                                        <div
-                                            class="flex items-center justify-center gap-1"
-                                        >
-                                            ID
-                                            <span class="text-sm">{{
-                                                getSortIcon("id")
-                                            }}</span>
-                                        </div>
-                                    </th>
-                                    <th
-                                        class="px-6 py-3 text-center text-xs font-medium text-white uppercase tracking-wider cursor-pointer hover:bg-pressed transition-colors"
-                                        @click="handleSort('status')"
-                                    >
-                                        <div
-                                            class="flex items-center justify-center gap-1"
-                                        >
-                                            Status
-                                            <span class="text-sm">{{
-                                                getSortIcon("status")
-                                            }}</span>
-                                        </div>
-                                    </th>
-                                    <th
-                                        class="px-6 py-3 text-center text-xs font-medium text-white uppercase tracking-wider"
-                                    >
-                                        PIN Code
-                                    </th>
-                                    <th
-                                        class="px-6 py-3 text-center text-xs font-medium text-white uppercase tracking-wider"
-                                    >
-                                        Actions
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                <tr v-if="residents.length === 0">
-                                    <td
-                                        colspan="5"
-                                        class="px-6 py-4 text-center text-gray-500"
-                                    >
-                                        No residents found
-                                    </td>
-                                </tr>
-                                <tr
-                                    v-for="resident in sortedResidents"
-                                    :key="resident.id"
-                                    class="hover:bg-background transition-colors"
-                                >
-                                    <!-- Name -->
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div
-                                            class="text-sm font-medium text-black"
-                                        >
-                                            {{ resident.name }}
-                                        </div>
-                                    </td>
-
-                                    <!-- ID -->
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div
-                                            class="text-sm text-black font-mono"
-                                        >
-                                            {{
-                                                resident.username || resident.id
-                                            }}
-                                        </div>
-                                    </td>
-
-                                    <!-- Status -->
-                                    <td
-                                        class="px-6 py-4 whitespace-nowrap text-center"
-                                    >
-                                        <span
-                                            :class="{
-                                                'bg-accent text-black':
-                                                    resident.status ===
-                                                    'pending',
-                                                'bg-green-100 text-green-800 border border-green-200':
-                                                    resident.status ===
-                                                    'approved',
-                                                'bg-red-100 text-red-800 border border-red-200':
-                                                    resident.status ===
-                                                    'rejected',
-                                            }"
-                                            class="inline-flex px-3 py-1 text-sm font-semibold rounded-full"
-                                        >
-                                            {{
-                                                resident.status
-                                                    .charAt(0)
-                                                    .toUpperCase() +
-                                                resident.status.slice(1)
-                                            }}
-                                        </span>
-                                    </td>
-
-                                    <!-- PIN Code -->
-                                    <td
-                                        class="px-6 py-4 whitespace-nowrap text-center"
-                                    >
-                                        <button
-                                            @click="
-                                                togglePinVisibility(resident.id)
-                                            "
-                                            class="text-sm font-mono bg-white border-2 border-primary px-3 py-1 rounded hover:bg-pressed hover:text-white transition-colors"
-                                        >
-                                            {{
-                                                isPinVisible(resident.id)
-                                                    ? resident.pin_code
-                                                    : "••••••"
-                                            }}
-                                        </button>
-                                    </td>
-
-                                    <!-- Actions -->
-                                    <td
-                                        class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium"
-                                    >
-                                        <div class="flex flex-col space-y-1">
-                                            <button
-                                                @click="handleView(resident)"
-                                                class="bg-primary hover:bg-pressed text-white px-2 py-1 rounded text-xs font-medium transition-colors shadow-sm"
-                                            >
-                                                View
-                                            </button>
-                                            <button
-                                                @click="handleEdit(resident)"
-                                                class="bg-primary hover:bg-pressed text-white px-2 py-1 rounded text-xs font-medium transition-colors shadow-sm"
-                                            >
-                                                Edit
-                                            </button>
-                                            <button
-                                                @click="handleDelete(resident)"
-                                                class="bg-primary hover:bg-red-800 text-white px-2 py-1 rounded text-xs font-medium transition-colors shadow-sm"
-                                            >
-                                                Delete
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+                    <!-- DataTable Component -->
+                    <DataTable
+                        :items="residents"
+                        type="resident"
+                        @view="handleView"
+                        @edit="handleEdit"
+                        @delete="handleDelete"
+                    />
                 </div>
             </div>
         </div>
@@ -601,6 +253,14 @@ const handleResidentDeleted = () => {
             :results="flash.results"
             :errors="flash.errors"
             @close="showBatchModal = false"
+        />
+
+        <!-- Create Resident Modal -->
+        <CreateResidentModal
+            :show="showCreateModal"
+            :organization-id="organizationId"
+            @close="closeCreateModal"
+            @created="handleResidentCreated"
         />
 
         <!-- Edit Resident Modal -->

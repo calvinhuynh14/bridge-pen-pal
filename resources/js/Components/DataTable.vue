@@ -1,7 +1,8 @@
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import { Link } from "@inertiajs/vue3";
 import Avatar from "@/Components/Avatar.vue";
+import SearchBar from "@/Components/SearchBar.vue";
 
 const props = defineProps({
     items: {
@@ -10,16 +11,21 @@ const props = defineProps({
     },
     type: {
         type: String,
-        default: "resident", // 'resident' or 'volunteer'
-        validator: (value) => ["resident", "volunteer"].includes(value),
+        default: "resident", // 'resident', 'volunteer', or 'report'
+        validator: (value) =>
+            ["resident", "volunteer", "report"].includes(value),
     },
     sortField: {
         type: String,
-        default: "application_date",
+        default: null,
     },
     sortDirection: {
         type: String,
         default: "desc",
+    },
+    searchQuery: {
+        type: String,
+        default: "",
     },
 });
 
@@ -30,14 +36,43 @@ const emit = defineEmits([
     "delete",
     "approve",
     "reject",
+    "resolve",
+    "dismiss",
+    "ban",
+    "view-user",
+    "update:searchQuery",
 ]);
 
 // Pin code visibility state
 const visiblePins = ref(new Set());
 
 // Client-side sorting state
-const sortField = ref(props.sortField);
-const sortDirection = ref(props.sortDirection);
+// Default sort field based on type
+const defaultSortField = computed(() => {
+    if (props.sortField) return props.sortField;
+    if (props.type === "report") return "created_at";
+    if (props.type === "volunteer") return "application_date";
+    return "name";
+});
+
+const sortField = ref(defaultSortField.value);
+const sortDirection = ref(props.sortDirection || "desc");
+
+// Search state
+const localSearchQuery = ref(props.searchQuery || "");
+
+// Watch for external search query changes
+watch(
+    () => props.searchQuery,
+    (newValue) => {
+        localSearchQuery.value = newValue;
+    }
+);
+
+// Emit search query updates
+watch(localSearchQuery, (newValue) => {
+    emit("update:searchQuery", newValue);
+});
 
 // Client-side pagination state
 const currentPage = ref(1);
@@ -82,7 +117,7 @@ const columns = computed(() => {
                 mobile: false,
             },
         ];
-    } else {
+    } else if (props.type === "volunteer") {
         return [
             { key: "name", label: "Name", sortable: true, mobile: true },
             { key: "status", label: "Status", sortable: true, mobile: true },
@@ -92,6 +127,25 @@ const columns = computed(() => {
                 sortable: true,
                 mobile: true,
             },
+            {
+                key: "actions",
+                label: "Actions",
+                sortable: false,
+                mobile: false,
+            },
+        ];
+    } else {
+        // Report type
+        return [
+            {
+                key: "reported_user_name",
+                label: "Reported User",
+                sortable: true,
+                mobile: true,
+            },
+            { key: "reason", label: "Reason", sortable: false, mobile: true },
+            { key: "status", label: "Status", sortable: true, mobile: true },
+            { key: "created_at", label: "Date", sortable: true, mobile: true },
             {
                 key: "actions",
                 label: "Actions",
@@ -116,25 +170,54 @@ const handleSort = (field) => {
     }
 };
 
+// Computed property for filtered and sorted items
+const filteredItems = computed(() => {
+    if (!localSearchQuery.value || props.type === "report") {
+        // For reports, search is handled server-side
+        return props.items;
+    }
+
+    const searchLower = localSearchQuery.value.toLowerCase();
+    return props.items.filter((item) => {
+        if (props.type === "resident") {
+            return (
+                item.name?.toLowerCase().includes(searchLower) ||
+                item.id?.toString().includes(searchLower)
+            );
+        } else if (props.type === "volunteer") {
+            return item.name?.toLowerCase().includes(searchLower);
+        }
+        return true;
+    });
+});
+
 // Computed property for sorted items
 const sortedItems = computed(() => {
-    const items = [...props.items];
+    const items = [...filteredItems.value];
 
     return items.sort((a, b) => {
         let aValue, bValue;
 
         switch (sortField.value) {
             case "name":
-                aValue = a.name.toLowerCase();
-                bValue = b.name.toLowerCase();
+                aValue = a.name?.toLowerCase() || "";
+                bValue = b.name?.toLowerCase() || "";
+                break;
+            case "reported_user_name":
+                aValue = a.reported_user_name?.toLowerCase() || "";
+                bValue = b.reported_user_name?.toLowerCase() || "";
                 break;
             case "application_date":
                 aValue = new Date(a.application_date);
                 bValue = new Date(b.application_date);
                 break;
+            case "created_at":
+                aValue = new Date(a.created_at);
+                bValue = new Date(b.created_at);
+                break;
             case "status":
-                aValue = a.status.toLowerCase();
-                bValue = b.status.toLowerCase();
+                aValue = a.status?.toLowerCase() || "";
+                bValue = b.status?.toLowerCase() || "";
                 break;
             default:
                 return 0;
@@ -203,7 +286,7 @@ const getItemActions = (item) => {
                 class: "bg-primary hover:bg-red-800 text-white",
             },
         ];
-    } else {
+    } else if (props.type === "volunteer") {
         return [
             {
                 label: "View",
@@ -226,6 +309,15 @@ const getItemActions = (item) => {
                 class: "bg-primary hover:bg-red-800 text-white",
             },
         ];
+    } else {
+        // Report type
+        return [
+            {
+                label: "View",
+                action: "view",
+                class: "bg-primary hover:bg-pressed text-white",
+            },
+        ];
     }
 };
 
@@ -240,6 +332,12 @@ const getStatusClasses = (status) => {
             return `${baseClasses} bg-green-100 text-green-800 border border-green-200`;
         case "rejected":
             return `${baseClasses} bg-red-100 text-red-800 border border-red-200`;
+        case "reviewed":
+            return `${baseClasses} bg-blue-100 text-blue-800 border border-blue-200`;
+        case "resolved":
+            return `${baseClasses} bg-green-100 text-green-800 border border-green-200`;
+        case "dismissed":
+            return `${baseClasses} bg-gray-100 text-gray-800 border border-gray-200`;
         default:
             return `${baseClasses} bg-gray-100 text-gray-800`;
     }
@@ -249,10 +347,24 @@ const formatDate = (dateString) => {
     if (!dateString) return "N/A";
     return new Date(dateString).toLocaleDateString();
 };
+
+const truncateText = (text, maxLength = 50) => {
+    if (!text) return "N/A";
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + "...";
+};
 </script>
 
 <template>
     <div>
+        <!-- Search Bar -->
+        <div class="mb-4">
+            <SearchBar
+                v-model="localSearchQuery"
+                :placeholder="`Search ${type}s...`"
+            />
+        </div>
+
         <!-- Desktop Table -->
         <div class="hidden lg:block overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -307,7 +419,8 @@ const formatDate = (dateString) => {
                                     column.key === 'status' ||
                                     column.key === 'actions' ||
                                     column.key === 'pin_code' ||
-                                    column.key === 'application_date',
+                                    column.key === 'application_date' ||
+                                    column.key === 'created_at',
                                 'text-right': column.key === 'actions',
                             }"
                         >
@@ -383,6 +496,30 @@ const formatDate = (dateString) => {
                                 {{ formatDate(item.application_date) }}
                             </div>
 
+                            <!-- Reported User Name for Reports -->
+                            <div
+                                v-else-if="column.key === 'reported_user_name'"
+                                class="text-sm font-medium text-black"
+                            >
+                                {{ item.reported_user_name || "N/A" }}
+                            </div>
+
+                            <!-- Reason for Reports -->
+                            <div
+                                v-else-if="column.key === 'reason'"
+                                class="text-sm text-black max-w-md"
+                            >
+                                {{ truncateText(item.reason, 50) }}
+                            </div>
+
+                            <!-- Created At for Reports -->
+                            <div
+                                v-else-if="column.key === 'created_at'"
+                                class="text-sm text-black"
+                            >
+                                {{ formatDate(item.created_at) }}
+                            </div>
+
                             <!-- Actions -->
                             <div
                                 v-else-if="column.key === 'actions'"
@@ -433,7 +570,12 @@ const formatDate = (dateString) => {
                             </div>
                             <div>
                                 <div class="text-sm font-medium text-black">
-                                    {{ item.name }}
+                                    <template v-if="type === 'report'">
+                                        {{ item.reported_user_name || "N/A" }}
+                                    </template>
+                                    <template v-else>
+                                        {{ item.name }}
+                                    </template>
                                 </div>
                                 <div
                                     v-if="type === 'resident'"
@@ -441,11 +583,27 @@ const formatDate = (dateString) => {
                                 >
                                     ID: {{ item.id }}
                                 </div>
+                                <div
+                                    v-if="type === 'report'"
+                                    class="text-xs text-gray-500"
+                                >
+                                    {{ truncateText(item.reason, 30) }}
+                                </div>
                             </div>
                         </div>
 
-                        <!-- Right side: Actions -->
-                        <div class="flex items-center space-x-2">
+                        <!-- Right side: Status and Actions -->
+                        <div class="flex flex-col items-end space-y-2">
+                            <!-- Status for reports -->
+                            <span
+                                v-if="type === 'report'"
+                                :class="getStatusClasses(item.status)"
+                            >
+                                {{
+                                    item.status.charAt(0).toUpperCase() +
+                                    item.status.slice(1)
+                                }}
+                            </span>
                             <!-- Action Buttons -->
                             <div class="flex space-x-1">
                                 <button
