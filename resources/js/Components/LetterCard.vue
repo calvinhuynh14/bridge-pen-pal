@@ -16,6 +16,10 @@ const props = defineProps({
         type: Boolean,
         default: true,
     },
+    showStatus: {
+        type: Boolean,
+        default: true,
+    },
 });
 
 const emit = defineEmits(["claim", "report", "view", "reply"]);
@@ -151,7 +155,7 @@ const handleReport = (event) => {
     >
         <!-- Status Icon (Bottom Right) -->
         <div
-            v-if="statusConfig"
+            v-if="showStatus && statusConfig"
             class="absolute bottom-1.5 right-1.5 sm:bottom-2 sm:right-2 z-10"
             :title="statusConfig.title"
         >

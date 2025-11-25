@@ -10,9 +10,13 @@ const props = defineProps({
         type: Object,
         default: null,
     },
+    hideReplyButton: {
+        type: Boolean,
+        default: false,
+    },
 });
 
-const emit = defineEmits(["close", "reply"]);
+const emit = defineEmits(["close", "reply", "report"]);
 
 // Format date helper (date only, no time)
 const formatDate = (dateString) => {
@@ -163,6 +167,7 @@ onUnmounted(() => {
                     Report
                 </button>
                 <button
+                    v-if="!hideReplyButton"
                     @click="$emit('reply', letter.id)"
                     class="bg-primary hover:bg-pressed text-black px-4 py-2 sm:px-6 sm:py-3 rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center gap-1 sm:gap-2"
                 >

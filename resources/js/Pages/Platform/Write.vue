@@ -57,6 +57,7 @@ const selectedRecipient = ref(null); // null = open letter, or pen pal ID
 const letterContent = ref("");
 const isSending = ref(false);
 const sendError = ref(null);
+const originalLetter = ref(null); // Store the letter being replied to
 
 // Pagination state
 const currentPage = ref(1);
@@ -68,6 +69,9 @@ const loadError = ref(null);
 // View letter modal
 const showViewModal = ref(false);
 const viewingLetter = ref(null);
+
+// Preview original letter modal (for reply context)
+const showPreviewModal = ref(false);
 
 // Report modal
 const showReportModal = ref(false);
@@ -549,6 +553,9 @@ const handleReply = async (letterId) => {
             return;
         }
 
+        // Store the original letter for preview
+        originalLetter.value = letter;
+
         // Ensure pen pals are loaded first
         if (penPals.value.length === 0) {
             await loadPenPals(1, false);
@@ -592,6 +599,9 @@ const handleReply = async (letterId) => {
 
 // Handle write new letter
 const handleWriteNew = () => {
+    // Clear original letter when writing new (not replying)
+    originalLetter.value = null;
+    
     // If viewing correspondence, pre-fill the recipient
     if (selectedPenPal.value) {
         selectedRecipient.value = selectedPenPal.value.id;
@@ -604,6 +614,8 @@ const handleWriteNew = () => {
 
 // Handle cancel/back from writing interface
 const handleCancelWrite = () => {
+    // Clear original letter when canceling
+    originalLetter.value = null;
     showWritingInterface.value = false;
     letterContent.value = "";
     selectedRecipient.value = null;
@@ -1123,12 +1135,38 @@ onUnmounted(() => {
                         <div class="space-y-4">
                             <!-- To Field (Recipient Dropdown) -->
                             <div>
-                                <label
-                                    for="recipient"
-                                    class="block text-sm font-medium text-gray-700 mb-2"
-                                >
-                                    To:
-                                </label>
+                                <div class="flex items-center justify-between mb-2">
+                                    <label
+                                        for="recipient"
+                                        class="block text-sm font-medium text-gray-700"
+                                    >
+                                        To:
+                                    </label>
+                                    <!-- Preview Original Letter Button (only when replying) -->
+                                    <button
+                                        v-if="originalLetter"
+                                        @click="showPreviewModal = true"
+                                        type="button"
+                                        class="inline-flex items-center gap-2 bg-primary hover:bg-pressed text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-colors shadow-sm"
+                                    >
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            viewBox="0 0 24 24"
+                                            fill="currentColor"
+                                            class="size-4"
+                                        >
+                                            <path
+                                                d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"
+                                            />
+                                            <path
+                                                fill-rule="evenodd"
+                                                d="M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.762 1.762 0 0 1 0-1.113ZM17.25 12a5.25 5.25 0 1 1-10.5 0 5.25 5.25 0 0 1 10.5 0Z"
+                                                clip-rule="evenodd"
+                                            />
+                                        </svg>
+                                        Preview original letter
+                                    </button>
+                                </div>
                                 <Select
                                     id="recipient"
                                     v-model="selectedRecipient"
@@ -1446,6 +1484,16 @@ onUnmounted(() => {
             :letter="viewingLetter"
             @close="closeViewModal"
             @reply="handleReply"
+            @report="handleReport"
+        />
+
+        <!-- Preview Original Letter Modal (for reply context) -->
+        <LetterViewModal
+            :show="showPreviewModal"
+            :letter="originalLetter"
+            :hide-reply-button="true"
+            @close="showPreviewModal = false"
+            @report="handleReport"
         />
 
         <!-- Report Modal -->

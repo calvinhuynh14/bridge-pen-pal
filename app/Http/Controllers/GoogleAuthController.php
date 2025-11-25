@@ -94,7 +94,7 @@ class GoogleAuthController extends Controller
             
             // Try to get user with state validation first (normal flow)
             try {
-                $googleUser = Socialite::driver('google')->user();
+            $googleUser = Socialite::driver('google')->user();
             } catch (Throwable $stateError) {
                 // If state validation fails (e.g., session lost in incognito mode), try stateless mode
                 // This is expected behavior when sessions don't persist, not an error
@@ -206,7 +206,7 @@ class GoogleAuthController extends Controller
             
             // Fall back to our session storage
             if (!$userType) {
-                $userType = session('google_oauth_user_type', 'admin');
+            $userType = session('google_oauth_user_type', 'admin');
                 if ($userType !== 'admin') {
                     \Log::info('Google OAuth callback - User type from session', ['user_type' => $userType]);
                 }
@@ -231,19 +231,19 @@ class GoogleAuthController extends Controller
                 })
             ]);
             
-            // Store Google user data in session for registration form
+                // Store Google user data in session for registration form
             // All user types (volunteer, admin, resident) need to complete registration
-            session([
-                'google_user' => [
-                    'name' => $googleUser->name,
-                    'email' => $googleUser->email,
-                    'avatar' => $googleUser->avatar
-                ]
-            ]);
-            
+                session([
+                    'google_user' => [
+                        'name' => $googleUser->name,
+                        'email' => $googleUser->email,
+                        'avatar' => $googleUser->avatar
+                    ]
+                ]);
+                
             // Clear the user type session (we've already stored it in $userType)
-            session()->forget('google_oauth_user_type');
-            
+                session()->forget('google_oauth_user_type');
+                
             // Save session to ensure it persists across redirect
             session()->save();
             

@@ -361,7 +361,31 @@ class LetterController extends Controller
         }
 
         // Check if user has access to this letter
-        if ($letter->sender_id != $user->id && $letter->receiver_id != $user->id) {
+        // Convert IDs to integers for proper comparison
+        $letterSenderId = (int)$letter->sender_id;
+        $letterReceiverId = $letter->receiver_id ? (int)$letter->receiver_id : null;
+        // Check is_open_letter from the letter object directly (l.* includes this field)
+        $isOpenLetter = isset($letter->is_open_letter) && (bool)$letter->is_open_letter;
+        $userId = (int)$user->id;
+        
+        // User can access if:
+        // 1. They are the sender, OR
+        // 2. They are the receiver (for non-open letters), OR
+        // 3. It's an open letter (anyone can view open letters to reply)
+        $hasAccess = ($letterSenderId === $userId) 
+            || ($letterReceiverId === $userId) 
+            || ($isOpenLetter && $letterReceiverId === null);
+        
+        if (!$hasAccess) {
+            // Log for debugging
+            \Log::info('Letter access denied', [
+                'letter_id' => $id,
+                'user_id' => $userId,
+                'sender_id' => $letterSenderId,
+                'receiver_id' => $letterReceiverId,
+                'is_open_letter' => $isOpenLetter,
+                'has_access' => $hasAccess,
+            ]);
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
@@ -624,6 +648,125 @@ class LetterController extends Controller
                 'current_page' => (int)$page,
                 'last_page' => $lastPage,
                 'per_page' => (int)$perPage,
+                'total' => $total,
+                'has_more' => $page < $lastPage,
+            ],
+        ]);
+    }
+
+    /**
+     * Get unread letters from pen pals for the current user
+     * Only returns letters from users who have sent/received letters with the current user (pen pals)
+     */
+    public function getUnreadLetters(Request $request)
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        // Get pagination parameters
+        $page = $request->input('page', 1);
+        $perPage = 4; // 4 letters per page as specified
+
+        // First, get list of pen pal user IDs
+        // Pen pals are users who have sent or received letters with the current user (non-open letters)
+        $penPalIds = DB::select("
+            SELECT DISTINCT u.id
+            FROM users u
+            WHERE u.id IN (
+                SELECT DISTINCT sender_id 
+                FROM letters 
+                WHERE receiver_id = ? 
+                AND is_open_letter = 0
+                AND deleted_at IS NULL
+                
+                UNION
+                
+                SELECT DISTINCT receiver_id 
+                FROM letters 
+                WHERE sender_id = ? 
+                AND is_open_letter = 0
+                AND deleted_at IS NULL
+            )
+            AND u.id != ?
+        ", [$user->id, $user->id, $user->id]);
+
+        $penPalIdArray = array_map(function($pal) {
+            return $pal->id;
+        }, $penPalIds);
+
+        if (empty($penPalIdArray)) {
+            return response()->json([
+                'letters' => [],
+                'pagination' => [
+                    'current_page' => 1,
+                    'last_page' => 1,
+                    'per_page' => $perPage,
+                    'total' => 0,
+                    'has_more' => false,
+                ],
+            ]);
+        }
+
+        // Build placeholders for IN clause
+        $placeholders = implode(',', array_fill(0, count($penPalIdArray), '?'));
+
+        // Get total count
+        $countQuery = "
+            SELECT COUNT(*) as total
+            FROM letters l
+            JOIN users sender ON l.sender_id = sender.id
+            WHERE l.receiver_id = ?
+            AND l.sender_id IN ($placeholders)
+            AND l.is_open_letter = 0
+            AND l.read_at IS NULL
+            AND l.deleted_at IS NULL
+        ";
+
+        $countParams = array_merge([$user->id], $penPalIdArray);
+        $totalResult = DB::selectOne($countQuery, $countParams);
+        $total = $totalResult->total;
+
+        // Calculate pagination
+        $offset = ($page - 1) * $perPage;
+        $lastPage = ceil($total / $perPage);
+
+        // Get unread letters from pen pals
+        $query = "
+            SELECT 
+                l.id,
+                l.content,
+                l.sent_at,
+                l.created_at,
+                l.status,
+                l.read_at,
+                sender.id as sender_id,
+                sender.name as sender_name,
+                receiver.id as receiver_id,
+                receiver.name as receiver_name
+            FROM letters l
+            JOIN users sender ON l.sender_id = sender.id
+            LEFT JOIN users receiver ON l.receiver_id = receiver.id
+            WHERE l.receiver_id = ?
+            AND l.sender_id IN ($placeholders)
+            AND l.is_open_letter = 0
+            AND l.read_at IS NULL
+            AND l.deleted_at IS NULL
+            ORDER BY l.sent_at DESC, l.created_at DESC
+            LIMIT ? OFFSET ?
+        ";
+
+        $queryParams = array_merge([$user->id], $penPalIdArray, [$perPage, $offset]);
+        $letters = DB::select($query, $queryParams);
+
+        return response()->json([
+            'letters' => $letters,
+            'pagination' => [
+                'current_page' => (int)$page,
+                'last_page' => $lastPage,
+                'per_page' => $perPage,
                 'total' => $total,
                 'has_more' => $page < $lastPage,
             ],

@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Http\Controllers\GoogleAuthController;
 use App\Http\Controllers\LetterController;
+use App\Http\Controllers\ProfileController;
 
 /**
  * Welcome Route
@@ -970,7 +971,24 @@ Route::middleware([
     
     // Platform home for residents and volunteers
     Route::get('/platform/home', function () {
-        return Inertia::render('PlatformHome');
+        $user = auth()->user();
+        
+        // TODO: Fetch story of the week from database
+        $storyOfTheWeek = [
+            'name' => 'Margaret Randy',
+            'profile_photo_url' => null,
+            'bio' => "At 82, Margaret has a way with plants—and people. A former flower shop owner, she knows that even a small bouquet can brighten someone's day.\n\nNow, at Willow Creek Retirement Home, she shares her love of nature through the pen pal platform. Her letters are filled with gardening tips, seasonal stories, and hand-drawn flower sketches. In return, volunteers send her pictures of their own plants—some thriving, some... still learning!\n\nFor Margaret, letters are like seeds—small connections that blossom into something beautiful. Would you like to be her next pen pal?"
+        ];
+        // Set to null to hide story: $storyOfTheWeek = null;
+        
+        // Unread letters will be fetched via API call on the frontend
+        // This allows for pagination without reloading the page
+        $unreadLetters = [];
+        
+        return Inertia::render('PlatformHome', [
+            'storyOfTheWeek' => $storyOfTheWeek,
+            'unreadLetters' => $unreadLetters,
+        ]);
     })->name('platform.home');
     
     // Discover page - for finding open letters
@@ -1046,7 +1064,9 @@ Route::middleware([
     Route::post('/platform/letters/{id}/claim', [LetterController::class, 'claim'])->name('letters.claim');
     Route::post('/platform/letters/{id}/report', [LetterController::class, 'report'])->name('letters.report');
     Route::post('/api/letters', [LetterController::class, 'store'])->name('api.letters.store');
+    // IMPORTANT: Specific routes must come before parameterized routes
     Route::get('/api/letters/received', [LetterController::class, 'getReceived'])->name('api.letters.received');
+    Route::get('/api/letters/unread', [LetterController::class, 'getUnreadLetters'])->name('api.letters.unread');
     Route::get('/api/letters/{id}', [LetterController::class, 'show'])->name('api.letters.show');
     Route::get('/api/correspondence/{penPalId}', [LetterController::class, 'getCorrespondence'])->name('api.correspondence');
     Route::get('/api/pen-pals', [LetterController::class, 'getPenPals'])->name('api.pen-pals');
@@ -1056,40 +1076,8 @@ Route::middleware([
         return Inertia::render('Platform/Write');
     })->name('platform.write');
     
-    // Profile settings for all users
-    Route::get('/profile/settings', function () {
-        $user = Auth::user();
-        $organizationName = null;
-        
-        // Get organization name for volunteers and residents
-        if ($user->isVolunteer()) {
-            $volunteer = DB::selectOne('
-                SELECT o.name 
-                FROM volunteer v
-                JOIN organization o ON v.organization_id = o.id
-                WHERE v.user_id = ?
-            ', [$user->id]);
-            $organizationName = $volunteer?->name;
-        } elseif ($user->isResident()) {
-            $resident = DB::selectOne('
-                SELECT o.name 
-                FROM resident r
-                JOIN organization o ON r.organization_id = o.id
-                WHERE r.user_id = ?
-            ', [$user->id]);
-            $organizationName = $resident?->name;
-        } elseif ($user->isAdmin()) {
-            $admin = DB::selectOne('
-                SELECT o.name 
-                FROM admin a
-                JOIN organization o ON a.organization_id = o.id
-                WHERE a.user_id = ?
-            ', [$user->id]);
-            $organizationName = $admin?->name;
-        }
-        
-        return Inertia::render('ProfileSettings', [
-            'organizationName' => $organizationName,
-        ]);
-    })->name('profile.settings');
+    // Override Jetstream's profile route to use our custom Profile/Show.vue component
+    // This route must be registered before Jetstream's service provider registers its routes
+    // Our route will take precedence and include organization data
+    Route::get('/user/profile', [ProfileController::class, 'show'])->name('profile.show');
 });

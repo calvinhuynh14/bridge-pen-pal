@@ -131,9 +131,9 @@ const logout = () => {
                                         Home
                                     </NavLink>
                                     <NavLink
-                                        :href="route('profile.settings')"
+                                        :href="route('profile.show')"
                                         :active="
-                                            route().current('profile.settings')
+                                            route().current('profile.show')
                                         "
                                     >
                                         Profile
@@ -189,7 +189,7 @@ const logout = () => {
                                         </div>
 
                                         <DropdownLink
-                                            :href="route('profile.settings')"
+                                            :href="route('profile.show')"
                                         >
                                             <div
                                                 class="flex items-center gap-2"
@@ -324,8 +324,8 @@ const logout = () => {
 
                         <div class="mt-3 space-y-1">
                             <ResponsiveNavLink
-                                :href="route('profile.settings')"
-                                :active="route().current('profile.settings')"
+                                :href="route('profile.show')"
+                                :active="route().current('profile.show')"
                             >
                                 <div class="flex items-center gap-2">
                                     <svg
@@ -578,7 +578,7 @@ const logout = () => {
                                 </Link>
 
                                 <Link
-                                    :href="route('profile.settings')"
+                                    :href="route('profile.show')"
                                     class="flex items-center px-4 py-3 text-base font-medium rounded-md hover:bg-hover transition-colors"
                                     :class="{
                                         'bg-pressed':
@@ -795,7 +795,7 @@ const logout = () => {
 
                         <!-- Profile -->
                         <Link
-                            :href="route('profile.settings')"
+                            :href="route('profile.show')"
                             class="flex flex-col items-center py-2 px-3 rounded-lg transition-colors"
                             :class="{
                                 'bg-pressed': $page.url.startsWith('/profile'),
