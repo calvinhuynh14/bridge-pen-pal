@@ -115,13 +115,19 @@ class FortifyServiceProvider extends ServiceProvider
                     return route('admin.dashboard');
                 }
                 
-                // Check if user is a resident
+                // Check if user is a resident (no email verification required)
                 if ($user->isResident()) {
                     return route('dashboard'); // Resident dashboard
                 }
                 
-                // Check volunteer approval status
+                // For volunteers: check email verification first, then approval status
                 if ($user->isVolunteer()) {
+                    // If email not verified, redirect to verification page
+                    if (!$user->hasVerifiedEmail()) {
+                        return route('verification.notice');
+                    }
+                    
+                    // Email is verified, check approval status
                     $volunteerStatus = \DB::select('SELECT status FROM volunteer WHERE user_id = ?', [$user->id]);
                     
                     if (empty($volunteerStatus) || $volunteerStatus[0]->status !== 'approved') {
@@ -138,23 +144,50 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::redirects('register', function (Request $request) {
             $user = auth()->user();
             
+            // Ensure user type relationship is loaded
+            if ($user && !$user->relationLoaded('userType')) {
+                $user->load('userType');
+            }
+            
             \Log::info('Fortify register redirect - Called', [
                 'user_id' => $user?->id,
                 'user_email' => $user?->email,
+                'user_type_id' => $user?->user_type_id,
                 'user_type' => $user?->userType?->name,
                 'is_admin' => $user?->isAdmin(),
                 'is_volunteer' => $user?->isVolunteer(),
                 'is_resident' => $user?->isResident(),
+                'email_verified' => $user?->hasVerifiedEmail(),
                 'session_id' => session()->getId(),
                 'is_inertia_request' => $request->header('X-Inertia') !== null
             ]);
             
             if ($user) {
+                // Check admin first - admins go directly to admin dashboard
                 if ($user->isAdmin()) {
                     $redirectUrl = route('admin.dashboard');
                     \Log::info('Fortify register redirect - Redirecting admin', ['url' => $redirectUrl]);
+                    if ($request->header('X-Inertia')) {
+                        return url($redirectUrl);
+                    }
                     return $redirectUrl;
-                } elseif ($user->isVolunteer()) {
+                }
+                
+                // Check volunteer - volunteers need email verification and approval
+                if ($user->isVolunteer()) {
+                    // For volunteers: check email verification first
+                    if (!$user->hasVerifiedEmail()) {
+                        $redirectUrl = route('verification.notice');
+                        \Log::info('Fortify register redirect - Redirecting volunteer to email verification', [
+                            'url' => $redirectUrl
+                        ]);
+                        if ($request->header('X-Inertia')) {
+                            return url($redirectUrl);
+                        }
+                        return $redirectUrl;
+                    }
+                    
+                    // Email is verified, redirect to application submitted page
                     $redirectUrl = route('application.submitted');
                     \Log::info('Fortify register redirect - Redirecting volunteer to application submitted', [
                         'url' => $redirectUrl,
@@ -165,14 +198,31 @@ class FortifyServiceProvider extends ServiceProvider
                         return url($redirectUrl);
                     }
                     return $redirectUrl;
-                } else {
-                    $redirectUrl = route('dashboard');
-                    \Log::info('Fortify register redirect - Redirecting other user type', ['url' => $redirectUrl]);
-                    return $redirectUrl;
                 }
+                
+                // Residents and other types go to dashboard
+                $redirectUrl = route('dashboard');
+                \Log::info('Fortify register redirect - Redirecting other user type', ['url' => $redirectUrl]);
+                if ($request->header('X-Inertia')) {
+                    return url($redirectUrl);
+                }
+                return $redirectUrl;
             }
             
             \Log::warning('Fortify register redirect - No authenticated user, redirecting to dashboard');
+            return route('dashboard');
+        });
+        
+        // Customize the redirect after email verification
+        Fortify::redirects('email-verification', function () {
+            $user = auth()->user();
+            
+            if ($user && $user->isVolunteer()) {
+                // Redirect volunteers to application submitted page with success message
+                return route('application.submitted') . '?verified=1';
+            }
+            
+            // For other user types, redirect to dashboard
             return route('dashboard');
         });
 

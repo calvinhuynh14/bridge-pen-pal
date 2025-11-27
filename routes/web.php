@@ -36,10 +36,30 @@ Route::get('/admin/login', function () {
 Route::get('/auth/google/redirect', [GoogleAuthController::class, 'redirect'])->name('auth.google.redirect');
 Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->name('auth.google.callback');
 
-    // Application submitted page for volunteers (public route)
-    Route::get('/application/submitted', function () {
-        return Inertia::render('Auth/ApplicationSubmitted');
-    })->name('application.submitted');
+    // Application submitted page for volunteers (requires auth but not verification)
+    Route::middleware(['auth:sanctum', config('jetstream.auth_session')])->group(function () {
+        Route::get('/application/submitted', function () {
+            $user = auth()->user();
+            
+            // Get volunteer status and rejection reason if user is a volunteer
+            $volunteerStatus = null;
+            $rejectionReason = null;
+            if ($user->isVolunteer()) {
+                $volunteerData = DB::selectOne('SELECT status, rejection_reason FROM volunteer WHERE user_id = ?', [$user->id]);
+                if ($volunteerData) {
+                    $volunteerStatus = $volunteerData->status;
+                    $rejectionReason = $volunteerData->rejection_reason;
+                }
+            }
+            
+            return Inertia::render('Auth/ApplicationSubmitted', [
+                'isEmailVerified' => $user->hasVerifiedEmail(),
+                'volunteerStatus' => $volunteerStatus,
+                'rejectionReason' => $rejectionReason,
+                'isVolunteer' => $user->isVolunteer(),
+            ]);
+        })->name('application.submitted');
+    });
     
     // Custom logout route that redirects to login
     Route::post('/logout-to-login', function (Request $request) {
@@ -57,7 +77,7 @@ Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->
 Route::middleware([
     'auth:sanctum',
     config('jetstream.auth_session'),
-    'verified',
+    'email.verified',
     'volunteer.approved',
 ])->group(function () {
     // Main dashboard route - redirects based on user type
@@ -123,7 +143,8 @@ Route::middleware([
         return Inertia::render('AdminDashboard', [
             'needsOrganizationSetup' => $needsOrganizationSetup,
             'volunteerApplications' => $volunteerApplications,
-            'totalResidents' => $totalResidents
+            'totalResidents' => $totalResidents,
+            'isEmailVerified' => $user->hasVerifiedEmail(),
         ]);
     })->name('admin.dashboard');
     
@@ -857,19 +878,21 @@ Route::middleware([
             
             $organizationId = $adminRecord[0]->organization_id;
             
-            // Get volunteer name before updating
-            $volunteer = DB::select('
-                SELECT u.name 
+            // Get volunteer user and organization name
+            $volunteerData = DB::selectOne('
+                SELECT u.id as user_id, u.name, u.email, o.name as organization_name
                 FROM volunteer v 
                 JOIN users u ON v.user_id = u.id 
+                JOIN organization o ON v.organization_id = o.id
                 WHERE v.id = ? AND v.organization_id = ?
             ', [$id, $organizationId]);
             
-            if (empty($volunteer)) {
+            if (empty($volunteerData)) {
                 return back()->withErrors(['error' => 'Volunteer application not found']);
             }
             
-            $volunteerName = $volunteer[0]->name;
+            $volunteerName = $volunteerData->name;
+            $organizationName = $volunteerData->organization_name;
             
             // Update volunteer status to approved
             $updated = DB::update('
@@ -879,50 +902,73 @@ Route::middleware([
             ', ['approved', now(), $id, $organizationId]);
             
             if ($updated) {
+                // Send approval notification email
+                $volunteerUser = \App\Models\User::find($volunteerData->user_id);
+                if ($volunteerUser) {
+                    $volunteerUser->notify(new \App\Notifications\ApplicationApprovedNotification($organizationName));
+                }
+                
                 return redirect()->route('admin.volunteers')->with('success', "Volunteer application for {$volunteerName} approved successfully");
             } else {
                 return back()->withErrors(['error' => 'Volunteer application not found or already processed']);
             }
         })->name('admin.volunteers.approve');
         
-        Route::post('/admin/volunteers/{id}/reject', function ($id) {
-        $user = auth()->user();
-        
-        // Verify admin has access to this volunteer
-        $adminRecord = DB::select('SELECT organization_id FROM admin WHERE user_id = ?', [$user->id]);
-        if (empty($adminRecord)) {
-            return back()->withErrors(['error' => 'Unauthorized']);
-        }
-        
-        $organizationId = $adminRecord[0]->organization_id;
-        
-        // Get volunteer name before updating
-        $volunteer = DB::select('
-            SELECT u.name 
-            FROM volunteer v 
-            JOIN users u ON v.user_id = u.id 
-            WHERE v.id = ? AND v.organization_id = ?
-        ', [$id, $organizationId]);
-        
-        if (empty($volunteer)) {
-            return back()->withErrors(['error' => 'Volunteer application not found']);
-        }
-        
-        $volunteerName = $volunteer[0]->name;
-        
-        // Update volunteer status to rejected
-        $updated = DB::update('
-            UPDATE volunteer 
-            SET status = ?, updated_at = ? 
-            WHERE id = ? AND organization_id = ?
-        ', ['rejected', now(), $id, $organizationId]);
-        
-        if ($updated) {
-            return redirect()->route('admin.volunteers')->with('success', "Volunteer application for {$volunteerName} rejected successfully");
-        } else {
-            return back()->withErrors(['error' => 'Volunteer application not found or already processed']);
-        }
-    })->name('admin.volunteers.reject');
+        Route::post('/admin/volunteers/{id}/reject', function ($id, Request $request) {
+            $user = auth()->user();
+            
+            // Verify admin has access to this volunteer
+            $adminRecord = DB::select('SELECT organization_id FROM admin WHERE user_id = ?', [$user->id]);
+            if (empty($adminRecord)) {
+                return back()->withErrors(['error' => 'Unauthorized']);
+            }
+            
+            $organizationId = $adminRecord[0]->organization_id;
+            
+            // Get volunteer user and organization name
+            $volunteerData = DB::selectOne('
+                SELECT u.id as user_id, u.name, u.email, o.name as organization_name
+                FROM volunteer v 
+                JOIN users u ON v.user_id = u.id 
+                JOIN organization o ON v.organization_id = o.id
+                WHERE v.id = ? AND v.organization_id = ?
+            ', [$id, $organizationId]);
+            
+            if (empty($volunteerData)) {
+                return back()->withErrors(['error' => 'Volunteer application not found']);
+            }
+            
+            $volunteerName = $volunteerData->name;
+            $organizationName = $volunteerData->organization_name;
+            
+            // Get rejection reason (optional)
+            $rejectionReason = $request->input('rejection_reason');
+            if ($rejectionReason) {
+                $rejectionReason = trim(strip_tags($rejectionReason)); // Sanitize
+                if (empty($rejectionReason)) {
+                    $rejectionReason = null;
+                }
+            }
+            
+            // Update volunteer status to rejected
+            $updated = DB::update('
+                UPDATE volunteer 
+                SET status = ?, rejection_reason = ?, updated_at = ? 
+                WHERE id = ? AND organization_id = ?
+            ', ['rejected', $rejectionReason, now(), $id, $organizationId]);
+            
+            if ($updated) {
+                // Send rejection notification email
+                $volunteerUser = \App\Models\User::find($volunteerData->user_id);
+                if ($volunteerUser) {
+                    $volunteerUser->notify(new \App\Notifications\ApplicationRejectedNotification($organizationName, $rejectionReason));
+                }
+                
+                return redirect()->route('admin.volunteers')->with('success', "Volunteer application for {$volunteerName} rejected successfully");
+            } else {
+                return back()->withErrors(['error' => 'Volunteer application not found or already processed']);
+            }
+        })->name('admin.volunteers.reject');
     
     Route::delete('/admin/volunteers/{id}/delete', function ($id) {
         $user = auth()->user();

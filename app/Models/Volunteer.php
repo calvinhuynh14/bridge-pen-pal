@@ -13,7 +13,8 @@ class Volunteer extends Model
         'user_id',
         'organization_id',
         'status',
-        'application_date'
+        'application_date',
+        'rejection_reason',
     ];
 
     protected $casts = [

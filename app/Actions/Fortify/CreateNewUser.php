@@ -129,7 +129,8 @@ class CreateNewUser implements CreatesNewUsers
             });
         } elseif ($userTypeName === 'volunteer') {
             // Create volunteer application record
-            DB::transaction(function () use ($user, $input, $sanitizeText) {
+            $organizationName = null;
+            DB::transaction(function () use ($user, $input, $sanitizeText, &$organizationName) {
                 // Sanitize application_notes to prevent XSS attacks
                 $applicationNotes = null;
                 if (!empty($input['application_notes'])) {
@@ -139,6 +140,10 @@ class CreateNewUser implements CreatesNewUsers
                         $applicationNotes = null;
                     }
                 }
+                
+                // Get organization name for email
+                $organization = DB::selectOne('SELECT name FROM organization WHERE id = ?', [$input['organization_id']]);
+                $organizationName = $organization ? $organization->name : 'the organization';
                 
                 DB::insert(
                     'INSERT INTO volunteer (user_id, organization_id, status, application_date, application_notes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
@@ -153,6 +158,11 @@ class CreateNewUser implements CreatesNewUsers
                     ]
                 );
             });
+            
+            // Send application submitted email notification
+            if ($organizationName) {
+                $user->notify(new \App\Notifications\ApplicationSubmittedNotification($organizationName));
+            }
         }
 
         // Clear Google user session if it exists

@@ -39,7 +39,13 @@ return [
         'client_id' => env('GOOGLE_CLIENT_ID'),        // Your Google Client ID
         'client_secret' => env('GOOGLE_CLIENT_SECRET'), // Your Google Client Secret
         'redirect' => env('GOOGLE_REDIRECT_URL'),      // Your Google Redirect URL
-    ]
+    ],
 
+    'mailgun' => [
+        'domain' => env('MAILGUN_DOMAIN'),
+        'secret' => env('MAILGUN_SECRET'),
+        'endpoint' => env('MAILGUN_ENDPOINT', 'api.mailgun.net'),
+        'scheme' => 'https',
+    ],
 
 ];

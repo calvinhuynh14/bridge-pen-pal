@@ -3,6 +3,7 @@ import AppLayout from "@/Layouts/AppLayout.vue";
 import { Head, Link, useForm } from "@inertiajs/vue3";
 import { ref, computed } from "vue";
 import ViewDetailsModal from "@/Components/ViewDetailsModal.vue";
+import RejectionReasonModal from "@/Components/RejectionReasonModal.vue";
 import DataTable from "@/Components/DataTable.vue";
 
 const props = defineProps({
@@ -40,6 +41,8 @@ const props = defineProps({
 // Modal state
 const showModal = ref(false);
 const selectedApplication = ref(null);
+const showRejectionModal = ref(false);
+const applicationToReject = ref(null);
 
 // Computed properties for total counts from backend
 const pendingCount = computed(() => {
@@ -67,9 +70,30 @@ const approveApplication = (applicationId) => {
     form.post(route("admin.volunteers.approve", applicationId));
 };
 
-const rejectApplication = (applicationId) => {
-    const form = useForm({});
-    form.post(route("admin.volunteers.reject", applicationId));
+const rejectApplication = (applicationId, rejectionReason = null) => {
+    const form = useForm({
+        rejection_reason: rejectionReason || null,
+    });
+    form.post(route("admin.volunteers.reject", applicationId), {
+        onSuccess: () => {
+            showRejectionModal.value = false;
+            applicationToReject.value = null;
+        },
+    });
+};
+
+const handleRejectClick = (application) => {
+    applicationToReject.value = application;
+    showRejectionModal.value = true;
+};
+
+const handleRejectionConfirm = ({ applicationId, rejectionReason }) => {
+    rejectApplication(applicationId, rejectionReason);
+};
+
+const handleRejectionClose = () => {
+    showRejectionModal.value = false;
+    applicationToReject.value = null;
 };
 
 const deleteApplication = (applicationId) => {
@@ -93,7 +117,7 @@ const handleApprove = (application) => {
 };
 
 const handleReject = (application) => {
-    rejectApplication(application.id);
+    handleRejectClick(application);
 };
 
 const handleDelete = (application) => {
@@ -187,6 +211,14 @@ const handleDelete = (application) => {
             :selected-item="selectedApplication"
             item-type="volunteer"
             @close="closeModal"
+        />
+
+        <!-- Rejection Reason Modal -->
+        <RejectionReasonModal
+            :show="showRejectionModal"
+            :application="applicationToReject"
+            @close="handleRejectionClose"
+            @confirm="handleRejectionConfirm"
         />
     </AppLayout>
 </template>

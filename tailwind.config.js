@@ -18,6 +18,7 @@ export default {
                 primary: "#B8B8FF",
                 pressed: "#9381FF", 
                 hover: "#5E239D",
+                light: "#DCDCFF",
                 white: "#F1F1F1",
                 background: "#FFF3E7",
                 accent: "#E9D60C",

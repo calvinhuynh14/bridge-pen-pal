@@ -4,7 +4,6 @@ import { computed } from "vue";
 import AuthenticationCard from "@/Components/AuthenticationCard.vue";
 import AuthenticationCardLogo from "@/Components/AuthenticationCardLogo.vue";
 import Checkbox from "@/Components/Checkbox.vue";
-import InputError from "@/Components/InputError.vue";
 import InputLabel from "@/Components/InputLabel.vue";
 import PrimaryButton from "@/Components/PrimaryButton.vue";
 import TextInput from "@/Components/TextInput.vue";
@@ -65,6 +64,112 @@ const form = useForm({
     // Admin fields
     organization_name: "",
 });
+
+// Helper function to get error messages as an array
+const getErrorMessages = () => {
+    // Collect all error messages
+    const errorMessages = [];
+    
+    // Check for email already exists error
+    if (form.errors.email) {
+        const emailError = Array.isArray(form.errors.email)
+            ? form.errors.email[0]
+            : form.errors.email;
+        if (emailError.includes('already been taken') || emailError.includes('already exists')) {
+            errorMessages.push('This email address is already registered. Please use a different email or try logging in.');
+        } else if (emailError.includes('required')) {
+            errorMessages.push('Email address is required.');
+        } else if (emailError.includes('valid email')) {
+            errorMessages.push('Please enter a valid email address.');
+        } else {
+            errorMessages.push(emailError);
+        }
+    }
+    
+    // Check for password errors
+    if (form.errors.password) {
+        const passwordError = Array.isArray(form.errors.password)
+            ? form.errors.password[0]
+            : form.errors.password;
+        errorMessages.push(passwordError);
+    }
+    
+    // Check for password confirmation errors
+    if (form.errors.password_confirmation) {
+        const confirmError = Array.isArray(form.errors.password_confirmation)
+            ? form.errors.password_confirmation[0]
+            : form.errors.password_confirmation;
+        if (confirmError.includes('match')) {
+            errorMessages.push('Password confirmation does not match.');
+        } else {
+            errorMessages.push(confirmError);
+        }
+    }
+    
+    // Check for required field errors
+    if (form.errors.name) {
+        const error = Array.isArray(form.errors.name) ? form.errors.name[0] : form.errors.name;
+        errorMessages.push(error || 'Full name is required.');
+    }
+    
+    if (form.errors.first_name) {
+        const error = Array.isArray(form.errors.first_name) ? form.errors.first_name[0] : form.errors.first_name;
+        errorMessages.push(error || 'First name is required.');
+    }
+    
+    if (form.errors.last_name) {
+        const error = Array.isArray(form.errors.last_name) ? form.errors.last_name[0] : form.errors.last_name;
+        errorMessages.push(error || 'Last name is required.');
+    }
+    
+    if (form.errors.organization_id) {
+        const error = Array.isArray(form.errors.organization_id) ? form.errors.organization_id[0] : form.errors.organization_id;
+        errorMessages.push(error || 'Please select an organization.');
+    }
+    
+    if (form.errors.organization_name) {
+        const error = Array.isArray(form.errors.organization_name) ? form.errors.organization_name[0] : form.errors.organization_name;
+        errorMessages.push(error || 'Organization name is required.');
+    }
+    
+    if (form.errors.terms) {
+        const error = Array.isArray(form.errors.terms) ? form.errors.terms[0] : form.errors.terms;
+        errorMessages.push(error || 'You must agree to the Terms of Service and Privacy Policy.');
+    }
+    
+    if (form.errors.application_notes) {
+        const error = Array.isArray(form.errors.application_notes) ? form.errors.application_notes[0] : form.errors.application_notes;
+        errorMessages.push(error);
+    }
+    
+    // Check for other common errors
+    if (form.errors.message) {
+        const error = Array.isArray(form.errors.message) ? form.errors.message[0] : form.errors.message;
+        errorMessages.push(error);
+    }
+    
+    if (form.errors.error) {
+        const error = Array.isArray(form.errors.error) ? form.errors.error[0] : form.errors.error;
+        errorMessages.push(error);
+    }
+    
+    // Get any remaining errors from other fields
+    const processedFields = [
+        'email', 'password', 'password_confirmation', 'name', 
+        'first_name', 'last_name', 'organization_id', 
+        'organization_name', 'terms', 'application_notes', 
+        'message', 'error'
+    ];
+    
+    for (const [key, value] of Object.entries(form.errors)) {
+        if (!processedFields.includes(key)) {
+            const error = Array.isArray(value) ? value[0] : value;
+            errorMessages.push(error);
+        }
+    }
+    
+    return errorMessages.length > 0 ? errorMessages : ['Please check your information and try again.'];
+};
 
 const submit = () => {
     // Ensure user_type_id is set before submission
@@ -257,7 +362,23 @@ console.log("Updated form user_type_id:", form.user_type_id);
                 </h1>
             </div>
             <!-- Registration Form -->
-            <div class="rounded-lg px-0 lg:px-8 max-w-md mx-auto space-y-4">
+            <div class="rounded-lg px-0 lg:px-8 max-w-md lg:max-w-lg mx-auto space-y-4">
+                <!-- Error Message Box -->
+                <div
+                    v-if="Object.keys(form.errors).length > 0"
+                    class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg"
+                >
+                    <ul class="list-disc list-inside space-y-1">
+                        <li
+                            v-for="(error, index) in getErrorMessages()"
+                            :key="index"
+                            class="text-sm text-red-600 font-medium"
+                        >
+                            {{ error }}
+                        </li>
+                    </ul>
+                </div>
+
                 <form @submit.prevent="submit">
                     <!-- Hidden field for user type -->
                     <input
@@ -279,10 +400,6 @@ console.log("Updated form user_type_id:", form.user_type_id);
                                 autocomplete="name"
                                 placeholder="Enter your full name"
                             />
-                            <InputError
-                                class="mt-2"
-                                :message="form.errors.name"
-                            />
                         </div>
 
                         <!-- Volunteer: First Name and Last Name Fields -->
@@ -301,10 +418,6 @@ console.log("Updated form user_type_id:", form.user_type_id);
                                     autocomplete="given-name"
                                     placeholder="First name"
                                 />
-                                <InputError
-                                    class="mt-2"
-                                    :message="form.errors.first_name"
-                                />
                             </div>
                             <div>
                                 <TextInput
@@ -315,10 +428,6 @@ console.log("Updated form user_type_id:", form.user_type_id);
                                     required
                                     autocomplete="family-name"
                                     placeholder="Last name"
-                                />
-                                <InputError
-                                    class="mt-2"
-                                    :message="form.errors.last_name"
                                 />
                             </div>
                         </div>
@@ -337,12 +446,6 @@ console.log("Updated form user_type_id:", form.user_type_id);
                                 class="mt-2"
                                 required
                                 aria-required="true"
-                                aria-describedby="organization_id-error"
-                            />
-                            <InputError
-                                id="organization_id-error"
-                                class="mt-2"
-                                :message="form.errors.organization_id"
                             />
                         </div>
 
@@ -384,37 +487,39 @@ console.log("Updated form user_type_id:", form.user_type_id);
                                 }"
                                 placeholder="Tell us why you'd like to volunteer and any relevant experience..."
                             ></textarea>
-                            <InputError
-                                class="mt-2"
-                                :message="form.errors.application_notes"
-                            />
                         </div>
 
                         <!-- Admin: Organization Name Field -->
                         <div v-if="type === 'admin'">
+                            <InputLabel
+                                for="organization_name"
+                                value="Organization Name"
+                                class="text-black"
+                            />
                             <TextInput
                                 id="organization_name"
                                 v-model="form.organization_name"
                                 type="text"
-                                class="mt-2 block w-full border-gray-300 rounded-lg focus:border-primary focus:ring-primary"
+                                class="mt-2 block w-full lg:w-96 border-gray-300 rounded-lg focus:border-primary focus:ring-primary"
                                 required
                                 autofocus
                                 autocomplete="organization"
                                 placeholder="Enter your organization name"
                             />
-                            <InputError
-                                class="mt-2"
-                                :message="form.errors.organization_name"
-                            />
                         </div>
 
                         <!-- Email Field -->
                         <div>
+                            <InputLabel
+                                for="email"
+                                value="Email Address"
+                                class="text-black"
+                            />
                             <TextInput
                                 id="email"
                                 v-model="form.email"
                                 type="email"
-                                class="mt-2 block w-full border-gray-300 rounded-lg focus:border-primary focus:ring-primary"
+                                class="mt-2 block w-full lg:w-96 border-gray-300 rounded-lg focus:border-primary focus:ring-primary"
                                 :class="{
                                     'bg-gray-100 cursor-not-allowed opacity-75':
                                         isGoogleUser,
@@ -454,35 +559,37 @@ console.log("Updated form user_type_id:", form.user_type_id);
 
                         <!-- Password Field - Hidden for Google users -->
                         <div v-if="!isGoogleUser">
+                            <InputLabel
+                                for="password"
+                                value="Password"
+                                class="text-black"
+                            />
                             <TextInput
                                 id="password"
                                 v-model="form.password"
                                 type="password"
-                                class="mt-2 block w-full border-gray-300 rounded-lg focus:border-primary focus:ring-primary"
+                                class="mt-2 block w-full lg:w-96 border-gray-300 rounded-lg focus:border-primary focus:ring-primary"
                                 required
                                 autocomplete="new-password"
                                 placeholder="Create a password"
-                            />
-                            <InputError
-                                class="mt-2"
-                                :message="form.errors.password"
                             />
                         </div>
 
                         <!-- Confirm Password Field - Hidden for Google users -->
                         <div v-if="!isGoogleUser">
+                            <InputLabel
+                                for="password_confirmation"
+                                value="Confirm Password"
+                                class="text-black"
+                            />
                             <TextInput
                                 id="password_confirmation"
                                 v-model="form.password_confirmation"
                                 type="password"
-                                class="mt-2 block w-full border-gray-300 rounded-lg focus:border-primary focus:ring-primary"
+                                class="mt-2 block w-full lg:w-96 border-gray-300 rounded-lg focus:border-primary focus:ring-primary"
                                 required
                                 autocomplete="new-password"
                                 placeholder="Confirm your password"
-                            />
-                            <InputError
-                                class="mt-2"
-                                :message="form.errors.password_confirmation"
                             />
                         </div>
 
@@ -522,7 +629,6 @@ console.log("Updated form user_type_id:", form.user_type_id);
                                 </label>
                             </div>
                         </div>
-                        <InputError class="mt-2" :message="form.errors.terms" />
                     </div>
 
                     <!-- Submit Button -->
