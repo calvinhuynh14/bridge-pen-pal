@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from "vue";
+import Avatar from "@/Components/Avatar.vue";
 
 const props = defineProps({
     show: {
@@ -135,12 +136,20 @@ onUnmounted(() => {
 
                 <!-- From (bottom, left-aligned, larger font, pressed color) -->
                 <div class="mt-auto pt-4 sm:pt-6 md:pt-8 text-left">
-                    <p
-                        class="text-pressed font-semibold text-base sm:text-lg md:text-xl"
-                    >
-                        <span class="font-medium">From:</span>
-                        {{ letter.sender_name }}
-                    </p>
+                    <div class="flex items-center gap-3">
+                        <Avatar
+                            :src="letter.sender_avatar ? `/images/avatars/${letter.sender_avatar}` : null"
+                            :name="letter.sender_name"
+                            size="md"
+                            border-color="pressed"
+                        />
+                        <p
+                            class="text-pressed font-semibold text-base sm:text-lg md:text-xl"
+                        >
+                            <span class="font-medium">From:</span>
+                            {{ letter.sender_name }}
+                        </p>
+                    </div>
                 </div>
             </div>
 

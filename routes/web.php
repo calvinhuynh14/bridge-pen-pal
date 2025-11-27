@@ -1053,9 +1053,11 @@ Route::middleware([
                 l.is_open_letter,
                 sender.id as sender_id,
                 sender.name as sender_name,
+                sender.avatar as sender_avatar,
                 ut.name as sender_type,
                 receiver.id as receiver_id,
-                receiver.name as receiver_name
+                receiver.name as receiver_name,
+                receiver.avatar as receiver_avatar
             FROM letters l
             JOIN users sender ON l.sender_id = sender.id
             JOIN user_types ut ON sender.user_type_id = ut.id
@@ -1126,4 +1128,5 @@ Route::middleware([
     // This route must be registered before Jetstream's service provider registers its routes
     // Our route will take precedence and include organization data
     Route::get('/user/profile', [ProfileController::class, 'show'])->name('profile.show');
+    Route::put('/user/profile/avatar', [ProfileController::class, 'updateAvatar'])->name('profile.avatar.update');
 });

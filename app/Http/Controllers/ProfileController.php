@@ -45,8 +45,48 @@ class ProfileController extends Controller
             $organizationName = $admin?->name;
         }
         
+        // Get available avatars
+        $availableAvatars = [
+            'avatar_1_1.png',
+            'avatar_1_2.png',
+            'avatar_1_3.png',
+            'avatar_1_4.png',
+            'avatar_1_5.png',
+            'avatar_1_6.png',
+            'avatar_1_7.png',
+            'avatar_1_8.png',
+            'avatar_1_9.png',
+            'avatar_1_10.png',
+            'avatar_1_11.png',
+            'avatar_1_12.png',
+        ];
+        
         return Inertia::render('Profile/Show', [
             'organizationName' => $organizationName,
+            'availableAvatars' => $availableAvatars,
+            'currentAvatar' => $user->avatar,
         ]);
+    }
+    
+    /**
+     * Update the user's avatar.
+     */
+    public function updateAvatar(Request $request)
+    {
+        $request->validate([
+            'avatar' => ['nullable', 'string', 'in:avatar_1_1.png,avatar_1_2.png,avatar_1_3.png,avatar_1_4.png,avatar_1_5.png,avatar_1_6.png,avatar_1_7.png,avatar_1_8.png,avatar_1_9.png,avatar_1_10.png,avatar_1_11.png,avatar_1_12.png'],
+        ]);
+        
+        $user = Auth::user();
+        $user->avatar = $request->avatar;
+        $user->save();
+        
+        // Refresh the user model to ensure accessors are recalculated
+        $user->refresh();
+        
+        // Clear any cached user data to ensure fresh data is returned
+        Auth::setUser($user);
+        
+        return redirect()->back()->with('success', 'Avatar updated successfully.');
     }
 }

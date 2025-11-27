@@ -1,6 +1,5 @@
 <script setup>
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import InputError from '@/Components/InputError.vue';
 import TextInput from '@/Components/TextInput.vue';
 import SimpleHeader from '@/Components/SimpleHeader.vue';
 
@@ -15,6 +14,81 @@ const form = useForm({
     password: '',
     password_confirmation: '',
 });
+
+
+// Helper function to get error messages as an array
+const getErrorMessages = () => {
+    const errorMessages = [];
+    
+    // Check for password errors - always show requirements
+    if (form.errors.password) {
+        const passwordErrors = Array.isArray(form.errors.password)
+            ? form.errors.password
+            : [form.errors.password];
+        
+        // Check for special cases first
+        let hasSpecialError = false;
+        passwordErrors.forEach((passwordError) => {
+            const errorLower = passwordError.toLowerCase();
+            
+            // Check for uncompromised password error (this requires server-side check)
+            // Laravel's Password rule uses various error messages for uncompromised
+            if (errorLower.includes('uncompromised') || 
+                errorLower.includes('compromised') || 
+                errorLower.includes('data breach') ||
+                errorLower.includes('been found in a data leak') ||
+                errorLower.includes('appeared in a data breach')) {
+                errorMessages.push('This password has been found in a data breach. Please choose a different password.');
+                hasSpecialError = true;
+            } else if (errorLower.includes('required')) {
+                errorMessages.push('Password is required.');
+                hasSpecialError = true;
+            } else {
+                // If we don't recognize the error, show it along with requirements
+                // This helps debug what Laravel is actually returning
+                console.log('Password error:', passwordError);
+            }
+        });
+        
+        // If it's not a special error, show password requirements
+        if (!hasSpecialError) {
+            errorMessages.push('Password must contain:');
+            errorMessages.push('• At least 8 characters');
+            errorMessages.push('• At least one capital letter');
+            errorMessages.push('• At least one lowercase letter');
+            errorMessages.push('• At least one number');
+            errorMessages.push('• At least one special character');
+        }
+    }
+    
+    // Check for password confirmation errors
+    if (form.errors.password_confirmation) {
+        const confirmErrors = Array.isArray(form.errors.password_confirmation)
+            ? form.errors.password_confirmation
+            : [form.errors.password_confirmation];
+        
+        confirmErrors.forEach((confirmError) => {
+            if (confirmError.includes('match') || confirmError.includes('same')) {
+                errorMessages.push('Password confirmation does not match.');
+            } else {
+                errorMessages.push(confirmError);
+            }
+        });
+    }
+    
+    // Check for other errors
+    if (form.errors.email) {
+        const emailErrors = Array.isArray(form.errors.email) ? form.errors.email : [form.errors.email];
+        emailErrors.forEach((error) => errorMessages.push(error));
+    }
+    
+    if (form.errors.token) {
+        const tokenErrors = Array.isArray(form.errors.token) ? form.errors.token : [form.errors.token];
+        tokenErrors.forEach((error) => errorMessages.push(error));
+    }
+    
+    return errorMessages;
+};
 
 const submit = () => {
     form.post(route('password.update'), {
@@ -95,14 +169,15 @@ const submit = () => {
                     v-if="Object.keys(form.errors).length > 0"
                     class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg"
                 >
-                    <p class="text-sm text-red-600 font-medium">
-                        {{
-                            form.errors.password ||
-                            form.errors.email ||
-                            form.errors.token ||
-                            'Please check your information and try again.'
-                        }}
-                    </p>
+                    <ul class="list-disc list-inside space-y-1">
+                        <li
+                            v-for="(error, index) in getErrorMessages()"
+                            :key="index"
+                            class="text-sm text-red-600 font-medium"
+                        >
+                            {{ error }}
+                        </li>
+                    </ul>
                 </div>
 
                 <form @submit.prevent="submit">
@@ -119,7 +194,6 @@ const submit = () => {
                                 disabled
                                 autocomplete="email"
                             />
-                            <InputError class="mt-2" :message="form.errors.email" />
                         </div>
 
                         <!-- Password Field -->
@@ -134,7 +208,6 @@ const submit = () => {
                                 autocomplete="new-password"
                                 placeholder="Enter your new password"
                             />
-                            <InputError class="mt-2" :message="form.errors.password" />
                         </div>
 
                         <!-- Confirm Password Field -->
@@ -147,10 +220,6 @@ const submit = () => {
                                 required
                                 autocomplete="new-password"
                                 placeholder="Confirm your new password"
-                            />
-                            <InputError
-                                class="mt-2"
-                                :message="form.errors.password_confirmation"
                             />
                         </div>
                     </div>

@@ -7,12 +7,21 @@ import TextInput from "@/Components/TextInput.vue";
 import InputLabel from "@/Components/InputLabel.vue";
 import InputError from "@/Components/InputError.vue";
 import CustomButton from "@/Components/CustomButton.vue";
+import AvatarSelector from "@/Components/AvatarSelector.vue";
 
 // Get current user from page props
 const page = usePage();
 const user = computed(() => page.props.auth.user);
 const props = defineProps({
     organizationName: {
+        type: String,
+        default: null,
+    },
+    availableAvatars: {
+        type: Array,
+        default: () => [],
+    },
+    currentAvatar: {
         type: String,
         default: null,
     },
@@ -31,8 +40,16 @@ const organizationName = computed(() => {
 // Form for profile updates
 const profileForm = useForm({
     name: user.value?.name || "",
-    email: isVolunteer.value || isAdmin.value ? user.value?.email || "" : "",
+    email: isVolunteer.value ? user.value?.email || "" : "",
     organization_name: isAdmin.value ? props.organizationName || "" : "",
+});
+
+// Check if user might be a Google OAuth user (we can't definitively know, but we'll show a note)
+// For now, we'll allow email changes but show a note
+const isGoogleOAuthUser = computed(() => {
+    // We can't definitively detect this, but we'll show a note anyway
+    // Users who signed up with Google OAuth should know they did
+    return false; // This would need to be passed from backend if we add a flag
 });
 
 // Form for password update
@@ -50,9 +67,8 @@ const updateProfile = () => {
     let formData;
 
     if (isAdmin.value) {
+        // Admins can only update organization name
         formData = {
-            name: profileForm.name,
-            email: profileForm.email,
             organization_name: profileForm.organization_name,
         };
     } else if (isVolunteer.value) {
@@ -118,43 +134,33 @@ const getProfileTitle = () => {
 
         <div class="py-12">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <!-- Profile Picture Section (Placeholder) -->
+                <!-- Avatar Selection Section -->
                 <div
                     v-if="isResident || isVolunteer"
                     class="bg-primary overflow-hidden shadow-xl sm:rounded-lg p-4 sm:p-6 mb-8"
                 >
-                    <h3 class="text-lg font-semibold text-white mb-4">
-                        Profile Picture
-                    </h3>
-                    <div class="flex items-center gap-6">
-                        <div
-                            class="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center"
-                        >
-                            <span class="text-gray-400 text-sm">Photo</span>
-                        </div>
-                        <div>
-                            <p class="text-sm text-white">
-                                Profile picture functionality coming soon
-                            </p>
-                        </div>
-                    </div>
+                    <AvatarSelector
+                        :available-avatars="availableAvatars"
+                        :current-avatar="currentAvatar"
+                        :user-name="user?.name || ''"
+                    />
                 </div>
 
                 <!-- Profile Information Card -->
                 <div
                     class="bg-primary overflow-hidden shadow-xl sm:rounded-lg p-4 sm:p-6 mb-8"
                 >
-                    <h3 class="text-lg font-semibold text-white mb-4">
+                    <h3 class="text-xl lg:text-2xl font-semibold text-white mb-4">
                         Profile Information
                     </h3>
 
                     <form @submit.prevent="updateProfile">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <!-- Name Field (Editable for volunteers and admins, read-only for residents) -->
-                            <div>
+                            <!-- Name Field (Editable for volunteers only, read-only for residents, hidden for admins) -->
+                            <div v-if="!isAdmin">
                                 <label
                                     for="name"
-                                    class="block text-sm font-medium text-white mb-2"
+                                    class="block text-base lg:text-lg font-medium text-white mb-2"
                                 >
                                     Name
                                 </label>
@@ -162,7 +168,7 @@ const getProfileTitle = () => {
                                     id="name"
                                     v-model="profileForm.name"
                                     type="text"
-                                    class="mt-2 block w-full"
+                                    class="mt-2 block w-full text-base"
                                     :class="
                                         isResident
                                             ? 'bg-gray-100 cursor-not-allowed opacity-75'
@@ -178,22 +184,28 @@ const getProfileTitle = () => {
                                 />
                             </div>
 
-                            <!-- Email Field (Editable for volunteers and admins) -->
+                            <!-- Email Field (Editable for volunteers, read-only for admins) -->
                             <div v-if="isVolunteer || isAdmin">
                                 <label
                                     for="email"
-                                    class="block text-sm font-medium text-white mb-2"
+                                    class="block text-base lg:text-lg font-medium text-white mb-2"
                                 >
-                                    Email
+                                    Email Address
                                 </label>
                                 <TextInput
                                     id="email"
-                                    v-model="profileForm.email"
+                                    :value="user?.email || ''"
                                     type="email"
-                                    class="mt-2 block w-full"
-                                    required
+                                    class="mt-2 block w-full text-base"
+                                    :class="isAdmin ? 'bg-gray-100 cursor-not-allowed opacity-75' : ''"
+                                    :disabled="isAdmin"
+                                    :readonly="isAdmin"
                                 />
+                                <p v-if="isAdmin" class="mt-1 text-sm text-white/80">
+                                    Email address cannot be changed.
+                                </p>
                                 <InputError
+                                    v-if="isVolunteer"
                                     class="mt-2"
                                     :message="profileForm.errors.email"
                                 />
@@ -203,7 +215,7 @@ const getProfileTitle = () => {
                             <div v-if="isAdmin">
                                 <label
                                     for="organization_name"
-                                    class="block text-sm font-medium text-white mb-2"
+                                    class="block text-base lg:text-lg font-medium text-white mb-2"
                                 >
                                     Organization Name
                                 </label>
@@ -211,7 +223,7 @@ const getProfileTitle = () => {
                                     id="organization_name"
                                     v-model="profileForm.organization_name"
                                     type="text"
-                                    class="mt-2 block w-full"
+                                    class="mt-2 block w-full text-base"
                                     required
                                 />
                                 <InputError
@@ -226,7 +238,7 @@ const getProfileTitle = () => {
                             <div v-if="isVolunteer || isResident">
                                 <label
                                     for="organization"
-                                    class="block text-sm font-medium text-white mb-2"
+                                    class="block text-base lg:text-lg font-medium text-white mb-2"
                                 >
                                     Organization
                                 </label>
@@ -234,7 +246,7 @@ const getProfileTitle = () => {
                                     id="organization"
                                     :value="organizationName"
                                     type="text"
-                                    class="mt-2 block w-full bg-gray-100 cursor-not-allowed opacity-75"
+                                    class="mt-2 block w-full text-base bg-gray-100 cursor-not-allowed opacity-75"
                                     disabled
                                 />
                             </div>
@@ -261,25 +273,32 @@ const getProfileTitle = () => {
                     v-if="isVolunteer || isAdmin"
                     class="bg-primary overflow-hidden shadow-xl sm:rounded-lg p-4 sm:p-6 mb-8"
                 >
-                    <h3 class="text-lg font-semibold text-white mb-4">
+                    <h3 class="text-xl lg:text-2xl font-semibold text-white mb-4">
                         Account Settings
                     </h3>
 
                     <div class="space-y-6">
                         <!-- Change Password Section -->
                         <div>
-                            <h4 class="text-sm font-medium text-white mb-2">
+                            <h4 class="text-base lg:text-lg font-medium text-white mb-2">
                                 Change Password
                             </h4>
-                            <p class="text-sm text-white mb-4">
-                                Update your account password
+                            <p class="text-base text-white mb-4">
+                                Update your account password. Your password must
+                                include:
                             </p>
+                            <ul class="text-base text-white/90 mb-4 list-disc list-inside space-y-1">
+                                <li>At least 8 characters</li>
+                                <li>At least one capital letter</li>
+                                <li>At least one number</li>
+                                <li>At least one special character</li>
+                            </ul>
                             <form @submit.prevent="updatePassword">
                                 <div class="space-y-4">
                                     <div>
                                         <label
                                             for="current_password"
-                                            class="block text-sm font-medium text-white mb-2"
+                                            class="block text-base lg:text-lg font-medium text-white mb-2"
                                         >
                                             Current Password
                                         </label>
@@ -289,8 +308,9 @@ const getProfileTitle = () => {
                                                 passwordForm.current_password
                                             "
                                             type="password"
-                                            class="mt-2 block w-full"
+                                            class="mt-2 block w-full text-base"
                                             required
+                                            autocomplete="current-password"
                                         />
                                         <InputError
                                             class="mt-2"
@@ -303,7 +323,7 @@ const getProfileTitle = () => {
                                     <div>
                                         <label
                                             for="password"
-                                            class="block text-sm font-medium text-white mb-2"
+                                            class="block text-base lg:text-lg font-medium text-white mb-2"
                                         >
                                             New Password
                                         </label>
@@ -311,8 +331,9 @@ const getProfileTitle = () => {
                                             id="password"
                                             v-model="passwordForm.password"
                                             type="password"
-                                            class="mt-2 block w-full"
+                                            class="mt-2 block w-full text-base"
                                             required
+                                            autocomplete="new-password"
                                         />
                                         <InputError
                                             class="mt-2"
@@ -324,7 +345,7 @@ const getProfileTitle = () => {
                                     <div>
                                         <label
                                             for="password_confirmation"
-                                            class="block text-sm font-medium text-white mb-2"
+                                            class="block text-base lg:text-lg font-medium text-white mb-2"
                                         >
                                             Confirm New Password
                                         </label>
@@ -334,8 +355,9 @@ const getProfileTitle = () => {
                                                 passwordForm.password_confirmation
                                             "
                                             type="password"
-                                            class="mt-2 block w-full"
+                                            class="mt-2 block w-full text-base"
                                             required
+                                            autocomplete="new-password"
                                         />
                                         <InputError
                                             class="mt-2"

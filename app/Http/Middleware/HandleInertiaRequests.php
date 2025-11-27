@@ -44,6 +44,8 @@ class HandleInertiaRequests extends Middleware
                     'email' => $request->user()->email,
                     'user_type' => $request->user()->getUserTypeName(),
                     'user_type_id' => $request->user()->user_type_id,
+                    'profile_photo_url' => $request->user()->profile_photo_url,
+                    'avatar' => $request->user()->avatar,
                 ] : null,
             ],
         ];

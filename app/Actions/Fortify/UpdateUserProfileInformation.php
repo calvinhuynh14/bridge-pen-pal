@@ -20,7 +20,6 @@ class UpdateUserProfileInformation implements UpdatesUserProfileInformation
     {
         // Determine validation rules based on user type
         $rules = [
-            'name' => ['required', 'string', 'max:255'],
             'photo' => ['nullable', 'mimes:jpg,jpeg,png', 'max:1024'],
         ];
         
@@ -30,10 +29,13 @@ class UpdateUserProfileInformation implements UpdatesUserProfileInformation
             // Return early without making any changes
             return;
         } else {
-            // Volunteers and admins can update name and email
-            $rules['email'] = ['required', 'email', 'max:255', Rule::unique('users')->ignore($user->id)];
+            // Volunteers can update name and email
+            if ($user->isVolunteer()) {
+                $rules['name'] = ['required', 'string', 'max:255'];
+                $rules['email'] = ['required', 'email', 'max:255', Rule::unique('users')->ignore($user->id)];
+            }
             
-            // Admins can also update organization name
+            // Admins can only update organization name (no name or email fields for admins)
             if ($user->isAdmin()) {
                 $rules['organization_name'] = ['required', 'string', 'max:255'];
             }
@@ -66,10 +68,21 @@ class UpdateUserProfileInformation implements UpdatesUserProfileInformation
                 $user instanceof MustVerifyEmail) {
                 $this->updateVerifiedUser($user, $input);
             } else {
-                $user->forceFill([
-                    'name' => $input['name'],
-                    'email' => $input['email'],
-                ])->save();
+                // Update user fields based on user type
+                $updateData = [];
+                
+                // Volunteers can update name and email
+                if ($user->isVolunteer()) {
+                    $updateData['email'] = $input['email'];
+                    if (isset($input['name'])) {
+                        $updateData['name'] = $input['name'];
+                    }
+                }
+                
+                // Admins don't update user fields (only organization name is updated separately)
+                if (!empty($updateData)) {
+                    $user->forceFill($updateData)->save();
+                }
             }
         }
     }

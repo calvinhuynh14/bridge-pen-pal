@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Jetstream\HasProfilePhoto;
 use Laravel\Sanctum\HasApiTokens;
@@ -32,6 +33,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'username',
         'password',
         'user_type_id',
+        'avatar',
     ];
 
     /**
@@ -53,7 +55,41 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     protected $appends = [
         'profile_photo_url',
+        'avatar_url',
     ];
+    
+    /**
+     * Get the avatar URL if an avatar is selected.
+     *
+     * @return string|null
+     */
+    public function getAvatarUrlAttribute()
+    {
+        if ($this->avatar) {
+            return '/images/avatars/' . $this->avatar;
+        }
+        return null;
+    }
+    
+    /**
+     * Override the profile photo URL to use avatar if no profile photo exists.
+     *
+     * @return string|null
+     */
+    public function getProfilePhotoUrlAttribute()
+    {
+        // First check if user has uploaded a profile photo (Jetstream's default behavior)
+        $photoUrl = $this->profile_photo_path 
+            ? Storage::disk($this->profilePhotoDisk())->url($this->profile_photo_path)
+            : null;
+        
+        // If no profile photo, use avatar if available
+        if (!$photoUrl && $this->avatar) {
+            return '/images/avatars/' . $this->avatar;
+        }
+        
+        return $photoUrl;
+    }
 
     /**
      * Get the attributes that should be cast.

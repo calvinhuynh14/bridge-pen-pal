@@ -160,13 +160,9 @@ const logout = () => {
                                         >
                                             <Avatar
                                                 :src="
-                                                    $page.props.jetstream
-                                                        ?.managesProfilePhotos &&
                                                     $page.props.auth.user
-                                                        ?.profile_photo_url
-                                                        ? $page.props.auth.user
-                                                              .profile_photo_url
-                                                        : null
+                                                        ?.profile_photo_url ||
+                                                    null
                                                 "
                                                 :name="
                                                     $page.props.auth.user
@@ -299,12 +295,8 @@ const logout = () => {
                             <div class="shrink-0 me-3">
                                 <Avatar
                                     :src="
-                                        $page.props.jetstream
-                                            ?.managesProfilePhotos &&
-                                        $page.props.auth.user?.profile_photo_url
-                                            ? $page.props.auth.user
-                                                  .profile_photo_url
-                                            : null
+                                        $page.props.auth.user
+                                            ?.profile_photo_url || null
                                     "
                                     :name="$page.props.auth.user?.name || ''"
                                     size="md"

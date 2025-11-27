@@ -90,7 +90,7 @@ const loadIncomingLetters = async () => {
                 uniqueSenders.set(letter.sender_id, {
                     id: letter.sender_id,
                     name: letter.sender_name,
-                    avatar: null, // Can be added later if avatars are stored
+                    avatar: letter.sender_avatar ? `/images/avatars/${letter.sender_avatar}` : null,
                 });
             }
         });
@@ -132,7 +132,7 @@ const loadPenPals = async (page = 1, append = false) => {
                 ...pen_pals.map((pal) => ({
                     id: Number(pal.id), // Ensure ID is a number
                     name: pal.name,
-                    avatar: null, // Can be added later if avatars are stored
+                    avatar: pal.avatar ? `/images/avatars/${pal.avatar}` : null,
                     has_messages:
                         pal.has_messages === 1 || pal.has_messages === true,
                     unread_count: parseInt(pal.unread_count) || 0,
@@ -143,7 +143,7 @@ const loadPenPals = async (page = 1, append = false) => {
             penPals.value = pen_pals.map((pal) => ({
                 id: Number(pal.id), // Ensure ID is a number
                 name: pal.name,
-                avatar: null, // Can be added later if avatars are stored
+                avatar: pal.avatar ? `/images/avatars/${pal.avatar}` : null,
                 has_messages:
                     pal.has_messages === 1 || pal.has_messages === true,
                 unread_count: parseInt(pal.unread_count) || 0,
@@ -574,7 +574,7 @@ const handleReply = async (letterId) => {
             senderPenPal = {
                 id: senderId,
                 name: letter.sender_name || "Unknown",
-                avatar: null,
+                avatar: letter.sender_avatar ? `/images/avatars/${letter.sender_avatar}` : null,
                 has_messages: false,
                 unread_count: 0,
             };

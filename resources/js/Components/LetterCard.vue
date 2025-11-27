@@ -185,7 +185,7 @@ const handleReport = (event) => {
         <div class="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-3">
             <div class="flex-shrink-0">
                 <Avatar
-                    :src="letter.sender_avatar || letter.avatar"
+                    :src="letter.sender_avatar ? `/images/avatars/${letter.sender_avatar}` : null"
                     :name="letter.sender_name"
                     size="custom"
                     custom-size="w-6 h-6 sm:w-9 sm:h-9 md:w-10 md:h-10"

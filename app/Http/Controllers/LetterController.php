@@ -44,9 +44,11 @@ class LetterController extends Controller
                 l.status,
                 sender.id as sender_id,
                 sender.name as sender_name,
+                sender.avatar as sender_avatar,
                 ut.name as sender_type,
                 receiver.id as receiver_id,
-                receiver.name as receiver_name
+                receiver.name as receiver_name,
+                receiver.avatar as receiver_avatar
             FROM letters l
             JOIN users sender ON l.sender_id = sender.id
             JOIN user_types ut ON sender.user_type_id = ut.id
@@ -284,7 +286,8 @@ class LetterController extends Controller
                 l.read_at,
                 l.created_at,
                 sender.id as sender_id,
-                sender.name as sender_name
+                sender.name as sender_name,
+                sender.avatar as sender_avatar
             FROM letters l
             JOIN users sender ON l.sender_id = sender.id
             WHERE l.receiver_id = ?
@@ -316,6 +319,7 @@ class LetterController extends Controller
                 l.created_at,
                 receiver.id as receiver_id,
                 receiver.name as receiver_name,
+                receiver.avatar as receiver_avatar,
                 claimed_by_user.id as claimed_by_id,
                 claimed_by_user.name as claimed_by_name
             FROM letters l
@@ -344,8 +348,10 @@ class LetterController extends Controller
                 l.*,
                 sender.id as sender_id,
                 sender.name as sender_name,
+                sender.avatar as sender_avatar,
                 receiver.id as receiver_id,
                 receiver.name as receiver_name,
+                receiver.avatar as receiver_avatar,
                 claimed_by_user.id as claimed_by_id,
                 claimed_by_user.name as claimed_by_name
             FROM letters l
@@ -505,8 +511,10 @@ class LetterController extends Controller
                 l.created_at,
                 l.sender_id,
                 sender.name as sender_name,
+                sender.avatar as sender_avatar,
                 l.receiver_id,
                 receiver.name as receiver_name,
+                receiver.avatar as receiver_avatar,
                 l.is_open_letter,
                 l.status
             FROM letters l
@@ -603,6 +611,7 @@ class LetterController extends Controller
                 u.id,
                 u.name,
                 u.email,
+                u.avatar,
                 CASE 
                     WHEN EXISTS (
                         SELECT 1 FROM letters l
@@ -744,8 +753,10 @@ class LetterController extends Controller
                 l.read_at,
                 sender.id as sender_id,
                 sender.name as sender_name,
+                sender.avatar as sender_avatar,
                 receiver.id as receiver_id,
-                receiver.name as receiver_name
+                receiver.name as receiver_name,
+                receiver.avatar as receiver_avatar
             FROM letters l
             JOIN users sender ON l.sender_id = sender.id
             LEFT JOIN users receiver ON l.receiver_id = receiver.id
