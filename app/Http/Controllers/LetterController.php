@@ -40,7 +40,6 @@ class LetterController extends Controller
                 l.content,
                 l.sent_at,
                 l.created_at,
-                l.claimed_by,
                 l.status,
                 sender.id as sender_id,
                 CASE 
@@ -85,8 +84,8 @@ class LetterController extends Controller
             $query .= " AND ut.name = 'resident'";
         }
 
-        // Exclude letters already claimed by current user
-        $query .= " AND (l.claimed_by IS NULL OR l.claimed_by != ?)";
+        // Exclude letters already claimed by current user (receiver_id is set)
+        $query .= " AND (l.receiver_id IS NULL OR l.receiver_id != ?)";
         $params[] = $user->id;
 
         // Exclude letters sent by current user (users cannot see their own open letters)
@@ -116,7 +115,7 @@ class LetterController extends Controller
             SELECT 
                 id,
                 is_open_letter,
-                claimed_by,
+                receiver_id,
                 sender_id,
                 status,
                 deleted_at
@@ -133,7 +132,7 @@ class LetterController extends Controller
             return response()->json(['error' => 'This is not an open letter'], 400);
         }
 
-        if ($letter->claimed_by) {
+        if ($letter->receiver_id) {
             return response()->json(['error' => 'This letter has already been claimed'], 400);
         }
 
@@ -168,11 +167,10 @@ class LetterController extends Controller
         // Claim the letter
         DB::update("
             UPDATE letters
-            SET claimed_by = ?,
-                receiver_id = ?,
+            SET receiver_id = ?,
                 updated_at = ?
             WHERE id = ?
-        ", [$user->id, $user->id, now(), $id]);
+        ", [$user->id, now(), $id]);
 
         return response()->json([
             'message' => 'Letter claimed successfully',
@@ -351,16 +349,9 @@ class LetterController extends Controller
                     WHEN receiver.is_anonymous = 1 
                     THEN NULL 
                     ELSE receiver.avatar 
-                END as receiver_avatar,
-                claimed_by_user.id as claimed_by_id,
-                CASE 
-                    WHEN claimed_by_user.is_anonymous = 1 AND claimed_by_user.anonymous_name IS NOT NULL 
-                    THEN claimed_by_user.anonymous_name 
-                    ELSE claimed_by_user.name 
-                END as claimed_by_name
+                END as receiver_avatar
             FROM letters l
             LEFT JOIN users receiver ON l.receiver_id = receiver.id
-            LEFT JOIN users claimed_by_user ON l.claimed_by = claimed_by_user.id
             WHERE l.sender_id = ?
             AND l.deleted_at IS NULL
             ORDER BY l.sent_at DESC, l.created_at DESC
@@ -403,17 +394,10 @@ class LetterController extends Controller
                     WHEN receiver.is_anonymous = 1 
                     THEN NULL 
                     ELSE receiver.avatar 
-                END as receiver_avatar,
-                claimed_by_user.id as claimed_by_id,
-                CASE 
-                    WHEN claimed_by_user.is_anonymous = 1 AND claimed_by_user.anonymous_name IS NOT NULL 
-                    THEN claimed_by_user.anonymous_name 
-                    ELSE claimed_by_user.name 
-                END as claimed_by_name
+                END as receiver_avatar
             FROM letters l
             JOIN users sender ON l.sender_id = sender.id
             LEFT JOIN users receiver ON l.receiver_id = receiver.id
-            LEFT JOIN users claimed_by_user ON l.claimed_by = claimed_by_user.id
             WHERE l.id = ?
             AND l.deleted_at IS NULL
         ", [$id]);

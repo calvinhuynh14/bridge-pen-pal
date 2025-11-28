@@ -80,17 +80,12 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function getProfilePhotoUrlAttribute()
     {
-        // First check if user has uploaded a profile photo (Jetstream's default behavior)
-        $photoUrl = $this->profile_photo_path 
-            ? Storage::disk($this->profilePhotoDisk())->url($this->profile_photo_path)
-            : null;
-        
-        // If no profile photo, use avatar if available
-        if (!$photoUrl && $this->avatar) {
+        // Use avatar if available
+        if ($this->avatar) {
             return '/images/avatars/' . $this->avatar;
         }
         
-        return $photoUrl;
+        return null;
     }
     
     /**

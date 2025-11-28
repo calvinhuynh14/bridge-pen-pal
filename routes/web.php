@@ -1049,7 +1049,6 @@ Route::middleware([
                 l.content,
                 l.sent_at,
                 l.created_at,
-                l.claimed_by,
                 l.is_open_letter,
                 sender.id as sender_id,
                 sender.name as sender_name,
@@ -1078,8 +1077,8 @@ Route::middleware([
             $query .= " AND ut.name = 'resident'";
         }
 
-        // Exclude letters already claimed by current user
-        $query .= " AND (l.claimed_by IS NULL OR l.claimed_by != ?)";
+        // Exclude letters already claimed by current user (receiver_id is set)
+        $query .= " AND (l.receiver_id IS NULL OR l.receiver_id != ?)";
         $params[] = $user->id;
 
         // Exclude letters sent by current user

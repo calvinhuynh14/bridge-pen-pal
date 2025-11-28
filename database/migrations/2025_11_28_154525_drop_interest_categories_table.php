@@ -11,9 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->string('avatar')->nullable()->after('email');
-        });
+        Schema::dropIfExists('interest_categories');
     }
 
     /**
@@ -21,8 +19,11 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn('avatar');
+        Schema::create('interest_categories', function (Blueprint $table) {
+            $table->id();
+            $table->string('name', 50)->unique();
+            $table->text('description')->nullable();
+            $table->timestamps();
         });
     }
 };

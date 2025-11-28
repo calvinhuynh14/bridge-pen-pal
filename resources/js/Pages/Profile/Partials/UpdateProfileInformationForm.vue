@@ -116,15 +116,6 @@ const clearPhotoFileInput = () => {
                     Select A New Photo
                 </SecondaryButton>
 
-                <SecondaryButton
-                    v-if="user.profile_photo_path"
-                    type="button"
-                    class="mt-2"
-                    @click.prevent="deletePhoto"
-                >
-                    Remove Photo
-                </SecondaryButton>
-
                 <InputError :message="form.errors.photo" class="mt-2" />
             </div>
 

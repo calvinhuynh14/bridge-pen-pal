@@ -397,7 +397,6 @@ class TestDataSeeder extends Seeder
                 'sent_at' => $sentAt,
                 'delivered_at' => $deliveredAt,
                 'read_at' => null,
-                'claimed_by' => null,
                 'created_at' => $sentAt,
                 'updated_at' => $now,
             ]);
@@ -446,7 +445,6 @@ class TestDataSeeder extends Seeder
                     'sent_at' => $sentAt,
                     'delivered_at' => $deliveredAt,
                     'read_at' => $readAt,
-                    'claimed_by' => null,
                     'created_at' => $sentAt,
                     'updated_at' => $now,
                 ]);
@@ -482,7 +480,6 @@ class TestDataSeeder extends Seeder
                 'sent_at' => $sentAt,
                 'delivered_at' => $deliveredAt,
                 'read_at' => $readAt,
-                'claimed_by' => null,
                 'created_at' => $sentAt,
                 'updated_at' => $now,
             ]);
@@ -613,7 +610,6 @@ class TestDataSeeder extends Seeder
                     'sent_at' => $sentAt,
                     'delivered_at' => $deliveredAt,
                     'read_at' => $readAt,
-                    'claimed_by' => null,
                     'created_at' => $sentAt,
                     'updated_at' => $now,
                 ]);
