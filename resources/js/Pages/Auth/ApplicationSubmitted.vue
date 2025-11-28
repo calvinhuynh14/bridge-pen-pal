@@ -133,7 +133,7 @@ onMounted(() => {
                             >Email verified successfully!</span
                         >
                     </div>
-                </div>
+            </div>
 
                 <!-- Success Message -->
                 <div class="text-center">

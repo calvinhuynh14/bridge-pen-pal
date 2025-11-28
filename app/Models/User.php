@@ -34,6 +34,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'password',
         'user_type_id',
         'avatar',
+        'is_anonymous',
+        'anonymous_name',
     ];
 
     /**
@@ -89,6 +91,50 @@ class User extends Authenticatable implements MustVerifyEmail
         }
         
         return $photoUrl;
+    }
+    
+    /**
+     * Get the display name (anonymous name if anonymous mode is enabled, otherwise real name).
+     *
+     * @return string
+     */
+    public function getDisplayNameAttribute()
+    {
+        if ($this->is_anonymous && $this->anonymous_name) {
+            return $this->anonymous_name;
+        }
+        return $this->name;
+    }
+    
+    /**
+     * Get the display avatar (generic avatar if anonymous mode is enabled, otherwise user's avatar).
+     *
+     * @return string|null
+     */
+    public function getDisplayAvatarAttribute()
+    {
+        if ($this->is_anonymous) {
+            // Return a generic/default avatar when anonymous
+            return null; // Will use initials from anonymous name
+        }
+        return $this->avatar;
+    }
+    
+    /**
+     * Generate a random anonymous name.
+     *
+     * @return string
+     */
+    public static function generateAnonymousName()
+    {
+        $adjectives = ['Quiet', 'Mysterious', 'Thoughtful', 'Curious', 'Gentle', 'Wise', 'Kind', 'Peaceful', 'Calm', 'Serene'];
+        $nouns = ['Writer', 'Reader', 'Friend', 'PenPal', 'Traveler', 'Dreamer', 'Explorer', 'Learner', 'Storyteller', 'Listener'];
+        
+        $adjective = $adjectives[array_rand($adjectives)];
+        $noun = $nouns[array_rand($nouns)];
+        $number = rand(100, 999);
+        
+        return $adjective . $noun . $number;
     }
 
     /**

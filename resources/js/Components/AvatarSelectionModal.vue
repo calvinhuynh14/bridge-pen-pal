@@ -59,9 +59,9 @@ const getAvatarUrl = (avatar) => {
         <div class="p-6 bg-background">
             <!-- Modal Header -->
             <div class="flex items-center justify-between mb-6">
-                <h3 class="text-2xl lg:text-3xl font-bold text-black">
-                    Select Avatar
-                </h3>
+                    <h3 class="text-3xl lg:text-4xl font-bold text-black">
+                        Select Avatar
+                    </h3>
                 <button
                     @click="closeModal"
                     class="text-gray-400 hover:text-gray-600 transition-colors"
@@ -182,7 +182,7 @@ const getAvatarUrl = (avatar) => {
                     type="button"
                     @click="selectAvatar(null)"
                     :disabled="form.processing"
-                    class="text-base lg:text-lg text-gray-600 hover:text-gray-800 underline disabled:opacity-50 disabled:cursor-not-allowed"
+                            class="text-lg lg:text-xl text-gray-600 hover:text-gray-800 underline disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     Remove Avatar
                 </button>

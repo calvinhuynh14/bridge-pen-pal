@@ -201,8 +201,8 @@ class FortifyServiceProvider extends ServiceProvider
                 }
                 
                 // Residents and other types go to dashboard
-                $redirectUrl = route('dashboard');
-                \Log::info('Fortify register redirect - Redirecting other user type', ['url' => $redirectUrl]);
+                    $redirectUrl = route('dashboard');
+                    \Log::info('Fortify register redirect - Redirecting other user type', ['url' => $redirectUrl]);
                 if ($request->header('X-Inertia')) {
                     return url($redirectUrl);
                 }

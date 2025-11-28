@@ -43,12 +43,28 @@ class LetterController extends Controller
                 l.claimed_by,
                 l.status,
                 sender.id as sender_id,
-                sender.name as sender_name,
-                sender.avatar as sender_avatar,
+                CASE 
+                    WHEN sender.is_anonymous = 1 AND sender.anonymous_name IS NOT NULL 
+                    THEN sender.anonymous_name 
+                    ELSE sender.name 
+                END as sender_name,
+                CASE 
+                    WHEN sender.is_anonymous = 1 
+                    THEN NULL 
+                    ELSE sender.avatar 
+                END as sender_avatar,
                 ut.name as sender_type,
                 receiver.id as receiver_id,
-                receiver.name as receiver_name,
-                receiver.avatar as receiver_avatar
+                CASE 
+                    WHEN receiver.is_anonymous = 1 AND receiver.anonymous_name IS NOT NULL 
+                    THEN receiver.anonymous_name 
+                    ELSE receiver.name 
+                END as receiver_name,
+                CASE 
+                    WHEN receiver.is_anonymous = 1 
+                    THEN NULL 
+                    ELSE receiver.avatar 
+                END as receiver_avatar
             FROM letters l
             JOIN users sender ON l.sender_id = sender.id
             JOIN user_types ut ON sender.user_type_id = ut.id
@@ -286,8 +302,16 @@ class LetterController extends Controller
                 l.read_at,
                 l.created_at,
                 sender.id as sender_id,
-                sender.name as sender_name,
-                sender.avatar as sender_avatar
+                CASE 
+                    WHEN sender.is_anonymous = 1 AND sender.anonymous_name IS NOT NULL 
+                    THEN sender.anonymous_name 
+                    ELSE sender.name 
+                END as sender_name,
+                CASE 
+                    WHEN sender.is_anonymous = 1 
+                    THEN NULL 
+                    ELSE sender.avatar 
+                END as sender_avatar
             FROM letters l
             JOIN users sender ON l.sender_id = sender.id
             WHERE l.receiver_id = ?
@@ -318,10 +342,22 @@ class LetterController extends Controller
                 l.delivered_at,
                 l.created_at,
                 receiver.id as receiver_id,
-                receiver.name as receiver_name,
-                receiver.avatar as receiver_avatar,
+                CASE 
+                    WHEN receiver.is_anonymous = 1 AND receiver.anonymous_name IS NOT NULL 
+                    THEN receiver.anonymous_name 
+                    ELSE receiver.name 
+                END as receiver_name,
+                CASE 
+                    WHEN receiver.is_anonymous = 1 
+                    THEN NULL 
+                    ELSE receiver.avatar 
+                END as receiver_avatar,
                 claimed_by_user.id as claimed_by_id,
-                claimed_by_user.name as claimed_by_name
+                CASE 
+                    WHEN claimed_by_user.is_anonymous = 1 AND claimed_by_user.anonymous_name IS NOT NULL 
+                    THEN claimed_by_user.anonymous_name 
+                    ELSE claimed_by_user.name 
+                END as claimed_by_name
             FROM letters l
             LEFT JOIN users receiver ON l.receiver_id = receiver.id
             LEFT JOIN users claimed_by_user ON l.claimed_by = claimed_by_user.id
@@ -347,13 +383,33 @@ class LetterController extends Controller
             SELECT 
                 l.*,
                 sender.id as sender_id,
-                sender.name as sender_name,
-                sender.avatar as sender_avatar,
+                CASE 
+                    WHEN sender.is_anonymous = 1 AND sender.anonymous_name IS NOT NULL 
+                    THEN sender.anonymous_name 
+                    ELSE sender.name 
+                END as sender_name,
+                CASE 
+                    WHEN sender.is_anonymous = 1 
+                    THEN NULL 
+                    ELSE sender.avatar 
+                END as sender_avatar,
                 receiver.id as receiver_id,
-                receiver.name as receiver_name,
-                receiver.avatar as receiver_avatar,
+                CASE 
+                    WHEN receiver.is_anonymous = 1 AND receiver.anonymous_name IS NOT NULL 
+                    THEN receiver.anonymous_name 
+                    ELSE receiver.name 
+                END as receiver_name,
+                CASE 
+                    WHEN receiver.is_anonymous = 1 
+                    THEN NULL 
+                    ELSE receiver.avatar 
+                END as receiver_avatar,
                 claimed_by_user.id as claimed_by_id,
-                claimed_by_user.name as claimed_by_name
+                CASE 
+                    WHEN claimed_by_user.is_anonymous = 1 AND claimed_by_user.anonymous_name IS NOT NULL 
+                    THEN claimed_by_user.anonymous_name 
+                    ELSE claimed_by_user.name 
+                END as claimed_by_name
             FROM letters l
             JOIN users sender ON l.sender_id = sender.id
             LEFT JOIN users receiver ON l.receiver_id = receiver.id
@@ -414,11 +470,23 @@ class LetterController extends Controller
                 SELECT 
                     l.*,
                     sender.id as sender_id,
-                    sender.name as sender_name,
+                    CASE 
+                        WHEN sender.is_anonymous = 1 AND sender.anonymous_name IS NOT NULL 
+                        THEN sender.anonymous_name 
+                        ELSE sender.name 
+                    END as sender_name,
                     receiver.id as receiver_id,
-                    receiver.name as receiver_name,
+                    CASE 
+                        WHEN receiver.is_anonymous = 1 AND receiver.anonymous_name IS NOT NULL 
+                        THEN receiver.anonymous_name 
+                        ELSE receiver.name 
+                    END as receiver_name,
                     claimed_by_user.id as claimed_by_id,
-                    claimed_by_user.name as claimed_by_name
+                    CASE 
+                        WHEN claimed_by_user.is_anonymous = 1 AND claimed_by_user.anonymous_name IS NOT NULL 
+                        THEN claimed_by_user.anonymous_name 
+                        ELSE claimed_by_user.name 
+                    END as claimed_by_name
                 FROM letters l
                 JOIN users sender ON l.sender_id = sender.id
                 LEFT JOIN users receiver ON l.receiver_id = receiver.id
@@ -440,7 +508,17 @@ class LetterController extends Controller
         $user = Auth::user();
         
         // Validate pen pal ID
-        $penPal = DB::selectOne("SELECT id, name FROM users WHERE id = ?", [$penPalId]);
+        $penPal = DB::selectOne("
+            SELECT 
+                id, 
+                CASE 
+                    WHEN is_anonymous = 1 AND anonymous_name IS NOT NULL 
+                    THEN anonymous_name 
+                    ELSE name 
+                END as name 
+            FROM users 
+            WHERE id = ?
+        ", [$penPalId]);
         if (!$penPal) {
             return response()->json(['error' => 'Pen pal not found'], 404);
         }
@@ -477,8 +555,8 @@ class LetterController extends Controller
             $searchTerm = '%' . $search . '%';
             $whereClause .= " AND (
                 l.content LIKE ?
-                OR sender.name LIKE ?
-                OR receiver.name LIKE ?
+                OR (CASE WHEN sender.is_anonymous = 1 AND sender.anonymous_name IS NOT NULL THEN sender.anonymous_name ELSE sender.name END) LIKE ?
+                OR (CASE WHEN receiver.is_anonymous = 1 AND receiver.anonymous_name IS NOT NULL THEN receiver.anonymous_name ELSE receiver.name END) LIKE ?
                 OR DATE_FORMAT(l.sent_at, '%Y-%m-%d') LIKE ?
                 OR DATE_FORMAT(l.sent_at, '%M %d, %Y') LIKE ?
             )";
@@ -510,11 +588,27 @@ class LetterController extends Controller
                 l.read_at,
                 l.created_at,
                 l.sender_id,
-                sender.name as sender_name,
-                sender.avatar as sender_avatar,
+                CASE 
+                    WHEN sender.is_anonymous = 1 AND sender.anonymous_name IS NOT NULL 
+                    THEN sender.anonymous_name 
+                    ELSE sender.name 
+                END as sender_name,
+                CASE 
+                    WHEN sender.is_anonymous = 1 
+                    THEN NULL 
+                    ELSE sender.avatar 
+                END as sender_avatar,
                 l.receiver_id,
-                receiver.name as receiver_name,
-                receiver.avatar as receiver_avatar,
+                CASE 
+                    WHEN receiver.is_anonymous = 1 AND receiver.anonymous_name IS NOT NULL 
+                    THEN receiver.anonymous_name 
+                    ELSE receiver.name 
+                END as receiver_name,
+                CASE 
+                    WHEN receiver.is_anonymous = 1 
+                    THEN NULL 
+                    ELSE receiver.avatar 
+                END as receiver_avatar,
                 l.is_open_letter,
                 l.status
             FROM letters l
@@ -592,7 +686,7 @@ class LetterController extends Controller
         // Apply search filter
         if (!empty($search)) {
             $searchTerm = '%' . $search . '%';
-            $whereClause .= " AND u.name LIKE ?";
+            $whereClause .= " AND (CASE WHEN u.is_anonymous = 1 AND u.anonymous_name IS NOT NULL THEN u.anonymous_name ELSE u.name END) LIKE ?";
             $params[] = $searchTerm;
         }
 
@@ -609,9 +703,17 @@ class LetterController extends Controller
         $query = "
             SELECT DISTINCT 
                 u.id,
-                u.name,
+                CASE 
+                    WHEN u.is_anonymous = 1 AND u.anonymous_name IS NOT NULL 
+                    THEN u.anonymous_name 
+                    ELSE u.name 
+                END as name,
                 u.email,
-                u.avatar,
+                CASE 
+                    WHEN u.is_anonymous = 1 
+                    THEN NULL 
+                    ELSE u.avatar 
+                END as avatar,
                 CASE 
                     WHEN EXISTS (
                         SELECT 1 FROM letters l
@@ -633,7 +735,7 @@ class LetterController extends Controller
                 ), 0) as unread_count
             FROM users u
             " . $whereClause . "
-            ORDER BY u.name ASC
+            ORDER BY CASE WHEN u.is_anonymous = 1 AND u.anonymous_name IS NOT NULL THEN u.anonymous_name ELSE u.name END ASC
         ";
 
         // Add user ID for has_messages and unread_count checks
@@ -752,11 +854,27 @@ class LetterController extends Controller
                 l.status,
                 l.read_at,
                 sender.id as sender_id,
-                sender.name as sender_name,
-                sender.avatar as sender_avatar,
+                CASE 
+                    WHEN sender.is_anonymous = 1 AND sender.anonymous_name IS NOT NULL 
+                    THEN sender.anonymous_name 
+                    ELSE sender.name 
+                END as sender_name,
+                CASE 
+                    WHEN sender.is_anonymous = 1 
+                    THEN NULL 
+                    ELSE sender.avatar 
+                END as sender_avatar,
                 receiver.id as receiver_id,
-                receiver.name as receiver_name,
-                receiver.avatar as receiver_avatar
+                CASE 
+                    WHEN receiver.is_anonymous = 1 AND receiver.anonymous_name IS NOT NULL 
+                    THEN receiver.anonymous_name 
+                    ELSE receiver.name 
+                END as receiver_name,
+                CASE 
+                    WHEN receiver.is_anonymous = 1 
+                    THEN NULL 
+                    ELSE receiver.avatar 
+                END as receiver_avatar
             FROM letters l
             JOIN users sender ON l.sender_id = sender.id
             LEFT JOIN users receiver ON l.receiver_id = receiver.id

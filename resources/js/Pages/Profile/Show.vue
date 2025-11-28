@@ -1,13 +1,14 @@
 <script setup>
 import AppLayout from "@/Layouts/AppLayout.vue";
-import { Head, useForm } from "@inertiajs/vue3";
-import { computed } from "vue";
-import { usePage } from "@inertiajs/vue3";
+import { Head, useForm, usePage, router } from "@inertiajs/vue3";
+import { computed, ref, watch } from "vue";
 import TextInput from "@/Components/TextInput.vue";
 import InputLabel from "@/Components/InputLabel.vue";
 import InputError from "@/Components/InputError.vue";
 import CustomButton from "@/Components/CustomButton.vue";
 import AvatarSelector from "@/Components/AvatarSelector.vue";
+import InterestSelectionModal from "@/Components/InterestSelectionModal.vue";
+import LanguageSelectionModal from "@/Components/LanguageSelectionModal.vue";
 
 // Get current user from page props
 const page = usePage();
@@ -22,6 +23,30 @@ const props = defineProps({
         default: () => [],
     },
     currentAvatar: {
+        type: String,
+        default: null,
+    },
+    availableInterests: {
+        type: Array,
+        default: () => [],
+    },
+    userInterests: {
+        type: Array,
+        default: () => [],
+    },
+    availableLanguages: {
+        type: Array,
+        default: () => [],
+    },
+    userLanguages: {
+        type: Array,
+        default: () => [],
+    },
+    isAnonymous: {
+        type: Boolean,
+        default: false,
+    },
+    anonymousName: {
         type: String,
         default: null,
     },
@@ -44,6 +69,127 @@ const profileForm = useForm({
     organization_name: isAdmin.value ? props.organizationName || "" : "",
 });
 
+// Success message refs
+const profileUpdateSuccess = ref(false);
+const passwordUpdateSuccess = ref(false);
+
+// Interest modal state
+const showInterestModal = ref(false);
+
+// Language modal state
+const showLanguageModal = ref(false);
+
+// Anonymous name prop
+const anonymousName = computed(() => props.anonymousName);
+
+// Debug: Log initial props
+console.log("Profile Show - Initial props:", {
+    isAnonymous: props.isAnonymous,
+    anonymousName: props.anonymousName,
+    isAnonymousType: typeof props.isAnonymous,
+});
+
+// Anonymous mode state - use computed to sync with props
+const isAnonymousMode = computed({
+    get: () => props.isAnonymous || false,
+    set: (value) => {
+        // This will be handled by the update function
+    },
+});
+
+// Anonymous mode form
+const anonymousForm = useForm({
+    is_anonymous: props.isAnonymous || false,
+});
+
+// Debug: Log initial form state
+console.log("Profile Show - Initial form state:", {
+    is_anonymous: anonymousForm.is_anonymous,
+    is_anonymousType: typeof anonymousForm.is_anonymous,
+});
+
+// Watch for prop changes and update form
+watch(
+    () => props.isAnonymous,
+    (newValue, oldValue) => {
+        console.log("Profile Show - Watcher fired:", {
+            oldValue,
+            newValue,
+            newValueType: typeof newValue,
+            booleanValue: Boolean(newValue),
+        });
+        anonymousForm.is_anonymous = Boolean(newValue);
+        console.log("Profile Show - After watcher update:", {
+            formValue: anonymousForm.is_anonymous,
+        });
+    },
+    { immediate: true }
+);
+
+// Update anonymous mode
+const updateAnonymousMode = (event) => {
+    const newValue = event.target.checked;
+
+    console.log("Profile Show - updateAnonymousMode called:", {
+        newValue,
+        currentFormValue: anonymousForm.is_anonymous,
+        currentPropValue: props.isAnonymous,
+    });
+
+    // Update form value
+    anonymousForm.is_anonymous = newValue;
+
+    console.log("Profile Show - Form updated to:", anonymousForm.is_anonymous);
+
+    anonymousForm.put(route("profile.anonymous.update"), {
+        preserveScroll: true,
+        onSuccess: () => {
+            console.log("Profile Show - Update successful, reloading props...");
+            // Reload page props to get updated anonymous status and name
+            router.reload({ only: ["isAnonymous", "anonymousName"] });
+        },
+        onError: (errors) => {
+            console.error("Profile Show - Update failed:", errors);
+            // Revert on error
+            anonymousForm.is_anonymous = !newValue;
+        },
+    });
+};
+
+// Get selected interests names
+const selectedInterestsNames = computed(() => {
+    if (
+        !props.availableInterests ||
+        !props.userInterests ||
+        props.availableInterests.length === 0
+    ) {
+        return [];
+    }
+    return props.availableInterests
+        .filter((interest) => props.userInterests.includes(interest.id))
+        .map((interest) => interest.name);
+});
+
+// Props references for template
+const availableInterests = computed(() => props.availableInterests || []);
+const userInterests = computed(() => props.userInterests || []);
+const availableLanguages = computed(() => props.availableLanguages || []);
+const userLanguages = computed(() => props.userLanguages || []);
+
+// Get selected languages names
+const selectedLanguagesNames = computed(() => {
+    if (
+        !availableLanguages.value ||
+        !userLanguages.value ||
+        availableLanguages.value.length === 0
+    ) {
+        return [];
+    }
+    return availableLanguages.value
+        .filter((language) => userLanguages.value.includes(language.id))
+        .map((language) => language.name);
+});
+
 // Check if user might be a Google OAuth user (we can't definitively know, but we'll show a note)
 // For now, we'll allow email changes but show a note
 const isGoogleOAuthUser = computed(() => {
@@ -59,6 +205,48 @@ const passwordForm = useForm({
     password_confirmation: "",
 });
 
+// Helper function to get password error messages as an array
+const getPasswordErrorMessages = () => {
+    const errorMessages = [];
+
+    // Get errors from form.errors - errors are nested under updatePassword due to errorBag
+    const errors = passwordForm.errors || {};
+    const updatePasswordErrors = errors.updatePassword || errors;
+
+    // Only check for password errors (ignore current_password and password_confirmation)
+    if (updatePasswordErrors.password) {
+        const passwordErrors = Array.isArray(updatePasswordErrors.password)
+            ? updatePasswordErrors.password
+            : [updatePasswordErrors.password];
+
+        // Check if password is the same as current password
+        let isSamePassword = false;
+        passwordErrors.forEach((passwordError) => {
+            const errorLower = passwordError.toLowerCase();
+            if (
+                errorLower.includes("different") ||
+                errorLower.includes("must be different")
+            ) {
+                isSamePassword = true;
+                errorMessages.push(
+                    "The new password must be different from your current password."
+                );
+            }
+        });
+
+        // If not the same password error, show requirements error
+        if (!isSamePassword) {
+            errorMessages.push("Password must contain:");
+            errorMessages.push("• At least 8 characters");
+            errorMessages.push("• At least one capital letter");
+            errorMessages.push("• At least one number");
+            errorMessages.push("• At least one special character");
+        }
+    }
+
+    return errorMessages;
+};
+
 // Update profile
 const updateProfile = () => {
     // Volunteers can update name and email
@@ -72,7 +260,8 @@ const updateProfile = () => {
             organization_name: profileForm.organization_name,
         };
     } else if (isVolunteer.value) {
-        formData = { name: profileForm.name, email: profileForm.email };
+        // Volunteers can only update name, not email
+        formData = { name: profileForm.name };
     } else {
         return; // Residents cannot update
     }
@@ -82,6 +271,10 @@ const updateProfile = () => {
         .put(route("user-profile-information.update"), {
             preserveScroll: true,
             onSuccess: () => {
+                profileUpdateSuccess.value = true;
+                setTimeout(() => {
+                    profileUpdateSuccess.value = false;
+                }, 5000);
                 // Don't reset form, keep the updated values
                 // For admins, refresh the page to get updated organization name
                 if (isAdmin.value) {
@@ -97,20 +290,12 @@ const updatePassword = () => {
         preserveScroll: true,
         onSuccess: () => {
             passwordForm.reset();
+            passwordUpdateSuccess.value = true;
+            setTimeout(() => {
+                passwordUpdateSuccess.value = false;
+            }, 5000);
         },
     });
-};
-
-// Delete account (volunteers only)
-const deleteAccount = () => {
-    if (
-        confirm(
-            "Are you sure you want to delete your account? This action cannot be undone."
-        )
-    ) {
-        // TODO: Implement account deletion
-        console.log("Delete account - placeholder");
-    }
 };
 
 // Get profile title based on user type
@@ -127,7 +312,9 @@ const getProfileTitle = () => {
 
     <AppLayout :title="getProfileTitle()">
         <template #header>
-            <h2 class="font-semibold text-xl text-primary leading-tight">
+            <h2
+                class="font-semibold text-2xl lg:text-3xl text-primary leading-tight"
+            >
                 {{ getProfileTitle() }}
             </h2>
         </template>
@@ -150,17 +337,28 @@ const getProfileTitle = () => {
                 <div
                     class="bg-primary overflow-hidden shadow-xl sm:rounded-lg p-4 sm:p-6 mb-8"
                 >
-                    <h3 class="text-xl lg:text-2xl font-semibold text-white mb-4">
+                    <h3
+                        class="text-2xl lg:text-3xl font-semibold text-white mb-4"
+                    >
                         Profile Information
                     </h3>
 
                     <form @submit.prevent="updateProfile">
+                        <!-- Success Message -->
+                        <div
+                            v-if="profileUpdateSuccess"
+                            class="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg"
+                        >
+                            <p class="text-base text-green-600 font-medium">
+                                Profile updated successfully!
+                            </p>
+                        </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <!-- Name Field (Editable for volunteers only, read-only for residents, hidden for admins) -->
                             <div v-if="!isAdmin">
                                 <label
                                     for="name"
-                                    class="block text-base lg:text-lg font-medium text-white mb-2"
+                                    class="block text-lg lg:text-xl font-medium text-white mb-2"
                                 >
                                     Name
                                 </label>
@@ -168,7 +366,7 @@ const getProfileTitle = () => {
                                     id="name"
                                     v-model="profileForm.name"
                                     type="text"
-                                    class="mt-2 block w-full text-base"
+                                    class="mt-2 block w-full text-lg"
                                     :class="
                                         isResident
                                             ? 'bg-gray-100 cursor-not-allowed opacity-75'
@@ -184,11 +382,11 @@ const getProfileTitle = () => {
                                 />
                             </div>
 
-                            <!-- Email Field (Editable for volunteers, read-only for admins) -->
+                            <!-- Email Field (Read-only for volunteers and admins) -->
                             <div v-if="isVolunteer || isAdmin">
                                 <label
                                     for="email"
-                                    class="block text-base lg:text-lg font-medium text-white mb-2"
+                                    class="block text-lg lg:text-xl font-medium text-white mb-2"
                                 >
                                     Email Address
                                 </label>
@@ -196,26 +394,20 @@ const getProfileTitle = () => {
                                     id="email"
                                     :value="user?.email || ''"
                                     type="email"
-                                    class="mt-2 block w-full text-base"
-                                    :class="isAdmin ? 'bg-gray-100 cursor-not-allowed opacity-75' : ''"
-                                    :disabled="isAdmin"
-                                    :readonly="isAdmin"
+                                    class="mt-2 block w-full text-base bg-gray-100 cursor-not-allowed opacity-75"
+                                    disabled
+                                    readonly
                                 />
-                                <p v-if="isAdmin" class="mt-1 text-sm text-white/80">
+                                <p class="mt-1 text-base text-white/80">
                                     Email address cannot be changed.
                                 </p>
-                                <InputError
-                                    v-if="isVolunteer"
-                                    class="mt-2"
-                                    :message="profileForm.errors.email"
-                                />
                             </div>
 
                             <!-- Organization Field (Editable for admins, read-only for volunteers and residents) -->
                             <div v-if="isAdmin">
                                 <label
                                     for="organization_name"
-                                    class="block text-base lg:text-lg font-medium text-white mb-2"
+                                    class="block text-lg lg:text-xl font-medium text-white mb-2"
                                 >
                                     Organization Name
                                 </label>
@@ -223,7 +415,7 @@ const getProfileTitle = () => {
                                     id="organization_name"
                                     v-model="profileForm.organization_name"
                                     type="text"
-                                    class="mt-2 block w-full text-base"
+                                    class="mt-2 block w-full text-lg"
                                     required
                                 />
                                 <InputError
@@ -238,7 +430,7 @@ const getProfileTitle = () => {
                             <div v-if="isVolunteer || isResident">
                                 <label
                                     for="organization"
-                                    class="block text-base lg:text-lg font-medium text-white mb-2"
+                                    class="block text-lg lg:text-xl font-medium text-white mb-2"
                                 >
                                     Organization
                                 </label>
@@ -273,32 +465,66 @@ const getProfileTitle = () => {
                     v-if="isVolunteer || isAdmin"
                     class="bg-primary overflow-hidden shadow-xl sm:rounded-lg p-4 sm:p-6 mb-8"
                 >
-                    <h3 class="text-xl lg:text-2xl font-semibold text-white mb-4">
+                    <h3
+                        class="text-2xl lg:text-3xl font-semibold text-white mb-4"
+                    >
                         Account Settings
                     </h3>
 
                     <div class="space-y-6">
                         <!-- Change Password Section -->
                         <div>
-                            <h4 class="text-base lg:text-lg font-medium text-white mb-2">
+                            <h4
+                                class="text-base lg:text-lg font-medium text-white mb-2"
+                            >
                                 Change Password
                             </h4>
-                            <p class="text-base text-white mb-4">
+                            <p class="text-lg text-white mb-4">
                                 Update your account password. Your password must
                                 include:
                             </p>
-                            <ul class="text-base text-white/90 mb-4 list-disc list-inside space-y-1">
+                            <ul
+                                class="text-lg text-white/90 mb-4 list-disc list-inside space-y-1"
+                            >
                                 <li>At least 8 characters</li>
                                 <li>At least one capital letter</li>
                                 <li>At least one number</li>
                                 <li>At least one special character</li>
                             </ul>
                             <form @submit.prevent="updatePassword">
+                                <!-- Success Message -->
+                                <div
+                                    v-if="passwordUpdateSuccess"
+                                    class="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg"
+                                >
+                                    <p
+                                        class="text-sm text-green-600 font-medium"
+                                    >
+                                        Password updated successfully!
+                                    </p>
+                                </div>
+                                <!-- Error Message -->
+                                <div
+                                    v-if="getPasswordErrorMessages().length > 0"
+                                    class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg"
+                                >
+                                    <ul class="list-disc list-inside space-y-1">
+                                        <li
+                                            v-for="(
+                                                error, index
+                                            ) in getPasswordErrorMessages()"
+                                            :key="index"
+                                            class="text-base text-red-600 font-medium"
+                                        >
+                                            {{ error }}
+                                        </li>
+                                    </ul>
+                                </div>
                                 <div class="space-y-4">
                                     <div>
                                         <label
                                             for="current_password"
-                                            class="block text-base lg:text-lg font-medium text-white mb-2"
+                                            class="block text-lg lg:text-xl font-medium text-white mb-2"
                                         >
                                             Current Password
                                         </label>
@@ -308,22 +534,15 @@ const getProfileTitle = () => {
                                                 passwordForm.current_password
                                             "
                                             type="password"
-                                            class="mt-2 block w-full text-base"
+                                            class="mt-2 block w-full text-lg"
                                             required
                                             autocomplete="current-password"
-                                        />
-                                        <InputError
-                                            class="mt-2"
-                                            :message="
-                                                passwordForm.errors
-                                                    .current_password
-                                            "
                                         />
                                     </div>
                                     <div>
                                         <label
                                             for="password"
-                                            class="block text-base lg:text-lg font-medium text-white mb-2"
+                                            class="block text-lg lg:text-xl font-medium text-white mb-2"
                                         >
                                             New Password
                                         </label>
@@ -331,21 +550,15 @@ const getProfileTitle = () => {
                                             id="password"
                                             v-model="passwordForm.password"
                                             type="password"
-                                            class="mt-2 block w-full text-base"
+                                            class="mt-2 block w-full text-lg"
                                             required
                                             autocomplete="new-password"
-                                        />
-                                        <InputError
-                                            class="mt-2"
-                                            :message="
-                                                passwordForm.errors.password
-                                            "
                                         />
                                     </div>
                                     <div>
                                         <label
                                             for="password_confirmation"
-                                            class="block text-base lg:text-lg font-medium text-white mb-2"
+                                            class="block text-lg lg:text-xl font-medium text-white mb-2"
                                         >
                                             Confirm New Password
                                         </label>
@@ -355,16 +568,9 @@ const getProfileTitle = () => {
                                                 passwordForm.password_confirmation
                                             "
                                             type="password"
-                                            class="mt-2 block w-full text-base"
+                                            class="mt-2 block w-full text-lg"
                                             required
                                             autocomplete="new-password"
-                                        />
-                                        <InputError
-                                            class="mt-2"
-                                            :message="
-                                                passwordForm.errors
-                                                    .password_confirmation
-                                            "
                                         />
                                     </div>
                                     <div>
@@ -382,133 +588,143 @@ const getProfileTitle = () => {
                                 </div>
                             </form>
                         </div>
-
-                        <!-- Delete Account Section (Volunteers only - admins cannot delete their account) -->
-                        <div
-                            v-if="isVolunteer"
-                            class="pt-6 border-t-2 border-white"
-                        >
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <h4 class="text-sm font-medium text-white">
-                                        Delete Account
-                                    </h4>
-                                    <p class="text-sm text-white mt-1">
-                                        Permanently delete your account and all
-                                        data
-                                    </p>
-                                </div>
-                                <CustomButton
-                                    text="Delete Account"
-                                    preset="neutral"
-                                    size="small"
-                                    @click="deleteAccount"
-                                />
-                            </div>
-                        </div>
                     </div>
                 </div>
 
-                <!-- Interests Section (Placeholder) -->
+                <!-- Interests Section -->
                 <div
                     v-if="isResident || isVolunteer"
                     class="bg-primary overflow-hidden shadow-xl sm:rounded-lg p-4 sm:p-6 mb-8"
                 >
-                    <h3 class="text-lg font-semibold text-white mb-4">
+                    <h3
+                        class="text-2xl lg:text-3xl font-semibold text-white mb-4"
+                    >
                         Interests
                     </h3>
                     <div class="space-y-4">
-                        <p class="text-sm text-white mb-4">
-                            Interest management coming soon
+                        <p class="text-lg text-white mb-4">
+                            Select your interests to help match you with pen
+                            pals
                         </p>
-                        <div class="flex flex-wrap gap-2">
+                        <div
+                            v-if="selectedInterestsNames.length > 0"
+                            class="flex flex-wrap gap-2 mb-4"
+                        >
                             <span
-                                class="px-3 py-1 bg-background text-primary rounded-full text-sm"
+                                v-for="(
+                                    interestName, index
+                                ) in selectedInterestsNames"
+                                :key="index"
+                                class="px-3 py-1 bg-white text-black rounded-full text-lg font-medium"
                             >
-                                Interest 1
+                                {{ interestName }}
                             </span>
-                            <span
-                                class="px-3 py-1 bg-background text-primary rounded-full text-sm"
-                            >
-                                Interest 2
-                            </span>
-                            <span
-                                class="px-3 py-1 bg-background text-primary rounded-full text-sm"
-                            >
-                                Interest 3
-                            </span>
+                        </div>
+                        <div v-else class="mb-4">
+                            <p class="text-lg text-white/80 italic">
+                                No interests selected yet
+                            </p>
                         </div>
                         <CustomButton
                             text="Add/Remove Interests"
                             preset="neutral"
                             size="small"
-                            disabled
+                            @click="showInterestModal = true"
                         />
                     </div>
                 </div>
 
-                <!-- Languages Section (Placeholder) -->
+                <!-- Languages Section -->
                 <div
                     v-if="isResident || isVolunteer"
                     class="bg-primary overflow-hidden shadow-xl sm:rounded-lg p-4 sm:p-6 mb-8"
                 >
-                    <h3 class="text-lg font-semibold text-white mb-4">
+                    <h3
+                        class="text-2xl lg:text-3xl font-semibold text-white mb-4"
+                    >
                         Languages
                     </h3>
                     <div class="space-y-4">
-                        <p class="text-sm text-white mb-4">
-                            Language management coming soon
+                        <p class="text-lg text-white mb-4">
+                            Select languages you speak to help match you with
+                            pen pals
                         </p>
-                        <div class="flex flex-wrap gap-2">
+                        <div
+                            v-if="selectedLanguagesNames.length > 0"
+                            class="flex flex-wrap gap-2 mb-4"
+                        >
                             <span
-                                class="px-3 py-1 bg-background text-primary rounded-full text-sm"
+                                v-for="(
+                                    languageName, index
+                                ) in selectedLanguagesNames"
+                                :key="index"
+                                class="px-3 py-1 bg-white text-black rounded-full text-lg font-medium"
                             >
-                                English
+                                {{ languageName }}
                             </span>
-                            <span
-                                class="px-3 py-1 bg-background text-primary rounded-full text-sm"
-                            >
-                                French
-                            </span>
+                        </div>
+                        <div v-else class="mb-4">
+                            <p class="text-lg text-white/80 italic">
+                                No languages selected yet
+                            </p>
                         </div>
                         <CustomButton
                             text="Add/Remove Languages"
                             preset="neutral"
                             size="small"
-                            disabled
+                            @click="showLanguageModal = true"
                         />
                     </div>
                 </div>
 
-                <!-- Anonymous Mode Section (Placeholder) -->
+                <!-- Anonymous Mode Section -->
                 <div
                     v-if="isResident || isVolunteer"
                     class="bg-primary overflow-hidden shadow-xl sm:rounded-lg p-4 sm:p-6"
                 >
-                    <h3 class="text-lg font-semibold text-white mb-4">
+                    <h3
+                        class="text-2xl lg:text-3xl font-semibold text-white mb-4"
+                    >
                         Privacy Settings
                     </h3>
                     <div class="space-y-4">
                         <div class="flex items-center justify-between">
                             <div>
-                                <h4 class="text-sm font-medium text-white">
+                                <h4 class="text-lg font-medium text-white">
                                     Anonymous Mode
                                 </h4>
-                                <p class="text-sm text-white mt-1">
-                                    Hide your identity in communications (coming
-                                    soon)
+                                <p class="text-base text-white mt-1">
+                                    Hide your real name in communications. Your
+                                    name will be replaced with a random
+                                    anonymous name.
+                                </p>
+                                <p
+                                    v-if="
+                                        anonymousForm.is_anonymous &&
+                                        anonymousName
+                                    "
+                                    class="text-base text-white/80 mt-2 italic"
+                                >
+                                    Your anonymous name: {{ anonymousName }}
                                 </p>
                             </div>
                             <label
-                                class="relative inline-flex items-center cursor-not-allowed opacity-50"
+                                class="relative inline-flex items-center cursor-pointer"
                             >
                                 <input
                                     type="checkbox"
+                                    :checked="anonymousForm.is_anonymous"
+                                    @change="updateAnonymousMode"
                                     class="sr-only peer"
-                                    disabled
+                                    :disabled="anonymousForm.processing"
                                 />
                                 <div
-                                    class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"
+                                    :class="[
+                                        'w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[\'\'] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-pressed',
+                                        anonymousForm.processing
+                                            ? 'opacity-50 cursor-not-allowed'
+                                            : 'cursor-pointer',
+                                    ]"
                                 ></div>
                             </label>
                         </div>
@@ -516,5 +732,21 @@ const getProfileTitle = () => {
                 </div>
             </div>
         </div>
+
+        <!-- Interest Selection Modal -->
+        <InterestSelectionModal
+            :show="showInterestModal"
+            :available-interests="availableInterests"
+            :current-interests="userInterests"
+            @close="showInterestModal = false"
+        />
+
+        <!-- Language Selection Modal -->
+        <LanguageSelectionModal
+            :show="showLanguageModal"
+            :available-languages="availableLanguages"
+            :current-languages="userLanguages"
+            @close="showLanguageModal = false"
+        />
     </AppLayout>
 </template>

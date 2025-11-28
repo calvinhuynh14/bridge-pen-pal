@@ -18,11 +18,29 @@ class UpdateUserPassword implements UpdatesUserPasswords
      */
     public function update(User $user, array $input): void
     {
+        // First validate current password
         Validator::make($input, [
             'current_password' => ['required', 'string', 'current_password:web'],
-            'password' => $this->passwordRules(),
         ], [
             'current_password.current_password' => __('The provided password does not match your current password.'),
+        ])->validateWithBag('updatePassword');
+
+        // Check if new password is the same as current password
+        if (Hash::check($input['password'], $user->password)) {
+            $validator = Validator::make($input, [
+                'password' => [
+                    function ($attribute, $value, $fail) {
+                        $fail('The new password must be different from your current password.');
+                    },
+                ],
+            ]);
+            $validator->validateWithBag('updatePassword');
+            return; // Stop here if passwords match
+        }
+
+        // Validate password requirements
+        Validator::make($input, [
+            'password' => $this->passwordRules(),
         ])->validateWithBag('updatePassword');
 
         $user->forceFill([

@@ -42,7 +42,7 @@ const verificationLinkSent = computed(() => props.status === 'verification-link-
                 >
                     Check your inbox
                 </h2>
-            </div>
+        </div>
 
             <div
                 class="flex lg:flex items-center justify-center w-2/3 lg:w-1/2"
@@ -52,7 +52,7 @@ const verificationLinkSent = computed(() => props.status === 'verification-link-
                     alt="Bridge Logo"
                     class="w-full h-auto object-contain max-w-[280px] lg:max-w-none lg:w-full"
                 />
-            </div>
+        </div>
         </section>
 
         <!-- Verification Section -->

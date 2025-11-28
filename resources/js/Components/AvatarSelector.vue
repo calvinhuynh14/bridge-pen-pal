@@ -46,10 +46,10 @@ const getAvatarUrl = (avatar) => {
 <template>
     <div class="space-y-4">
         <div>
-            <h4 class="text-lg lg:text-xl font-medium text-white mb-2">
+            <h4 class="text-xl lg:text-2xl font-medium text-white mb-2">
                 Profile Avatar
             </h4>
-            <p class="text-base lg:text-lg text-white/80 mb-4">
+            <p class="text-lg lg:text-xl text-white/80 mb-4">
                 Click on your avatar to change it
             </p>
         </div>
@@ -87,11 +87,11 @@ const getAvatarUrl = (avatar) => {
                 </div>
             </button>
             <div>
-                <p class="text-base lg:text-lg text-white font-medium">Current Avatar</p>
-                <p v-if="!selectedAvatar" class="text-sm lg:text-base text-white/60">
+                <p class="text-lg lg:text-xl text-white font-medium">Current Avatar</p>
+                <p v-if="!selectedAvatar" class="text-base lg:text-lg text-white/60">
                     No avatar selected. Click to choose one.
                 </p>
-                <p v-else class="text-sm lg:text-base text-white/60">
+                <p v-else class="text-base lg:text-lg text-white/60">
                     Click to change avatar
                 </p>
             </div>

@@ -29,10 +29,9 @@ class UpdateUserProfileInformation implements UpdatesUserProfileInformation
             // Return early without making any changes
             return;
         } else {
-            // Volunteers can update name and email
+            // Volunteers can only update name (email is read-only)
             if ($user->isVolunteer()) {
                 $rules['name'] = ['required', 'string', 'max:255'];
-                $rules['email'] = ['required', 'email', 'max:255', Rule::unique('users')->ignore($user->id)];
             }
             
             // Admins can only update organization name (no name or email fields for admins)
@@ -64,25 +63,17 @@ class UpdateUserProfileInformation implements UpdatesUserProfileInformation
                 }
             }
 
-            if ($input['email'] !== $user->email &&
-                $user instanceof MustVerifyEmail) {
-                $this->updateVerifiedUser($user, $input);
-            } else {
-                // Update user fields based on user type
-                $updateData = [];
-                
-                // Volunteers can update name and email
-                if ($user->isVolunteer()) {
-                    $updateData['email'] = $input['email'];
-                    if (isset($input['name'])) {
-                        $updateData['name'] = $input['name'];
-                    }
-                }
-                
-                // Admins don't update user fields (only organization name is updated separately)
-                if (!empty($updateData)) {
-                    $user->forceFill($updateData)->save();
-                }
+            // Update user fields based on user type
+            $updateData = [];
+            
+            // Volunteers can only update name (email is read-only)
+            if ($user->isVolunteer() && isset($input['name'])) {
+                $updateData['name'] = $input['name'];
+            }
+            
+            // Admins don't update user fields (only organization name is updated separately)
+            if (!empty($updateData)) {
+                $user->forceFill($updateData)->save();
             }
         }
     }

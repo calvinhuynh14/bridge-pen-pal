@@ -1127,6 +1127,9 @@ Route::middleware([
     // Override Jetstream's profile route to use our custom Profile/Show.vue component
     // This route must be registered before Jetstream's service provider registers its routes
     // Our route will take precedence and include organization data
-    Route::get('/user/profile', [ProfileController::class, 'show'])->name('profile.show');
-    Route::put('/user/profile/avatar', [ProfileController::class, 'updateAvatar'])->name('profile.avatar.update');
+            Route::get('/user/profile', [ProfileController::class, 'show'])->name('profile.show');
+            Route::put('/user/profile/avatar', [ProfileController::class, 'updateAvatar'])->name('profile.avatar.update');
+            Route::put('/user/profile/interests', [ProfileController::class, 'updateInterests'])->name('profile.interests.update');
+            Route::put('/user/profile/languages', [ProfileController::class, 'updateLanguages'])->name('profile.languages.update');
+            Route::put('/user/profile/anonymous', [ProfileController::class, 'updateAnonymousMode'])->name('profile.anonymous.update');
 });
