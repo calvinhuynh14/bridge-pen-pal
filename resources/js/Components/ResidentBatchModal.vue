@@ -112,6 +112,9 @@ const closeModal = () => {
             <!-- Success Message -->
             <div
                 v-if="success"
+                role="status"
+                aria-live="polite"
+                aria-atomic="true"
                 class="mb-6 p-4 bg-primary border-2 border-pressed text-black rounded-lg"
             >
                 {{ success }}
@@ -120,6 +123,9 @@ const closeModal = () => {
             <!-- Error Messages -->
             <div v-if="errors && Object.keys(errors).length > 0" class="mb-6">
                 <div
+                    role="alert"
+                    aria-live="assertive"
+                    aria-atomic="true"
                     class="p-4 bg-red-100 border-2 border-red-500 text-red-800 rounded-lg"
                 >
                     <h4 class="font-semibold mb-2">

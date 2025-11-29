@@ -159,7 +159,15 @@ const initial = computed(() => {
 
 // Get alt text
 const altText = computed(() => {
-    return props.alt || props.name || "Avatar";
+    return props.alt || `${props.name}'s avatar` || "Avatar";
+});
+
+// Get aria label for avatar
+const ariaLabel = computed(() => {
+    if (props.src) {
+        return props.alt || `${props.name}'s profile picture` || "User avatar";
+    }
+    return `${props.name}'s avatar (initial: ${initial.value})` || "User avatar";
 });
 </script>
 
@@ -173,8 +181,10 @@ const altText = computed(() => {
             borderColorClass,
             opacityClass,
         ]"
+        role="img"
+        :aria-label="ariaLabel"
     >
-        <img :src="src" :alt="altText" class="w-full h-full object-cover" />
+        <img :src="src" :alt="altText" class="w-full h-full object-cover" aria-hidden="true" />
     </div>
     <div
         v-else
@@ -187,8 +197,10 @@ const altText = computed(() => {
             textColorClass,
             opacityClass,
         ]"
+        role="img"
+        :aria-label="ariaLabel"
     >
-        <span :class="[textSizeClass, 'font-medium']">
+        <span :class="[textSizeClass, 'font-medium']" aria-hidden="true">
             {{ initial }}
         </span>
     </div>

@@ -15,9 +15,9 @@ export default {
     theme: {
         extend: {
             colors: {
-                primary: "#B8B8FF",
-                pressed: "#9381FF", 
-                hover: "#5E239D",
+                primary: "#6763C1",
+                pressed: "#9381FF",
+                hover: "#391334",
                 light: "#DCDCFF",
                 white: "#F1F1F1",
                 background: "#FFF3E7",

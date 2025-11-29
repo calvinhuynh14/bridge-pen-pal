@@ -75,7 +75,7 @@ const submit = () => {
                     <h1 class="text-primary text-2xl font-bold w-full">
                         Reset Password
                     </h1>
-                </div>
+        </div>
 
                 <!-- Success Message -->
                 <div
@@ -95,7 +95,7 @@ const submit = () => {
                             />
                         </svg>
                         <span class="text-green-800 font-medium text-sm">
-                            {{ status }}
+            {{ status }}
                         </span>
                     </div>
                 </div>
@@ -117,24 +117,24 @@ const submit = () => {
                     <p class="text-sm text-red-600 font-medium">
                         {{ form.errors.email || 'Please check your email address.' }}
                     </p>
-                </div>
+        </div>
 
-                <form @submit.prevent="submit">
+        <form @submit.prevent="submit">
                     <div class="space-y-4">
                         <!-- Email Field -->
-                        <div>
-                            <TextInput
-                                id="email"
-                                v-model="form.email"
-                                type="email"
+            <div>
+                <TextInput
+                    id="email"
+                    v-model="form.email"
+                    type="email"
                                 class="mt-2 block w-full border-gray-300 rounded-lg focus:border-primary focus:ring-primary"
-                                required
-                                autofocus
+                    required
+                    autofocus
                                 autocomplete="email"
                                 placeholder="Enter your email address"
-                            />
-                            <InputError class="mt-2" :message="form.errors.email" />
-                        </div>
+                />
+                <InputError class="mt-2" :message="form.errors.email" />
+            </div>
                     </div>
 
                     <!-- Submit Button -->

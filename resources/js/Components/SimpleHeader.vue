@@ -3,12 +3,12 @@ import { Link } from "@inertiajs/vue3";
 </script>
 
 <template>
-    <nav class="bg-primary">
+    <nav class="bg-primary" role="navigation" aria-label="Simple header navigation">
         <div class="w-full mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-center h-12">
                 <!-- Logo -->
                 <div class="shrink-0 flex items-center">
-                    <Link href="/">
+                    <Link href="/" aria-label="Bridge Pen Pal - Go to home">
                         <img
                             src="/images/logos/logo_name_horizontal_white.svg"
                             alt="Bridge Pen Pal"

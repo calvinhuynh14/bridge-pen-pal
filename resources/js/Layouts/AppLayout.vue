@@ -44,10 +44,22 @@ const logout = () => {
     <div>
         <Head :title="title" />
 
+        <!-- Skip to main content link -->
+        <a
+            href="#main-content"
+            class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-white focus:text-black focus:rounded focus:shadow-lg"
+        >
+            Skip to main content
+        </a>
+
         <Banner />
 
         <div class="min-h-screen">
-            <nav class="bg-primary sticky top-0 z-50 shadow-md">
+            <nav
+                class="bg-primary sticky top-0 z-50 shadow-md"
+                role="navigation"
+                aria-label="Main navigation"
+            >
                 <!-- Primary Navigation Menu -->
                 <div class="w-full mx-auto px-4 sm:px-6 lg:px-8">
                     <div class="flex justify-between h-12">
@@ -55,7 +67,10 @@ const logout = () => {
                             <!-- Sidebar Toggle Button (visible on md+ screens) -->
                             <button
                                 @click="toggleSidebar"
-                                class="md:flex hidden items-center justify-center p-2 rounded-md text-white hover:bg-hover focus:outline-none transition-colors mr-4"
+                                :aria-expanded="isSidebarOpen"
+                                aria-label="Toggle sidebar navigation"
+                                aria-controls="sidebar-navigation"
+                                class="md:flex hidden items-center justify-center p-2 rounded-md text-white hover:bg-hover focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary transition-colors mr-4"
                             >
                                 <svg
                                     xmlns="http://www.w3.org/2000/svg"
@@ -73,7 +88,10 @@ const logout = () => {
 
                             <!-- Logo -->
                             <div class="shrink-0 flex items-center">
-                                <Link :href="route('dashboard')">
+                                <Link
+                                    :href="route('dashboard')"
+                                    aria-label="Bridge Pen Pal - Go to dashboard"
+                                >
                                     <img
                                         src="/images/logos/logo_name_horizontal_white.svg"
                                         alt="Bridge Pen Pal"
@@ -148,15 +166,20 @@ const logout = () => {
                                 <Dropdown
                                     align="right"
                                     width="48"
+                                    aria-label="User menu"
                                     :content-classes="[
                                         'py-1',
                                         'bg-pressed',
                                         'overflow-hidden',
                                     ]"
                                 >
-                                    <template #trigger>
+                                    <template #trigger="{ open }">
                                         <button
-                                            class="flex text-sm border-2 border-transparent rounded-full focus:outline-none focus:border-gray-300 transition"
+                                            type="button"
+                                            :aria-expanded="open ? 'true' : 'false'"
+                                            aria-haspopup="true"
+                                            aria-label="User menu"
+                                            class="flex text-sm border-2 border-transparent rounded-full focus:outline-none focus:border-gray-300 focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary transition"
                                         >
                                             <Avatar
                                                 :src="
@@ -241,7 +264,10 @@ const logout = () => {
                         <!-- Hamburger (visible only on portrait mobile, hidden on md+ screens) -->
                         <div class="-me-2 flex items-center md:hidden">
                             <button
-                                class="inline-flex items-center justify-center p-2 rounded-md text-white hover:text-white hover:bg-hover focus:outline-none focus:bg-hover focus:text-white transition duration-150 ease-in-out"
+                                :aria-expanded="showingNavigationDropdown"
+                                aria-label="Toggle mobile navigation menu"
+                                aria-controls="mobile-navigation-menu"
+                                class="inline-flex items-center justify-center p-2 rounded-md text-white hover:text-white hover:bg-hover focus:outline-none focus:bg-hover focus:text-white focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary transition duration-150 ease-in-out"
                                 @click="
                                     showingNavigationDropdown =
                                         !showingNavigationDropdown
@@ -283,11 +309,14 @@ const logout = () => {
 
                 <!-- Responsive Navigation Menu (visible only on portrait mobile when hamburger is clicked) -->
                 <div
+                    id="mobile-navigation-menu"
                     :class="{
                         block: showingNavigationDropdown,
                         hidden: !showingNavigationDropdown,
                     }"
                     class="md:hidden"
+                    role="menu"
+                    aria-label="Mobile navigation menu"
                 >
                     <!-- Responsive Settings Options -->
                     <div class="pt-4 pb-1 border-t border-white/20 text-white">
@@ -362,14 +391,17 @@ const logout = () => {
             </nav>
 
             <!-- Page Content -->
-            <main class="flex">
+            <div class="flex">
                 <!-- Sidebar Navigation -->
-                <div
+                <aside
+                    id="sidebar-navigation"
                     class="bg-primary text-white sticky top-12 h-[calc(100vh-3rem)] transition-all duration-300 ease-in-out overflow-y-auto md:block hidden"
                     :class="{
                         'w-48': isSidebarOpen,
                         'w-0': !isSidebarOpen,
                     }"
+                    :aria-hidden="!isSidebarOpen"
+                    aria-label="Sidebar navigation"
                 >
                     <div
                         class="p-4 whitespace-nowrap transition-opacity duration-300"
@@ -384,7 +416,12 @@ const logout = () => {
                             <template v-if="isAdmin">
                                 <Link
                                     :href="route('admin.dashboard')"
-                                    class="flex items-center px-4 py-3 text-base font-medium rounded-md hover:bg-hover transition-colors"
+                                    :aria-current="
+                                        $page.url.startsWith('/admin/dashboard')
+                                            ? 'page'
+                                            : undefined
+                                    "
+                                    class="flex items-center px-4 py-3 text-base font-medium rounded-md hover:bg-hover transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary"
                                     :class="{
                                         'bg-pressed':
                                             $page.url.startsWith(
@@ -411,7 +448,12 @@ const logout = () => {
 
                                 <Link
                                     :href="route('admin.residents')"
-                                    class="flex items-center px-4 py-3 text-base font-medium rounded-md hover:bg-hover transition-colors"
+                                    :aria-current="
+                                        $page.url.startsWith('/admin/residents')
+                                            ? 'page'
+                                            : undefined
+                                    "
+                                    class="flex items-center px-4 py-3 text-base font-medium rounded-md hover:bg-hover transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary"
                                     :class="{
                                         'bg-pressed':
                                             $page.url.startsWith(
@@ -440,7 +482,12 @@ const logout = () => {
 
                                 <Link
                                     :href="route('admin.volunteers')"
-                                    class="flex items-center px-4 py-3 text-base font-medium rounded-md hover:bg-hover transition-colors"
+                                    :aria-current="
+                                        $page.url.startsWith('/admin/volunteers')
+                                            ? 'page'
+                                            : undefined
+                                    "
+                                    class="flex items-center px-4 py-3 text-base font-medium rounded-md hover:bg-hover transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary"
                                     :class="{
                                         'bg-pressed':
                                             $page.url.startsWith(
@@ -464,7 +511,12 @@ const logout = () => {
 
                                 <Link
                                     :href="route('admin.reports')"
-                                    class="flex items-center px-4 py-3 text-base font-medium rounded-md hover:bg-hover transition-colors"
+                                    :aria-current="
+                                        $page.url.startsWith('/admin/reports')
+                                            ? 'page'
+                                            : undefined
+                                    "
+                                    class="flex items-center px-4 py-3 text-base font-medium rounded-md hover:bg-hover transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary"
                                     :class="{
                                         'bg-pressed':
                                             $page.url.startsWith(
@@ -493,7 +545,12 @@ const logout = () => {
                             <template v-else>
                                 <Link
                                     :href="route('platform.home')"
-                                    class="flex items-center px-4 py-3 text-base font-medium rounded-md hover:bg-hover transition-colors"
+                                    :aria-current="
+                                        $page.url.startsWith('/platform/home')
+                                            ? 'page'
+                                            : undefined
+                                    "
+                                    class="flex items-center px-4 py-3 text-base font-medium rounded-md hover:bg-hover transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary"
                                     :class="{
                                         'bg-pressed':
                                             $page.url.startsWith(
@@ -520,7 +577,12 @@ const logout = () => {
 
                                 <Link
                                     :href="route('platform.discover')"
-                                    class="flex items-center px-4 py-3 text-base font-medium rounded-md hover:bg-hover transition-colors"
+                                    :aria-current="
+                                        $page.url.startsWith('/platform/discover')
+                                            ? 'page'
+                                            : undefined
+                                    "
+                                    class="flex items-center px-4 py-3 text-base font-medium rounded-md hover:bg-hover transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary"
                                     :class="{
                                         'bg-pressed':
                                             $page.url.startsWith(
@@ -545,7 +607,12 @@ const logout = () => {
 
                                 <Link
                                     :href="route('platform.write')"
-                                    class="flex items-center px-4 py-3 text-base font-medium rounded-md hover:bg-hover transition-colors"
+                                    :aria-current="
+                                        $page.url.startsWith('/platform/write')
+                                            ? 'page'
+                                            : undefined
+                                    "
+                                    class="flex items-center px-4 py-3 text-base font-medium rounded-md hover:bg-hover transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary"
                                     :class="{
                                         'bg-pressed':
                                             $page.url.startsWith(
@@ -571,7 +638,12 @@ const logout = () => {
 
                                 <Link
                                     :href="route('profile.show')"
-                                    class="flex items-center px-4 py-3 text-base font-medium rounded-md hover:bg-hover transition-colors"
+                                    :aria-current="
+                                        $page.url.startsWith('/profile')
+                                            ? 'page'
+                                            : undefined
+                                    "
+                                    class="flex items-center px-4 py-3 text-base font-medium rounded-md hover:bg-hover transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary"
                                     :class="{
                                         'bg-pressed':
                                             $page.url.startsWith('/profile'),
@@ -595,17 +667,22 @@ const logout = () => {
                             </template>
                         </nav>
                     </div>
-                </div>
+                </aside>
 
                 <!-- Main Content Area -->
-                <div class="flex-1 bg-background min-h-screen pb-16 lg:pb-0">
+                <main
+                    id="main-content"
+                    class="flex-1 bg-background min-h-screen pb-16 lg:pb-0"
+                >
                     <slot />
-                </div>
-            </main>
+                </main>
+            </div>
 
             <!-- Mobile Bottom Navigation (hidden on md+ screens) -->
-            <div
+            <nav
                 class="md:hidden fixed bottom-0 left-0 right-0 bg-primary text-white border-t border-gray-600"
+                role="navigation"
+                aria-label="Mobile bottom navigation"
             >
                 <div class="flex justify-around items-center py-2">
                     <!-- Admin Navigation -->
@@ -613,7 +690,12 @@ const logout = () => {
                         <!-- Overview -->
                         <Link
                             :href="route('admin.dashboard')"
-                            class="flex flex-col items-center py-2 px-3 rounded-lg transition-colors"
+                            :aria-current="
+                                $page.url.startsWith('/admin/dashboard')
+                                    ? 'page'
+                                    : undefined
+                            "
+                            class="flex flex-col items-center py-2 px-3 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary"
                             :class="{
                                 'bg-pressed':
                                     $page.url.startsWith('/admin/dashboard'),
@@ -638,7 +720,12 @@ const logout = () => {
                         <!-- Residents -->
                         <Link
                             :href="route('admin.residents')"
-                            class="flex flex-col items-center py-2 px-3 rounded-lg transition-colors"
+                            :aria-current="
+                                $page.url.startsWith('/admin/residents')
+                                    ? 'page'
+                                    : undefined
+                            "
+                            class="flex flex-col items-center py-2 px-3 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary"
                             :class="{
                                 'bg-pressed':
                                     $page.url.startsWith('/admin/residents'),
@@ -665,7 +752,12 @@ const logout = () => {
                         <!-- Volunteers -->
                         <Link
                             :href="route('admin.volunteers')"
-                            class="flex flex-col items-center py-2 px-3 rounded-lg transition-colors"
+                            :aria-current="
+                                $page.url.startsWith('/admin/volunteers')
+                                    ? 'page'
+                                    : undefined
+                            "
+                            class="flex flex-col items-center py-2 px-3 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary"
                             :class="{
                                 'bg-pressed':
                                     $page.url.startsWith('/admin/volunteers'),
@@ -687,7 +779,12 @@ const logout = () => {
                         <!-- Reports -->
                         <Link
                             :href="route('admin.reports')"
-                            class="flex flex-col items-center py-2 px-3 rounded-lg transition-colors"
+                            :aria-current="
+                                $page.url.startsWith('/admin/reports')
+                                    ? 'page'
+                                    : undefined
+                            "
+                            class="flex flex-col items-center py-2 px-3 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary"
                             :class="{
                                 'bg-pressed':
                                     $page.url.startsWith('/admin/reports'),
@@ -714,7 +811,12 @@ const logout = () => {
                         <!-- Home -->
                         <Link
                             :href="route('platform.home')"
-                            class="flex flex-col items-center py-2 px-3 rounded-lg transition-colors"
+                            :aria-current="
+                                $page.url.startsWith('/platform/home')
+                                    ? 'page'
+                                    : undefined
+                            "
+                            class="flex flex-col items-center py-2 px-3 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary"
                             :class="{
                                 'bg-pressed':
                                     $page.url.startsWith('/platform/home'),
@@ -739,7 +841,12 @@ const logout = () => {
                         <!-- Discover -->
                         <Link
                             :href="route('platform.discover')"
-                            class="flex flex-col items-center py-2 px-3 rounded-lg transition-colors"
+                            :aria-current="
+                                $page.url.startsWith('/platform/discover')
+                                    ? 'page'
+                                    : undefined
+                            "
+                            class="flex flex-col items-center py-2 px-3 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary"
                             :class="{
                                 'bg-pressed':
                                     $page.url.startsWith('/platform/discover'),
@@ -763,7 +870,12 @@ const logout = () => {
                         <!-- Write -->
                         <Link
                             :href="route('platform.write')"
-                            class="flex flex-col items-center py-2 px-3 rounded-lg transition-colors"
+                            :aria-current="
+                                $page.url.startsWith('/platform/write')
+                                    ? 'page'
+                                    : undefined
+                            "
+                            class="flex flex-col items-center py-2 px-3 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary"
                             :class="{
                                 'bg-pressed':
                                     $page.url.startsWith('/platform/write'),
@@ -788,7 +900,12 @@ const logout = () => {
                         <!-- Profile -->
                         <Link
                             :href="route('profile.show')"
-                            class="flex flex-col items-center py-2 px-3 rounded-lg transition-colors"
+                            :aria-current="
+                                $page.url.startsWith('/profile')
+                                    ? 'page'
+                                    : undefined
+                            "
+                            class="flex flex-col items-center py-2 px-3 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary"
                             :class="{
                                 'bg-pressed': $page.url.startsWith('/profile'),
                             }"
@@ -809,7 +926,7 @@ const logout = () => {
                         </Link>
                     </template>
                 </div>
-            </div>
+            </nav>
         </div>
     </div>
 </template>

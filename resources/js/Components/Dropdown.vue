@@ -14,6 +14,10 @@ const props = defineProps({
         type: Array,
         default: () => ["py-1", "bg-primary"],
     },
+    ariaLabel: {
+        type: String,
+        default: null,
+    },
 });
 
 let open = ref(false);
@@ -48,12 +52,17 @@ const alignmentClasses = computed(() => {
 
 <template>
     <div class="relative">
-        <div @click="open = !open">
-            <slot name="trigger" />
+        <div @click="open = !open" @keydown.enter.prevent="open = !open" @keydown.space.prevent="open = !open">
+            <slot name="trigger" :open="open" />
         </div>
 
         <!-- Full Screen Dropdown Overlay -->
-        <div v-show="open" class="fixed inset-0 z-40" @click="open = false" />
+        <div
+            v-show="open"
+            class="fixed inset-0 z-40"
+            @click="open = false"
+            aria-hidden="true"
+        />
 
         <transition
             enter-active-class="transition ease-out duration-200"
@@ -65,9 +74,10 @@ const alignmentClasses = computed(() => {
         >
             <div
                 v-show="open"
+                role="menu"
+                :aria-label="ariaLabel || 'Dropdown menu'"
                 class="absolute z-50 mt-2 rounded-md shadow-lg"
                 :class="[widthClass, alignmentClasses]"
-                style="display: none"
                 @click="open = false"
             >
                 <div

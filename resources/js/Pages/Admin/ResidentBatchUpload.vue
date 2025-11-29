@@ -107,6 +107,9 @@ const uploadFile = () => {
                             <div
                                 v-for="(error, key) in errors"
                                 :key="key"
+                                role="alert"
+                                aria-live="assertive"
+                                aria-atomic="true"
                                 class="p-4 bg-red-100 border border-red-400 text-red-700 rounded mb-2"
                             >
                                 {{ error }}
@@ -116,6 +119,9 @@ const uploadFile = () => {
                         <!-- Results Display -->
                         <div v-if="results" class="mb-6">
                             <div
+                                role="status"
+                                aria-live="polite"
+                                aria-atomic="true"
                                 class="p-4 bg-blue-100 border border-blue-400 text-blue-700 rounded mb-4"
                             >
                                 <h3 class="font-bold">

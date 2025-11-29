@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watchEffect } from 'vue';
+import { computed, ref, watchEffect } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 
 const page = usePage();
@@ -12,15 +12,29 @@ watchEffect(async () => {
     message.value = page.props.jetstream.flash?.banner || '';
     show.value = true;
 });
+
+const ariaRole = computed(() => {
+    return style.value === 'danger' ? 'alert' : 'status';
+});
+
+const ariaLive = computed(() => {
+    return style.value === 'danger' ? 'assertive' : 'polite';
+});
 </script>
 
 <template>
     <div>
-        <div v-if="show && message" :class="{ 'bg-indigo-500': style == 'success', 'bg-red-700': style == 'danger' }">
+        <div 
+            v-if="show && message" 
+            :class="{ 'bg-indigo-500': style == 'success', 'bg-red-700': style == 'danger' }"
+            :role="ariaRole"
+            :aria-live="ariaLive"
+            aria-atomic="true"
+        >
             <div class="max-w-screen-xl mx-auto py-2 px-3 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between flex-wrap">
                     <div class="w-0 flex-1 flex items-center min-w-0">
-                        <span class="flex p-2 rounded-lg" :class="{ 'bg-indigo-600': style == 'success', 'bg-red-600': style == 'danger' }">
+                        <span class="flex p-2 rounded-lg" :class="{ 'bg-indigo-600': style == 'success', 'bg-red-600': style == 'danger' }" aria-hidden="true">
                             <svg v-if="style == 'success'" class="size-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
@@ -40,10 +54,10 @@ watchEffect(async () => {
                             type="button"
                             class="-me-1 flex p-2 rounded-md focus:outline-none sm:-me-2 transition"
                             :class="{ 'hover:bg-indigo-600 focus:bg-indigo-600': style == 'success', 'hover:bg-red-600 focus:bg-red-600': style == 'danger' }"
-                            aria-label="Dismiss"
+                            aria-label="Dismiss banner"
                             @click.prevent="show = false"
                         >
-                            <svg class="size-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <svg class="size-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                             </svg>
                         </button>

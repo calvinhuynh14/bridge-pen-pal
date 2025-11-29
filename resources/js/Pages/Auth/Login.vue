@@ -195,8 +195,12 @@ const getSubtitle = (type) => {
                     </h1>
                 </div>
 
+                <!-- Success Message -->
                 <div
                     v-if="status"
+                    role="status"
+                    aria-live="polite"
+                    aria-atomic="true"
                     class="font-medium text-sm text-green-600 mb-4"
                 >
                     {{ status }}
@@ -205,6 +209,9 @@ const getSubtitle = (type) => {
                 <!-- Authentication Error Message -->
                 <div
                     v-if="Object.keys(form.errors).length > 0"
+                    role="alert"
+                    aria-live="assertive"
+                    aria-atomic="true"
                     class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg"
                 >
                     <p class="text-sm text-red-600 font-medium">
@@ -243,9 +250,7 @@ const getSubtitle = (type) => {
                                 pattern="[0-9]{6}"
                                 inputmode="numeric"
                             />
-                            <p class="mt-1 text-xs text-gray-500">
-                                6 digits only
-                            </p>
+                            <p class="mt-1 text-sm text-light">6 digits only</p>
                             <InputError
                                 class="mt-2"
                                 :message="form.errors.username"
@@ -276,7 +281,7 @@ const getSubtitle = (type) => {
                             />
                             <p
                                 v-if="type === 'resident'"
-                                class="mt-1 text-xs text-gray-500"
+                                class="mt-1 text-sm text-light"
                             >
                                 6 digits only
                             </p>

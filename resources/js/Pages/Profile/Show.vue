@@ -495,6 +495,9 @@ const getProfileTitle = () => {
                                 <!-- Success Message -->
                                 <div
                                     v-if="passwordUpdateSuccess"
+                                    role="status"
+                                    aria-live="polite"
+                                    aria-atomic="true"
                                     class="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg"
                                 >
                                     <p
@@ -506,6 +509,9 @@ const getProfileTitle = () => {
                                 <!-- Error Message -->
                                 <div
                                     v-if="getPasswordErrorMessages().length > 0"
+                                    role="alert"
+                                    aria-live="assertive"
+                                    aria-atomic="true"
                                     class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg"
                                 >
                                     <ul class="list-disc list-inside space-y-1">

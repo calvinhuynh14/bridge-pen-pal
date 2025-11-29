@@ -115,6 +115,9 @@ onMounted(() => {
                 <!-- Success Message (Email Verified) -->
                 <div
                     v-if="justVerified"
+                    role="status"
+                    aria-live="polite"
+                    aria-atomic="true"
                     class="bg-green-50 lg:bg-green-100 border border-green-200 rounded-lg p-4 mb-4"
                 >
                     <div class="flex items-center">
@@ -122,6 +125,7 @@ onMounted(() => {
                             class="h-5 w-5 text-green-600 mr-2"
                             fill="currentColor"
                             viewBox="0 0 20 20"
+                            aria-hidden="true"
                         >
                             <path
                                 fill-rule="evenodd"

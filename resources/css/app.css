@@ -16,6 +16,59 @@
     }
 }
 
+@layer utilities {
+    /* Screen reader only - visually hidden but accessible to screen readers */
+    .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border-width: 0;
+    }
+
+    /* Make sr-only visible when focused (for skip links) */
+    .sr-only:focus {
+        position: static;
+        width: auto;
+        height: auto;
+        padding: 0.5rem 1rem;
+        margin: 0;
+        overflow: visible;
+        clip: auto;
+        white-space: normal;
+        background-color: #000;
+        color: #fff;
+        z-index: 9999;
+    }
+}
+
+@layer base {
+    /* Global focus indicators for accessibility - WCAG 2.1 Level AA compliant */
+    *:focus-visible {
+        outline: 2px solid #6763C1; /* primary color */
+        outline-offset: 2px;
+    }
+
+    /* Ensure buttons and links have visible focus */
+    button:focus-visible,
+    a:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible {
+        outline: 2px solid #6763C1;
+        outline-offset: 2px;
+    }
+
+    /* Remove default outline for mouse users, keep for keyboard users */
+    *:focus:not(:focus-visible) {
+        outline: none;
+    }
+}
+
 [x-cloak] {
     display: none;
 }

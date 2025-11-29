@@ -1,5 +1,5 @@
 <script setup>
-defineProps({
+const props = defineProps({
     size: {
         type: String,
         default: "md",
@@ -10,6 +10,10 @@ defineProps({
         default: "primary",
         validator: (value) =>
             ["primary", "pressed", "white", "black"].includes(value),
+    },
+    label: {
+        type: String,
+        default: "Loading",
     },
 });
 
@@ -28,12 +32,19 @@ const colorClasses = {
 </script>
 
 <template>
-    <div :class="['inline-block', sizeClasses[size], colorClasses[color]]">
+    <div 
+        :class="['inline-block', sizeClasses[size], colorClasses[color]]"
+        role="status"
+        aria-live="polite"
+        :aria-label="label"
+    >
+        <span class="sr-only">{{ label }}...</span>
         <svg
             class="animate-spin"
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
+            aria-hidden="true"
         >
             <circle
                 class="opacity-25"
