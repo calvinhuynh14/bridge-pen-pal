@@ -116,7 +116,7 @@ const getSubtitle = (type) => {
     <SimpleHeader />
 
     <!-- Main Container -->
-    <div
+    <main
         :class="[
             'flex flex-col lg:flex-row',
             'min-h-screen bg-background items-center justify-center',
@@ -124,6 +124,7 @@ const getSubtitle = (type) => {
                 ? 'pt-2 pb-2 px-2 lg:p-4 gap-2 lg:gap-4'
                 : 'p-2 lg:p-4 gap-4',
         ]"
+        role="main"
     >
         <!-- Hero Section -->
         <section
@@ -133,26 +134,26 @@ const getSubtitle = (type) => {
                     ? 'items-center justify-center lg:pt-0'
                     : 'items-center justify-center',
             ]"
+            aria-label="Login hero section"
         >
             <div class="flex-1">
                 <h1
-                    class="hidden lg:block text-primary text-2xl lg:text-4xl xl:text-6xl"
+                    class="text-primary text-2xl lg:text-4xl xl:text-6xl font-bold"
                 >
                     {{ getTitle(type) }}
                 </h1>
-                <h2
-                    class="hidden lg:block text-hover text-lg lg:text-2xl xl:text-4xl"
-                >
+                <h2 class="text-hover text-lg lg:text-2xl xl:text-4xl mt-2">
                     {{ getSubtitle(type) }}
                 </h2>
             </div>
 
             <div
                 class="flex lg:flex items-center justify-center w-2/3 lg:w-1/2"
+                aria-hidden="true"
             >
                 <img
                     src="/images/logos/logo-with-name-purple.svg"
-                    alt="Bridge Logo"
+                    alt=""
                     class="w-full h-auto object-contain max-w-[280px] lg:max-w-none lg:w-full"
                 />
             </div>
@@ -165,11 +166,19 @@ const getSubtitle = (type) => {
                 <p class="text-hover font-bold text-lg">
                     Not a {{ type === "admin" ? "admin" : "volunteer" }}?
                 </p>
-                <Link :href="route('register', { type: type })">
+                <Link
+                    :href="route('register', { type: type })"
+                    :aria-label="`Sign up as ${
+                        type === 'admin' ? 'admin' : 'volunteer'
+                    }`"
+                >
                     <CustomButton
                         text="Sign Up"
                         preset="neutral"
                         size="small"
+                        :ariaLabel="`Sign up as ${
+                            type === 'admin' ? 'admin' : 'volunteer'
+                        }`"
                     />
                 </Link>
             </div>
@@ -178,32 +187,35 @@ const getSubtitle = (type) => {
         <!-- Login Form Section -->
         <section
             class="flex flex-col mx-2 lg:mx-8 lg:bg-primary lg:w-full justify-center lg:items-center lg:rounded-lg lg:py-16 lg:px-8"
+            aria-label="Login form section"
         >
-            <div class="flex-1 mb-8 text-center">
-                <h1
-                    class="hidden lg:block text-white text-2xl lg:text-4xl xl:text-6xl"
-                >
-                    Log in to Bridge
-                </h1>
-            </div>
             <!-- Login Form -->
             <div class="rounded-lg px-4 lg:px-4 max-w-md mx-auto space-y-4">
-                <!-- "Log in to Bridge" heading for mobile (all user types) -->
-                <div class="flex lg:hidden mb-2 text-center">
-                    <h1 class="text-primary text-2xl font-bold w-full">
-                        Log in to Bridge
-                    </h1>
-                </div>
-
                 <!-- Success Message -->
                 <div
                     v-if="status"
                     role="status"
                     aria-live="polite"
                     aria-atomic="true"
-                    class="font-medium text-sm text-green-600 mb-4"
+                    class="mb-4 p-3 bg-green-50 lg:bg-green-100 border border-green-200 rounded-lg"
                 >
-                    {{ status }}
+                    <div class="flex items-center">
+                        <svg
+                            class="h-5 w-5 text-green-600 mr-2"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                            aria-hidden="true"
+                        >
+                            <path
+                                fill-rule="evenodd"
+                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                clip-rule="evenodd"
+                            />
+                        </svg>
+                        <span class="text-green-800 font-medium text-sm">
+                            {{ status }}
+                        </span>
+                    </div>
                 </div>
 
                 <!-- Authentication Error Message -->
@@ -219,30 +231,57 @@ const getSubtitle = (type) => {
                     </p>
                 </div>
 
-                <form @submit.prevent="submit">
+                <form @submit.prevent="submit" aria-label="Login form">
                     <div class="space-y-4">
                         <!-- Email Field (for volunteers and admins) -->
                         <div v-if="type !== 'resident'">
+                            <InputLabel
+                                for="email"
+                                value="Email"
+                                color=""
+                                size="base"
+                                class="text-primary lg:text-white"
+                            />
                             <TextInput
                                 id="email"
                                 v-model="form.email"
                                 type="email"
                                 class="mt-2 block w-full border-gray-300 rounded-lg focus:border-primary focus:ring-primary"
-                                required
+                                :required="true"
+                                :errorId="
+                                    form.errors.email ? `email-error` : null
+                                "
                                 autofocus
                                 autocomplete="email"
                                 placeholder="Enter your email"
+                            />
+                            <InputError
+                                id="email-error"
+                                class="mt-2"
+                                :message="form.errors.email"
                             />
                         </div>
 
                         <!-- Username Field (for residents) -->
                         <div v-if="type === 'resident'">
+                            <InputLabel
+                                for="username"
+                                value="Username"
+                                color=""
+                                size="base"
+                                class="text-primary lg:text-white"
+                            />
                             <TextInput
                                 id="username"
                                 v-model="form.username"
                                 type="text"
                                 class="mt-2 block w-full border-gray-300 rounded-lg focus:border-primary focus:ring-primary"
-                                required
+                                :required="true"
+                                :errorId="
+                                    form.errors.username
+                                        ? `username-error`
+                                        : null
+                                "
                                 autofocus
                                 autocomplete="username"
                                 placeholder="Enter your 6-digit username"
@@ -250,8 +289,14 @@ const getSubtitle = (type) => {
                                 pattern="[0-9]{6}"
                                 inputmode="numeric"
                             />
-                            <p class="mt-1 text-sm text-light">6 digits only</p>
+                            <p
+                                class="mt-1 text-sm text-primary lg:text-white"
+                                id="username-hint"
+                            >
+                                6 digits only
+                            </p>
                             <InputError
+                                id="username-error"
                                 class="mt-2"
                                 :message="form.errors.username"
                             />
@@ -259,12 +304,26 @@ const getSubtitle = (type) => {
 
                         <!-- Password Field -->
                         <div>
+                            <InputLabel
+                                for="password"
+                                :value="
+                                    type === 'resident' ? 'PIN' : 'Password'
+                                "
+                                color=""
+                                size="base"
+                                class="text-primary lg:text-white"
+                            />
                             <TextInput
                                 id="password"
                                 v-model="form.password"
                                 type="password"
                                 class="mt-2 block w-full border-gray-300 rounded-lg focus:border-primary focus:ring-primary"
-                                required
+                                :required="true"
+                                :errorId="
+                                    form.errors.password
+                                        ? `password-error`
+                                        : null
+                                "
                                 autocomplete="current-password"
                                 :placeholder="
                                     type === 'resident'
@@ -281,11 +340,13 @@ const getSubtitle = (type) => {
                             />
                             <p
                                 v-if="type === 'resident'"
-                                class="mt-1 text-sm text-light"
+                                class="mt-1 text-sm text-primary lg:text-white"
+                                id="password-hint"
                             >
                                 6 digits only
                             </p>
                             <InputError
+                                id="password-error"
                                 class="mt-2"
                                 :message="form.errors.password"
                             />
@@ -300,7 +361,7 @@ const getSubtitle = (type) => {
                             />
                             <label
                                 for="remember"
-                                class="ml-2 text-md text-hover font-bold"
+                                class="ml-2 text-base text-primary lg:text-white font-medium"
                             >
                                 Remember me
                             </label>
@@ -312,7 +373,9 @@ const getSubtitle = (type) => {
                         <button
                             type="submit"
                             :disabled="form.processing"
-                            class="w-full bg-primary lg:bg-background text-white hover:text-white lg:text-hover lg:border-hover lg:border-2 px-8 py-4 rounded-lg text-lg font-medium hover:bg-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            :aria-busy="form.processing"
+                            aria-label="Sign in to your account"
+                            class="w-full bg-primary lg:bg-background text-white hover:text-white lg:text-hover lg:border-hover lg:border-2 px-8 py-4 rounded-lg text-lg font-medium hover:bg-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
                         >
                             {{ form.processing ? "Signing In..." : "Sign In" }}
                         </button>
@@ -322,7 +385,8 @@ const getSubtitle = (type) => {
                             <Link
                                 v-if="canResetPassword"
                                 :href="route('password.request')"
-                                class="text-hover hover:text-pressed text-lg"
+                                class="text-primary underline lg:text-white hover:text-pressed lg:hover:text-white text-lg"
+                                aria-label="Reset your password"
                             >
                                 Forgot your password?
                             </Link>
@@ -337,11 +401,11 @@ const getSubtitle = (type) => {
                 >
                     <!-- Divider line with OR -->
                     <div class="relative flex items-center">
-                        <div class="flex-grow h-0.5 bg-gray-300"></div>
-                        <span class="px-3 text-gray-500 text-sm bg-background"
+                        <div class="flex-grow h-0.5 bg-primary"></div>
+                        <span class="px-3 text-primary text-sm bg-background"
                             >OR</span
                         >
-                        <div class="flex-grow h-0.5 bg-gray-300"></div>
+                        <div class="flex-grow h-0.5 bg-primary"></div>
                     </div>
 
                     <div class="flex items-center justify-center">
@@ -349,12 +413,15 @@ const getSubtitle = (type) => {
                             :href="
                                 route('auth.google.redirect', { type: type })
                             "
+                            aria-label="Continue with Google"
                         >
                             <img
                                 src="/images/logos/web_neutral_sq_ctn.svg"
-                                alt="Continue with Google"
+                                alt=""
                                 class="h-10"
+                                aria-hidden="true"
                             />
+                            <span class="sr-only">Continue with Google</span>
                         </a>
                     </div>
                 </div>
@@ -365,7 +432,7 @@ const getSubtitle = (type) => {
                     class="hidden lg:block text-center space-y-4 mt-4"
                 >
                     <!-- Divider line with OR -->
-                    <div class="relative flex items-center">
+                    <div class="relative flex items-center" aria-hidden="true">
                         <div class="flex-grow h-0.5 bg-black"></div>
                         <span class="px-3 text-black text-md">OR</span>
                         <div class="flex-grow h-0.5 bg-black"></div>
@@ -376,12 +443,15 @@ const getSubtitle = (type) => {
                             :href="
                                 route('auth.google.redirect', { type: type })
                             "
+                            aria-label="Continue with Google"
                         >
                             <img
                                 src="/images/logos/web_neutral_sq_ctn.svg"
-                                alt="Continue with Google"
+                                alt=""
                                 class="h-10"
+                                aria-hidden="true"
                             />
+                            <span class="sr-only">Continue with Google</span>
                         </a>
                     </div>
                 </div>
@@ -393,9 +463,21 @@ const getSubtitle = (type) => {
             <p class="text-hover font-bold text-lg">
                 Not a {{ type === "admin" ? "admin" : "volunteer" }}?
             </p>
-            <Link :href="route('register', { type: type })">
-                <CustomButton text="Sign Up" preset="neutral" size="small" />
+            <Link
+                :href="route('register', { type: type })"
+                :aria-label="`Sign up as ${
+                    type === 'admin' ? 'admin' : 'volunteer'
+                }`"
+            >
+                <CustomButton
+                    text="Sign Up"
+                    preset="neutral"
+                    size="small"
+                    :ariaLabel="`Sign up as ${
+                        type === 'admin' ? 'admin' : 'volunteer'
+                    }`"
+                />
             </Link>
         </div>
-    </div>
+    </main>
 </template>

@@ -28,15 +28,28 @@ const props = defineProps({
         type: Number,
         default: 5,
     },
+    required: {
+        type: Boolean,
+        default: false,
+    },
+    errorId: {
+        type: String,
+        default: null,
+    },
 });
 
 const emit = defineEmits(["update:modelValue"]);
 
 const attrs = useAttrs();
 
-// Separate class from other attributes
+// Extract id from attrs for proper label association
+const selectId = computed(
+    () => attrs.id || `select-${Math.random().toString(36).substr(2, 9)}`
+);
+
+// Separate class and id from other attributes
 const buttonAttrs = computed(() => {
-    const { class: _, ...rest } = attrs;
+    const { class: _, id: __, ...rest } = attrs;
     return rest;
 });
 
@@ -149,20 +162,27 @@ onUnmounted(() => {
     <div ref="dropdownRef" :class="['relative', containerClass]">
         <!-- Button/Input that triggers dropdown -->
         <button
+            :id="selectId"
             type="button"
             @click="toggleDropdown"
             @keydown="handleKeydown"
             v-bind="buttonAttrs"
             :class="[
                 'block w-full bg-white rounded-lg border-2 border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 px-3 py-2 text-sm text-gray-900 focus:outline-none cursor-pointer transition-colors text-left',
+                props.errorId ? 'border-red-500' : '',
             ]"
             :aria-expanded="isOpen"
             :aria-haspopup="true"
+            :aria-required="required"
+            :aria-invalid="!!errorId"
+            :aria-describedby="errorId || undefined"
+            role="combobox"
+            :aria-controls="`${selectId}-listbox`"
         >
             <span
                 :class="[
                     selectedLabel === placeholder
-                        ? 'text-gray-400'
+                        ? 'text-gray-800'
                         : 'text-gray-900',
                 ]"
             >
@@ -194,6 +214,8 @@ onUnmounted(() => {
         <!-- Dropdown Menu -->
         <div
             v-if="isOpen"
+            :id="`${selectId}-listbox`"
+            role="listbox"
             class="absolute z-50 w-full mt-1 bg-white rounded-lg border-2 border-gray-300 shadow-lg max-h-60 overflow-hidden"
         >
             <!-- Search Input (if searchable) -->

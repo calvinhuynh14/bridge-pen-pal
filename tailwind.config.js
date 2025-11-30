@@ -21,7 +21,7 @@ export default {
                 light: "#DCDCFF",
                 white: "#F1F1F1",
                 background: "#FFF3E7",
-                accent: "#E9D60C",
+                accent: "#FFFC0D",
                 black: "#1F1F1F",
                 inputField: "#F5F5F5",
             },

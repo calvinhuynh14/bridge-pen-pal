@@ -279,21 +279,23 @@ console.log("Updated form user_type_id:", form.user_type_id);
     <SimpleHeader />
 
     <!-- Main Container -->
-    <div
+    <main
         class="flex flex-col md:flex-row lg:flex-row min-h-screen bg-background items-center justify-center p-4 gap-4"
+        role="main"
     >
         <!-- Hero Section -->
         <section
             class="flex flex-col max-w-7xl bg-background rounded-lg lg:m-8 lg:p-8 lg:gap-8 text-center items-center justify-center"
+            aria-label="Registration hero section"
         >
             <div class="flex-1">
                 <h1
-                    class="hidden lg:block text-primary text-2xl lg:text-4xl xl:text-6xl"
+                    class="text-primary text-2xl lg:text-4xl xl:text-6xl font-bold"
                 >
                     {{ getTitle(type) }}
                 </h1>
                 <h2
-                    class="hidden lg:block text-hover text-lg lg:text-2xl xl:text-4xl"
+                    class="text-hover text-lg lg:text-2xl xl:text-4xl mt-2"
                 >
                     {{ getSubtitle(type) }}
                 </h2>
@@ -301,10 +303,11 @@ console.log("Updated form user_type_id:", form.user_type_id);
 
             <div
                 class="flex items-center justify-center w-3/4 md:w-3/5 lg:w-1/2"
+                aria-hidden="true"
             >
                 <img
                     src="/images/logos/logo-with-name-purple.svg"
-                    alt="Bridge Logo"
+                    alt=""
                     class="w-full h-full object-contain md:w-1/2 lg:w-full"
                 />
             </div>
@@ -314,37 +317,44 @@ console.log("Updated form user_type_id:", form.user_type_id);
                 <p class="text-hover font-bold text-lg">
                     Already have an account?
                 </p>
-                <Link :href="route('login', { type: type })">
+                <Link 
+                    :href="route('login', { type: type })"
+                    :aria-label="`Sign in as ${type}`"
+                >
                     <CustomButton
                         text="Sign In"
                         preset="neutral"
                         size="small"
+                        :ariaLabel="`Sign in as ${type}`"
                     />
                 </Link>
             </div>
 
             <div v-if="type === 'resident'" class="text-center">
-                <button
+                <a
+                    :href="route('auth.google.redirect', { type: type })"
                     class="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors lg:hidden"
+                    aria-label="Continue with Google"
                 >
                     <img
                         src="https://developers.google.com/identity/images/g-logo.png"
-                        alt="Google"
+                        alt=""
                         class="w-5 h-5 mr-3"
+                        aria-hidden="true"
                     />
                     <span class="text-gray-700 font-medium"
                         >Continue with Google</span
                     >
-                </button>
+                </a>
 
                 <!-- Divider line with OR - only visible on small screens -->
                 <div class="md:hidden mt-4">
-                    <div class="relative flex items-center">
-                        <div class="flex-grow h-0.5 bg-gray-300"></div>
-                        <span class="px-3 text-gray-500 text-sm bg-background"
+                    <div class="relative flex items-center" aria-hidden="true">
+                        <div class="flex-grow h-0.5 bg-primary"></div>
+                        <span class="px-3 text-primary text-sm bg-background"
                             >OR</span
                         >
-                        <div class="flex-grow h-0.5 bg-gray-300"></div>
+                        <div class="flex-grow h-0.5 bg-primary"></div>
                     </div>
                 </div>
             </div>
@@ -353,19 +363,16 @@ console.log("Updated form user_type_id:", form.user_type_id);
         <!-- Registration Form Section -->
         <section
             class="flex flex-col mx-8 lg:bg-primary md:w-full justify-center lg:items-center lg:rounded-lg lg:py-16 lg:px-8"
+            aria-label="Registration form section"
         >
-            <div class="flex-1 mb-8">
-                <h1
-                    class="hidden lg:block text-white text-2xl lg:text-4xl xl:text-6xl"
-                >
-                    Join Bridge
-                </h1>
-            </div>
             <!-- Registration Form -->
             <div class="rounded-lg px-0 lg:px-8 max-w-md lg:max-w-lg mx-auto space-y-4">
                 <!-- Error Message Box -->
                 <div
                     v-if="Object.keys(form.errors).length > 0"
+                    role="alert"
+                    aria-live="assertive"
+                    aria-atomic="true"
                     class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg"
                 >
                     <ul class="list-disc list-inside space-y-1">
@@ -379,7 +386,10 @@ console.log("Updated form user_type_id:", form.user_type_id);
                     </ul>
                 </div>
 
-                <form @submit.prevent="submit">
+                <form 
+                    @submit.prevent="submit"
+                    aria-label="Registration form"
+                >
                     <!-- Hidden field for user type -->
                     <input
                         type="hidden"
@@ -390,15 +400,27 @@ console.log("Updated form user_type_id:", form.user_type_id);
                     <div class="space-y-4">
                         <!-- Resident: Full Name Field -->
                         <div v-if="type === 'resident'">
+                            <InputLabel
+                                for="name"
+                                value="Full Name"
+                                size="base"
+                                class="text-primary lg:text-white"
+                            />
                             <TextInput
                                 id="name"
                                 v-model="form.name"
                                 type="text"
                                 class="mt-2 block w-full border-gray-300 rounded-lg focus:border-primary focus:ring-primary"
-                                required
+                                :required="true"
+                                :errorId="form.errors.name ? `name-error` : null"
                                 autofocus
                                 autocomplete="name"
                                 placeholder="Enter your full name"
+                            />
+                            <InputError
+                                id="name-error"
+                                class="mt-2"
+                                :message="form.errors.name"
                             />
                         </div>
 
@@ -408,26 +430,50 @@ console.log("Updated form user_type_id:", form.user_type_id);
                             class="grid grid-cols-1 md:grid-cols-2 gap-4"
                         >
                             <div>
+                                <InputLabel
+                                    for="first_name"
+                                    value="First Name"
+                                    size="base"
+                                    class="text-primary lg:text-white"
+                                />
                                 <TextInput
                                     id="first_name"
                                     v-model="form.first_name"
                                     type="text"
                                     class="mt-2 block w-full border-gray-300 rounded-lg focus:border-primary focus:ring-primary"
-                                    required
+                                    :required="true"
+                                    :errorId="form.errors.first_name ? `first_name-error` : null"
                                     autofocus
                                     autocomplete="given-name"
                                     placeholder="First name"
                                 />
+                                <InputError
+                                    id="first_name-error"
+                                    class="mt-2"
+                                    :message="form.errors.first_name"
+                                />
                             </div>
                             <div>
+                                <InputLabel
+                                    for="last_name"
+                                    value="Last Name"
+                                    size="base"
+                                    class="text-primary lg:text-white"
+                                />
                                 <TextInput
                                     id="last_name"
                                     v-model="form.last_name"
                                     type="text"
                                     class="mt-2 block w-full border-gray-300 rounded-lg focus:border-primary focus:ring-primary"
-                                    required
+                                    :required="true"
+                                    :errorId="form.errors.last_name ? `last_name-error` : null"
                                     autocomplete="family-name"
                                     placeholder="Last name"
+                                />
+                                <InputError
+                                    id="last_name-error"
+                                    class="mt-2"
+                                    :message="form.errors.last_name"
                                 />
                             </div>
                         </div>
@@ -437,6 +483,8 @@ console.log("Updated form user_type_id:", form.user_type_id);
                             <InputLabel
                                 for="organization_id"
                                 value="Select Organization"
+                                size="base"
+                                class="text-primary lg:text-white"
                             />
                             <Select
                                 id="organization_id"
@@ -444,8 +492,13 @@ console.log("Updated form user_type_id:", form.user_type_id);
                                 :options="organizationOptions"
                                 placeholder="Select..."
                                 class="mt-2"
-                                required
-                                aria-required="true"
+                                :required="true"
+                                :errorId="form.errors.organization_id ? `organization_id-error` : null"
+                            />
+                            <InputError
+                                id="organization_id-error"
+                                class="mt-2"
+                                :message="form.errors.organization_id"
                             />
                         </div>
 
@@ -455,11 +508,13 @@ console.log("Updated form user_type_id:", form.user_type_id);
                                 <InputLabel
                                     for="application_notes"
                                     value="Message for Administrators (Optional)"
+                                    size="base"
+                                    class="text-primary lg:text-white"
                                 />
                                 <span
-                                    class="text-sm"
+                                    class="text-sm font-medium"
                                     :class="{
-                                        'text-gray-500':
+                                        'text-primary lg:text-white':
                                             applicationNotesRemaining > 100,
                                         'text-yellow-600':
                                             applicationNotesRemaining <= 100 &&
@@ -477,6 +532,8 @@ console.log("Updated form user_type_id:", form.user_type_id);
                                 v-model="form.application_notes"
                                 rows="4"
                                 :maxlength="APPLICATION_NOTES_MAX_LENGTH"
+                                :aria-describedby="form.errors.application_notes ? `application_notes-error` : undefined"
+                                :aria-invalid="!!form.errors.application_notes"
                                 class="mt-2 block w-full border-gray-300 rounded-lg focus:border-primary focus:ring-primary resize-y min-h-[100px]"
                                 :class="{
                                     'border-yellow-500':
@@ -487,6 +544,11 @@ console.log("Updated form user_type_id:", form.user_type_id);
                                 }"
                                 placeholder="Tell us why you'd like to volunteer and any relevant experience..."
                             ></textarea>
+                            <InputError
+                                id="application_notes-error"
+                                class="mt-2"
+                                :message="form.errors.application_notes"
+                            />
                         </div>
 
                         <!-- Admin: Organization Name Field -->
@@ -494,17 +556,24 @@ console.log("Updated form user_type_id:", form.user_type_id);
                             <InputLabel
                                 for="organization_name"
                                 value="Organization Name"
-                                class="text-black"
+                                size="base"
+                                class="text-primary lg:text-white"
                             />
                             <TextInput
                                 id="organization_name"
                                 v-model="form.organization_name"
                                 type="text"
-                                class="mt-2 block w-full lg:w-96 border-gray-300 rounded-lg focus:border-primary focus:ring-primary"
-                                required
+                                class="mt-2 block w-full max-w-md mx-auto border-gray-300 rounded-lg focus:border-primary focus:ring-primary"
+                                :required="true"
+                                :errorId="form.errors.organization_name ? `organization_name-error` : null"
                                 autofocus
                                 autocomplete="organization"
                                 placeholder="Enter your organization name"
+                            />
+                            <InputError
+                                id="organization_name-error"
+                                class="mt-2"
+                                :message="form.errors.organization_name"
                             />
                         </div>
 
@@ -513,33 +582,43 @@ console.log("Updated form user_type_id:", form.user_type_id);
                             <InputLabel
                                 for="email"
                                 value="Email Address"
-                                class="text-black"
+                                size="base"
+                                class="text-primary lg:text-white"
                             />
                             <TextInput
                                 id="email"
                                 v-model="form.email"
                                 type="email"
-                                class="mt-2 block w-full lg:w-96 border-gray-300 rounded-lg focus:border-primary focus:ring-primary"
+                                class="mt-2 block w-full max-w-md mx-auto border-gray-300 rounded-lg focus:border-primary focus:ring-primary"
                                 :class="{
                                     'bg-gray-100 cursor-not-allowed opacity-75':
                                         isGoogleUser,
                                 }"
                                 :disabled="isGoogleUser"
-                                required
+                                :required="!isGoogleUser"
+                                :errorId="form.errors.email ? `email-error` : null"
                                 autocomplete="email"
                                 placeholder="Enter your email address"
+                            />
+                            <InputError
+                                id="email-error"
+                                class="mt-2"
+                                :message="form.errors.email"
                             />
                         </div>
 
                         <!-- Google OAuth Message -->
                         <div
                             v-if="isGoogleUser"
+                            role="status"
+                            aria-live="polite"
+                            aria-atomic="true"
                             class="bg-green-50 border border-green-200 rounded-lg p-4"
                         >
                             <div class="flex items-center">
                                 <img
                                     :src="googleUser.avatar"
-                                    :alt="googleUser.name"
+                                    :alt="`${googleUser.name}'s avatar`"
                                     class="w-8 h-8 rounded-full mr-3"
                                 />
                                 <div>
@@ -562,16 +641,29 @@ console.log("Updated form user_type_id:", form.user_type_id);
                             <InputLabel
                                 for="password"
                                 value="Password"
-                                class="text-black"
+                                size="base"
+                                class="text-primary lg:text-white"
                             />
                             <TextInput
                                 id="password"
                                 v-model="form.password"
                                 type="password"
-                                class="mt-2 block w-full lg:w-96 border-gray-300 rounded-lg focus:border-primary focus:ring-primary"
-                                required
+                                class="mt-2 block w-full max-w-md mx-auto border-gray-300 rounded-lg focus:border-primary focus:ring-primary"
+                                :required="true"
+                                :errorId="form.errors.password ? `password-error` : null"
                                 autocomplete="new-password"
                                 placeholder="Create a password"
+                            />
+                            <p 
+                                id="password-requirements"
+                                class="mt-1 text-sm font-medium text-primary lg:text-white"
+                            >
+                                Password must be at least 8 characters and include uppercase, lowercase, number, and special character.
+                            </p>
+                            <InputError
+                                id="password-error"
+                                class="mt-2"
+                                :message="form.errors.password"
                             />
                         </div>
 
@@ -580,16 +672,23 @@ console.log("Updated form user_type_id:", form.user_type_id);
                             <InputLabel
                                 for="password_confirmation"
                                 value="Confirm Password"
-                                class="text-black"
+                                size="base"
+                                class="text-primary lg:text-white"
                             />
                             <TextInput
                                 id="password_confirmation"
                                 v-model="form.password_confirmation"
                                 type="password"
-                                class="mt-2 block w-full lg:w-96 border-gray-300 rounded-lg focus:border-primary focus:ring-primary"
-                                required
+                                class="mt-2 block w-full max-w-md mx-auto border-gray-300 rounded-lg focus:border-primary focus:ring-primary"
+                                :required="true"
+                                :errorId="form.errors.password_confirmation ? `password_confirmation-error` : null"
                                 autocomplete="new-password"
                                 placeholder="Confirm your password"
+                            />
+                            <InputError
+                                id="password_confirmation-error"
+                                class="mt-2"
+                                :message="form.errors.password_confirmation"
                             />
                         </div>
 
@@ -605,29 +704,38 @@ console.log("Updated form user_type_id:", form.user_type_id);
                                 id="terms"
                                 v-model:checked="form.terms"
                                 name="terms"
-                                required
+                                :required="true"
+                                :aria-invalid="form.errors.terms ? 'true' : 'false'"
+                                :aria-describedby="form.errors.terms ? `terms-error` : undefined"
                             />
                             <div class="ml-2">
                                 <label
                                     for="terms"
-                                    class="text-sm text-gray-600 dark:text-gray-400"
+                                    class="text-base text-primary lg:text-white font-medium"
                                 >
                                     I agree to the
                                     <Link
                                         :href="route('terms.show')"
-                                        class="underline text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                        class="underline text-primary lg:text-white hover:text-pressed lg:hover:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                                        aria-label="View Terms of Service"
                                     >
                                         Terms of Service
                                     </Link>
                                     and
                                     <Link
                                         :href="route('policy.show')"
-                                        class="underline text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                        class="underline text-primary lg:text-white hover:text-pressed lg:hover:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                                        aria-label="View Privacy Policy"
                                     >
                                         Privacy Policy
                                     </Link>
                                 </label>
                             </div>
+                            <InputError
+                                id="terms-error"
+                                class="mt-2 ml-2"
+                                :message="form.errors.terms"
+                            />
                         </div>
                     </div>
 
@@ -636,7 +744,9 @@ console.log("Updated form user_type_id:", form.user_type_id);
                         <button
                             type="submit"
                             :disabled="form.processing"
-                            class="w-full bg-primary lg:bg-background text-white lg:text-hover lg:border-hover lg:border-2 px-8 py-4 rounded-lg text-lg font-medium hover:bg-pressed transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            :aria-busy="form.processing"
+                            aria-label="Submit registration form"
+                            class="w-full bg-primary lg:bg-background text-white lg:text-hover lg:border-hover lg:border-2 px-8 py-4 rounded-lg text-lg font-medium hover:bg-pressed transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
                         >
                             {{
                                 form.processing
@@ -652,5 +762,5 @@ console.log("Updated form user_type_id:", form.user_type_id);
                 </form>
             </div>
         </section>
-    </div>
+    </main>
 </template>
