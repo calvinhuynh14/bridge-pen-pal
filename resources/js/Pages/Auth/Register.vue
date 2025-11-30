@@ -69,23 +69,28 @@ const form = useForm({
 const getErrorMessages = () => {
     // Collect all error messages
     const errorMessages = [];
-    
+
     // Check for email already exists error
     if (form.errors.email) {
         const emailError = Array.isArray(form.errors.email)
             ? form.errors.email[0]
             : form.errors.email;
-        if (emailError.includes('already been taken') || emailError.includes('already exists')) {
-            errorMessages.push('This email address is already registered. Please use a different email or try logging in.');
-        } else if (emailError.includes('required')) {
-            errorMessages.push('Email address is required.');
-        } else if (emailError.includes('valid email')) {
-            errorMessages.push('Please enter a valid email address.');
+        if (
+            emailError.includes("already been taken") ||
+            emailError.includes("already exists")
+        ) {
+            errorMessages.push(
+                "This email address is already registered. Please use a different email or try logging in."
+            );
+        } else if (emailError.includes("required")) {
+            errorMessages.push("Email address is required.");
+        } else if (emailError.includes("valid email")) {
+            errorMessages.push("Please enter a valid email address.");
         } else {
             errorMessages.push(emailError);
         }
     }
-    
+
     // Check for password errors
     if (form.errors.password) {
         const passwordError = Array.isArray(form.errors.password)
@@ -93,82 +98,113 @@ const getErrorMessages = () => {
             : form.errors.password;
         errorMessages.push(passwordError);
     }
-    
+
     // Check for password confirmation errors
     if (form.errors.password_confirmation) {
         const confirmError = Array.isArray(form.errors.password_confirmation)
             ? form.errors.password_confirmation[0]
             : form.errors.password_confirmation;
-        if (confirmError.includes('match')) {
-            errorMessages.push('Password confirmation does not match.');
+        if (confirmError.includes("match")) {
+            errorMessages.push("Password confirmation does not match.");
         } else {
             errorMessages.push(confirmError);
         }
     }
-    
+
     // Check for required field errors
     if (form.errors.name) {
-        const error = Array.isArray(form.errors.name) ? form.errors.name[0] : form.errors.name;
-        errorMessages.push(error || 'Full name is required.');
+        const error = Array.isArray(form.errors.name)
+            ? form.errors.name[0]
+            : form.errors.name;
+        errorMessages.push(error || "Full name is required.");
     }
-    
+
     if (form.errors.first_name) {
-        const error = Array.isArray(form.errors.first_name) ? form.errors.first_name[0] : form.errors.first_name;
-        errorMessages.push(error || 'First name is required.');
+        const error = Array.isArray(form.errors.first_name)
+            ? form.errors.first_name[0]
+            : form.errors.first_name;
+        errorMessages.push(error || "First name is required.");
     }
-    
+
     if (form.errors.last_name) {
-        const error = Array.isArray(form.errors.last_name) ? form.errors.last_name[0] : form.errors.last_name;
-        errorMessages.push(error || 'Last name is required.');
+        const error = Array.isArray(form.errors.last_name)
+            ? form.errors.last_name[0]
+            : form.errors.last_name;
+        errorMessages.push(error || "Last name is required.");
     }
-    
+
     if (form.errors.organization_id) {
-        const error = Array.isArray(form.errors.organization_id) ? form.errors.organization_id[0] : form.errors.organization_id;
-        errorMessages.push(error || 'Please select an organization.');
+        const error = Array.isArray(form.errors.organization_id)
+            ? form.errors.organization_id[0]
+            : form.errors.organization_id;
+        errorMessages.push(error || "Please select an organization.");
     }
-    
+
     if (form.errors.organization_name) {
-        const error = Array.isArray(form.errors.organization_name) ? form.errors.organization_name[0] : form.errors.organization_name;
-        errorMessages.push(error || 'Organization name is required.');
+        const error = Array.isArray(form.errors.organization_name)
+            ? form.errors.organization_name[0]
+            : form.errors.organization_name;
+        errorMessages.push(error || "Organization name is required.");
     }
-    
+
     if (form.errors.terms) {
-        const error = Array.isArray(form.errors.terms) ? form.errors.terms[0] : form.errors.terms;
-        errorMessages.push(error || 'You must agree to the Terms of Service and Privacy Policy.');
+        const error = Array.isArray(form.errors.terms)
+            ? form.errors.terms[0]
+            : form.errors.terms;
+        errorMessages.push(
+            error ||
+                "You must agree to the Terms of Service and Privacy Policy."
+        );
     }
-    
+
     if (form.errors.application_notes) {
-        const error = Array.isArray(form.errors.application_notes) ? form.errors.application_notes[0] : form.errors.application_notes;
+        const error = Array.isArray(form.errors.application_notes)
+            ? form.errors.application_notes[0]
+            : form.errors.application_notes;
         errorMessages.push(error);
     }
-    
+
     // Check for other common errors
     if (form.errors.message) {
-        const error = Array.isArray(form.errors.message) ? form.errors.message[0] : form.errors.message;
+        const error = Array.isArray(form.errors.message)
+            ? form.errors.message[0]
+            : form.errors.message;
         errorMessages.push(error);
     }
-    
+
     if (form.errors.error) {
-        const error = Array.isArray(form.errors.error) ? form.errors.error[0] : form.errors.error;
+        const error = Array.isArray(form.errors.error)
+            ? form.errors.error[0]
+            : form.errors.error;
         errorMessages.push(error);
     }
-    
+
     // Get any remaining errors from other fields
     const processedFields = [
-        'email', 'password', 'password_confirmation', 'name', 
-        'first_name', 'last_name', 'organization_id', 
-        'organization_name', 'terms', 'application_notes', 
-        'message', 'error'
+        "email",
+        "password",
+        "password_confirmation",
+        "name",
+        "first_name",
+        "last_name",
+        "organization_id",
+        "organization_name",
+        "terms",
+        "application_notes",
+        "message",
+        "error",
     ];
-    
+
     for (const [key, value] of Object.entries(form.errors)) {
         if (!processedFields.includes(key)) {
             const error = Array.isArray(value) ? value[0] : value;
             errorMessages.push(error);
         }
     }
-    
-    return errorMessages.length > 0 ? errorMessages : ['Please check your information and try again.'];
+
+    return errorMessages.length > 0
+        ? errorMessages
+        : ["Please check your information and try again."];
 };
 
 const submit = () => {
@@ -294,9 +330,7 @@ console.log("Updated form user_type_id:", form.user_type_id);
                 >
                     {{ getTitle(type) }}
                 </h1>
-                <h2
-                    class="text-hover text-lg lg:text-2xl xl:text-4xl mt-2"
-                >
+                <h2 class="text-hover text-lg lg:text-2xl xl:text-4xl mt-2">
                     {{ getSubtitle(type) }}
                 </h2>
             </div>
@@ -317,7 +351,7 @@ console.log("Updated form user_type_id:", form.user_type_id);
                 <p class="text-hover font-bold text-lg">
                     Already have an account?
                 </p>
-                <Link 
+                <Link
                     :href="route('login', { type: type })"
                     :aria-label="`Sign in as ${type}`"
                 >
@@ -366,7 +400,9 @@ console.log("Updated form user_type_id:", form.user_type_id);
             aria-label="Registration form section"
         >
             <!-- Registration Form -->
-            <div class="rounded-lg px-0 lg:px-8 max-w-md lg:max-w-lg mx-auto space-y-4">
+            <div
+                class="rounded-lg px-0 lg:px-8 max-w-md lg:max-w-lg mx-auto space-y-4"
+            >
                 <!-- Error Message Box -->
                 <div
                     v-if="Object.keys(form.errors).length > 0"
@@ -386,10 +422,7 @@ console.log("Updated form user_type_id:", form.user_type_id);
                     </ul>
                 </div>
 
-                <form 
-                    @submit.prevent="submit"
-                    aria-label="Registration form"
-                >
+                <form @submit.prevent="submit" aria-label="Registration form">
                     <!-- Hidden field for user type -->
                     <input
                         type="hidden"
@@ -412,7 +445,9 @@ console.log("Updated form user_type_id:", form.user_type_id);
                                 type="text"
                                 class="mt-2 block w-full border-gray-300 rounded-lg focus:border-primary focus:ring-primary"
                                 :required="true"
-                                :errorId="form.errors.name ? `name-error` : null"
+                                :errorId="
+                                    form.errors.name ? `name-error` : null
+                                "
                                 autofocus
                                 autocomplete="name"
                                 placeholder="Enter your full name"
@@ -442,7 +477,11 @@ console.log("Updated form user_type_id:", form.user_type_id);
                                     type="text"
                                     class="mt-2 block w-full border-gray-300 rounded-lg focus:border-primary focus:ring-primary"
                                     :required="true"
-                                    :errorId="form.errors.first_name ? `first_name-error` : null"
+                                    :errorId="
+                                        form.errors.first_name
+                                            ? `first_name-error`
+                                            : null
+                                    "
                                     autofocus
                                     autocomplete="given-name"
                                     placeholder="First name"
@@ -466,7 +505,11 @@ console.log("Updated form user_type_id:", form.user_type_id);
                                     type="text"
                                     class="mt-2 block w-full border-gray-300 rounded-lg focus:border-primary focus:ring-primary"
                                     :required="true"
-                                    :errorId="form.errors.last_name ? `last_name-error` : null"
+                                    :errorId="
+                                        form.errors.last_name
+                                            ? `last_name-error`
+                                            : null
+                                    "
                                     autocomplete="family-name"
                                     placeholder="Last name"
                                 />
@@ -493,7 +536,11 @@ console.log("Updated form user_type_id:", form.user_type_id);
                                 placeholder="Select..."
                                 class="mt-2"
                                 :required="true"
-                                :errorId="form.errors.organization_id ? `organization_id-error` : null"
+                                :errorId="
+                                    form.errors.organization_id
+                                        ? `organization_id-error`
+                                        : null
+                                "
                             />
                             <InputError
                                 id="organization_id-error"
@@ -532,7 +579,11 @@ console.log("Updated form user_type_id:", form.user_type_id);
                                 v-model="form.application_notes"
                                 rows="4"
                                 :maxlength="APPLICATION_NOTES_MAX_LENGTH"
-                                :aria-describedby="form.errors.application_notes ? `application_notes-error` : undefined"
+                                :aria-describedby="
+                                    form.errors.application_notes
+                                        ? `application_notes-error`
+                                        : undefined
+                                "
                                 :aria-invalid="!!form.errors.application_notes"
                                 class="mt-2 block w-full border-gray-300 rounded-lg focus:border-primary focus:ring-primary resize-y min-h-[100px]"
                                 :class="{
@@ -565,7 +616,11 @@ console.log("Updated form user_type_id:", form.user_type_id);
                                 type="text"
                                 class="mt-2 block w-full max-w-md mx-auto border-gray-300 rounded-lg focus:border-primary focus:ring-primary"
                                 :required="true"
-                                :errorId="form.errors.organization_name ? `organization_name-error` : null"
+                                :errorId="
+                                    form.errors.organization_name
+                                        ? `organization_name-error`
+                                        : null
+                                "
                                 autofocus
                                 autocomplete="organization"
                                 placeholder="Enter your organization name"
@@ -596,7 +651,9 @@ console.log("Updated form user_type_id:", form.user_type_id);
                                 }"
                                 :disabled="isGoogleUser"
                                 :required="!isGoogleUser"
-                                :errorId="form.errors.email ? `email-error` : null"
+                                :errorId="
+                                    form.errors.email ? `email-error` : null
+                                "
                                 autocomplete="email"
                                 placeholder="Enter your email address"
                             />
@@ -650,15 +707,21 @@ console.log("Updated form user_type_id:", form.user_type_id);
                                 type="password"
                                 class="mt-2 block w-full max-w-md mx-auto border-gray-300 rounded-lg focus:border-primary focus:ring-primary"
                                 :required="true"
-                                :errorId="form.errors.password ? `password-error` : null"
+                                :errorId="
+                                    form.errors.password
+                                        ? `password-error`
+                                        : null
+                                "
                                 autocomplete="new-password"
                                 placeholder="Create a password"
                             />
-                            <p 
+                            <p
                                 id="password-requirements"
                                 class="mt-1 text-sm font-medium text-primary lg:text-white"
                             >
-                                Password must be at least 8 characters and include uppercase, lowercase, number, and special character.
+                                Password must be at least 8 characters and
+                                include uppercase, lowercase, number, and
+                                special character.
                             </p>
                             <InputError
                                 id="password-error"
@@ -681,7 +744,11 @@ console.log("Updated form user_type_id:", form.user_type_id);
                                 type="password"
                                 class="mt-2 block w-full max-w-md mx-auto border-gray-300 rounded-lg focus:border-primary focus:ring-primary"
                                 :required="true"
-                                :errorId="form.errors.password_confirmation ? `password_confirmation-error` : null"
+                                :errorId="
+                                    form.errors.password_confirmation
+                                        ? `password_confirmation-error`
+                                        : null
+                                "
                                 autocomplete="new-password"
                                 placeholder="Confirm your password"
                             />
@@ -705,8 +772,14 @@ console.log("Updated form user_type_id:", form.user_type_id);
                                 v-model:checked="form.terms"
                                 name="terms"
                                 :required="true"
-                                :aria-invalid="form.errors.terms ? 'true' : 'false'"
-                                :aria-describedby="form.errors.terms ? `terms-error` : undefined"
+                                :aria-invalid="
+                                    form.errors.terms ? 'true' : 'false'
+                                "
+                                :aria-describedby="
+                                    form.errors.terms
+                                        ? `terms-error`
+                                        : undefined
+                                "
                             />
                             <div class="ml-2">
                                 <label
@@ -741,23 +814,31 @@ console.log("Updated form user_type_id:", form.user_type_id);
 
                     <!-- Submit Button -->
                     <div class="mt-4">
-                        <button
+                        <CustomButton
                             type="submit"
-                            :disabled="form.processing"
-                            :aria-busy="form.processing"
-                            aria-label="Submit registration form"
-                            class="w-full bg-primary lg:bg-background text-white lg:text-hover lg:border-hover lg:border-2 px-8 py-4 rounded-lg text-lg font-medium hover:bg-pressed transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
-                        >
-                            {{
+                            :text="
                                 form.processing
                                     ? isGoogleUser
-                                        ? "Completing Registration..."
-                                        : "Creating Account..."
+                                        ? 'Completing Registration...'
+                                        : 'Creating Account...'
                                     : isGoogleUser
-                                    ? "Complete Registration"
-                                    : "Create Account"
-                            }}
-                        </button>
+                                    ? 'Complete Registration'
+                                    : 'Create Account'
+                            "
+                            preset="neutral"
+                            size="medium"
+                            :isLoading="form.processing"
+                            :ariaLabel="
+                                form.processing
+                                    ? isGoogleUser
+                                        ? 'Completing Registration...'
+                                        : 'Creating Account...'
+                                    : isGoogleUser
+                                    ? 'Complete Registration'
+                                    : 'Create Account'
+                            "
+                            class="w-full max-w-md mx-auto"
+                        />
                     </div>
                 </form>
             </div>

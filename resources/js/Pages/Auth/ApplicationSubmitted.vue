@@ -75,21 +75,23 @@ onMounted(() => {
     <Head title="Application Submitted" />
 
     <!-- Main Container -->
-    <div
+    <main
         class="flex flex-col lg:flex-row min-h-screen bg-background items-center justify-center p-2 lg:p-4 gap-4"
+        role="main"
     >
         <!-- Hero Section -->
         <section
             class="flex flex-col max-w-7xl bg-background rounded-lg lg:m-8 lg:p-8 lg:gap-8 text-center items-center justify-center"
+            aria-label="Application submitted hero section"
         >
             <div class="flex-1">
                 <h1
-                    class="hidden lg:block text-primary text-2xl lg:text-4xl xl:text-6xl"
+                    class="text-primary text-2xl lg:text-4xl xl:text-6xl"
                 >
                     Application Submitted!
                 </h1>
                 <h2
-                    class="hidden lg:block text-hover text-lg lg:text-2xl xl:text-4xl"
+                    class="text-hover text-lg lg:text-2xl xl:text-4xl mt-2"
                 >
                     Thank you for your interest
                 </h2>
@@ -100,7 +102,8 @@ onMounted(() => {
             >
                 <img
                     src="/images/logos/logo-with-name-purple.svg"
-                    alt="Bridge Logo"
+                    alt=""
+                    aria-hidden="true"
                     class="w-full h-auto object-contain max-w-[280px] lg:max-w-none lg:w-full"
                 />
             </div>
@@ -109,6 +112,7 @@ onMounted(() => {
         <!-- Application Status Section -->
         <section
             class="flex flex-col mx-2 lg:mx-8 lg:bg-primary lg:w-full justify-center lg:items-center lg:rounded-lg lg:py-16 lg:px-8"
+            aria-label="Application status section"
         >
             <!-- Application Status Content -->
             <div class="rounded-lg px-4 lg:px-8 max-w-md mx-auto space-y-6">
@@ -133,7 +137,7 @@ onMounted(() => {
                                 clip-rule="evenodd"
                             />
                         </svg>
-                        <span class="text-green-800 font-medium"
+                        <span class="text-green-800 font-medium text-sm"
                             >Email verified successfully!</span
                         >
                     </div>
@@ -142,12 +146,12 @@ onMounted(() => {
                 <!-- Success Message -->
                 <div class="text-center">
                     <h2
-                        class="text-3xl lg:text-4xl font-bold text-gray-900 lg:text-black mb-4"
+                        class="text-3xl lg:text-4xl xl:text-6xl font-bold text-primary lg:text-white mb-4"
                     >
                         Application Submitted Successfully!
                     </h2>
 
-                    <p class="text-gray-600 lg:text-black mb-6">
+                    <p class="text-primary lg:text-white text-base lg:text-lg font-medium mb-6">
                         Thank you for your interest in becoming a pen pal
                         volunteer. Your application has been submitted and is
                         currently under review.
@@ -158,15 +162,19 @@ onMounted(() => {
                 <div
                     v-if="isVolunteer"
                     class="bg-light border border-primary/30 rounded-lg p-4 mb-4"
+                    role="region"
+                    aria-label="Application progress"
                 >
                     <h3 class="text-black font-semibold mb-3 text-center">
                         Application Progress
                     </h3>
-                    <div class="space-y-3">
+                    <div class="space-y-3" role="list">
                         <div
                             v-for="(step, index) in steps"
                             :key="index"
                             class="flex items-center"
+                            role="listitem"
+                            :aria-label="`${step.label}: ${step.completed ? 'Completed' : step.icon === 'x' ? 'Rejected' : 'Pending'}`"
                         >
                             <div
                                 class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center mr-3"
@@ -175,12 +183,15 @@ onMounted(() => {
                                     'bg-yellow-500': !step.completed && step.icon === 'pending',
                                     'bg-red-500': step.icon === 'x',
                                 }"
+                                role="img"
+                                :aria-label="step.completed ? 'Completed' : step.icon === 'x' ? 'Rejected' : 'Pending'"
                             >
                                 <svg
                                     v-if="step.icon === 'check'"
                                     class="h-5 w-5 text-white"
                                     fill="currentColor"
                                     viewBox="0 0 20 20"
+                                    aria-hidden="true"
                                 >
                                     <path
                                         fill-rule="evenodd"
@@ -193,6 +204,7 @@ onMounted(() => {
                                     class="h-5 w-5 text-white"
                                     fill="currentColor"
                                     viewBox="0 0 20 20"
+                                    aria-hidden="true"
                                 >
                                     <path
                                         fill-rule="evenodd"
@@ -206,6 +218,7 @@ onMounted(() => {
                                     viewBox="0 0 24 24"
                                     fill="currentColor"
                                     class="h-5 w-5 text-white"
+                                    aria-hidden="true"
                                 >
                                     <path
                                         fill-rule="evenodd"
@@ -218,6 +231,7 @@ onMounted(() => {
                                     class="h-5 w-5 text-white"
                                     fill="currentColor"
                                     viewBox="0 0 20 20"
+                                    aria-hidden="true"
                                 >
                                     <path
                                         fill-rule="evenodd"
@@ -242,6 +256,9 @@ onMounted(() => {
                 <!-- Email Verification Notice -->
                 <div
                     v-if="isVolunteer && !isEmailVerified"
+                    role="alert"
+                    aria-live="polite"
+                    aria-atomic="true"
                     class="bg-yellow-50 lg:bg-yellow-100 border border-yellow-200 rounded-lg p-4 mb-4"
                 >
                     <div class="flex items-center mb-2">
@@ -249,6 +266,7 @@ onMounted(() => {
                             class="h-5 w-5 text-yellow-600 mr-2"
                             fill="currentColor"
                             viewBox="0 0 20 20"
+                            aria-hidden="true"
                         >
                             <path
                                 fill-rule="evenodd"
@@ -264,12 +282,16 @@ onMounted(() => {
                         Please verify your email address to continue.
                         Check your inbox for a verification link.
                     </p>
-                    <Link :href="route('verification.notice')">
+                    <Link 
+                        :href="route('verification.notice')"
+                        aria-label="Go to email verification page"
+                    >
                         <CustomButton
                             text="Verify Email"
                             preset="primary"
                             size="small"
                             class="w-full"
+                            ariaLabel="Verify your email address"
                         />
                     </Link>
                 </div>
@@ -277,6 +299,9 @@ onMounted(() => {
                 <!-- Application Status -->
                 <div
                     v-if="isVolunteer && isEmailVerified"
+                    :role="volunteerStatus === 'rejected' ? 'alert' : 'status'"
+                    :aria-live="volunteerStatus === 'rejected' ? 'assertive' : 'polite'"
+                    aria-atomic="true"
                     :class="[
                         'border rounded-lg p-4',
                         volunteerStatus === 'rejected'
@@ -292,6 +317,7 @@ onMounted(() => {
                             class="h-5 w-5 text-red-600 mr-2"
                             fill="currentColor"
                             viewBox="0 0 20 20"
+                            aria-hidden="true"
                         >
                             <path
                                 fill-rule="evenodd"
@@ -304,6 +330,7 @@ onMounted(() => {
                             class="h-5 w-5 text-green-600 mr-2"
                             fill="currentColor"
                             viewBox="0 0 20 20"
+                            aria-hidden="true"
                         >
                             <path
                                 fill-rule="evenodd"
@@ -316,6 +343,7 @@ onMounted(() => {
                             class="h-5 w-5 text-yellow-600 mr-2"
                             fill="currentColor"
                             viewBox="0 0 20 20"
+                            aria-hidden="true"
                         >
                             <path
                                 fill-rule="evenodd"
@@ -388,12 +416,17 @@ onMounted(() => {
 
                 <!-- Action Buttons -->
                 <div>
-                    <Link href="/" class="block mb-6">
+                    <Link 
+                        href="/" 
+                        class="block mb-6"
+                        aria-label="Return to home page"
+                    >
                         <CustomButton
                             text="Return to Home"
                             preset="secondary"
                             size="medium"
                             class="w-full"
+                            ariaLabel="Return to home page"
                         />
                     </Link>
 
@@ -404,11 +437,12 @@ onMounted(() => {
                             size="small"
                             class="w-full"
                             @click="logoutAndRedirect"
-                            :disabled="logoutForm.processing"
+                            :isLoading="logoutForm.processing"
+                            ariaLabel="Sign in to your account"
                         />
                     </div>
                 </div>
             </div>
         </section>
-    </div>
+    </main>
 </template>

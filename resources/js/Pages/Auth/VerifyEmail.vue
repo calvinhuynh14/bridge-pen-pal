@@ -1,8 +1,8 @@
 <script setup>
-import { computed } from 'vue';
-import { Head, Link, useForm } from '@inertiajs/vue3';
-import CustomButton from '@/Components/CustomButton.vue';
-import SimpleHeader from '@/Components/SimpleHeader.vue';
+import { computed } from "vue";
+import { Head, Link, useForm } from "@inertiajs/vue3";
+import CustomButton from "@/Components/CustomButton.vue";
+import SimpleHeader from "@/Components/SimpleHeader.vue";
 
 const props = defineProps({
     status: String,
@@ -11,10 +11,12 @@ const props = defineProps({
 const form = useForm({});
 
 const submit = () => {
-    form.post(route('verification.send'));
+    form.post(route("verification.send"));
 };
 
-const verificationLinkSent = computed(() => props.status === 'verification-link-sent');
+const verificationLinkSent = computed(
+    () => props.status === "verification-link-sent"
+);
 </script>
 
 <template>
@@ -34,17 +36,13 @@ const verificationLinkSent = computed(() => props.status === 'verification-link-
             aria-label="Email verification hero section"
         >
             <div class="flex-1">
-                <h1
-                    class="text-primary text-2xl lg:text-4xl xl:text-6xl"
-                >
+                <h1 class="text-primary text-2xl lg:text-4xl xl:text-6xl">
                     Verify Your Email
                 </h1>
-                <h2
-                    class="text-hover text-lg lg:text-2xl xl:text-4xl mt-2"
-                >
+                <h2 class="text-hover text-lg lg:text-2xl xl:text-4xl mt-2">
                     Check your inbox
                 </h2>
-        </div>
+            </div>
 
             <div
                 class="flex lg:flex items-center justify-center w-2/3 lg:w-1/2"
@@ -55,7 +53,7 @@ const verificationLinkSent = computed(() => props.status === 'verification-link-
                     aria-hidden="true"
                     class="w-full h-auto object-contain max-w-[280px] lg:max-w-none lg:w-full"
                 />
-        </div>
+            </div>
         </section>
 
         <!-- Verification Section -->
@@ -73,7 +71,9 @@ const verificationLinkSent = computed(() => props.status === 'verification-link-
                         Verify Your Email Address
                     </h2>
 
-                    <p class="text-primary lg:text-white text-base lg:text-lg font-medium mb-6">
+                    <p
+                        class="text-primary lg:text-white text-base lg:text-lg font-medium mb-6"
+                    >
                         Before continuing, please verify your email address by
                         clicking on the link we just emailed to you. If you
                         didn't receive the email, we can send you another.
@@ -109,7 +109,10 @@ const verificationLinkSent = computed(() => props.status === 'verification-link-
                 </div>
 
                 <!-- Action Buttons -->
-                <form @submit.prevent="submit" aria-label="Email verification form">
+                <form
+                    @submit.prevent="submit"
+                    aria-label="Email verification form"
+                >
                     <div class="space-y-4">
                         <CustomButton
                             type="submit"
@@ -123,7 +126,7 @@ const verificationLinkSent = computed(() => props.status === 'verification-link-
 
                         <!-- Additional Actions -->
                         <div class="flex flex-col gap-2">
-                            <Link 
+                            <Link
                                 :href="route('application.submitted')"
                                 aria-label="Go back to application status"
                             >
@@ -136,9 +139,9 @@ const verificationLinkSent = computed(() => props.status === 'verification-link-
                                 />
                             </Link>
 
-                            <Link 
-                                :href="route('logout')" 
-                                method="post" 
+                            <Link
+                                :href="route('logout')"
+                                method="post"
                                 as="button"
                                 aria-label="Log out"
                             >

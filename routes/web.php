@@ -23,6 +23,13 @@ Route::get('/', function () {
 });
 
 /**
+ * Button Test Page Route
+ */
+Route::get('/test/buttons', function () {
+    return Inertia::render('Test/ButtonTest');
+})->name('test.buttons');
+
+/**
  * Admin Login Route
  */
 Route::get('/admin/login', function () {
