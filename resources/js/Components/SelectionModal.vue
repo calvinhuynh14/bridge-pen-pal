@@ -131,8 +131,10 @@ const getItemLabel = (item) => {
                         type="button"
                         @click="toggleItem(item[itemKey])"
                         :disabled="form.processing"
+                        :aria-label="isSelected(item[itemKey]) ? `Deselect ${getItemLabel(item)}` : `Select ${getItemLabel(item)}`"
+                        :aria-pressed="isSelected(item[itemKey])"
                         :class="[
-                            'w-full text-left px-4 py-3 rounded-lg border-2 transition-all',
+                            'w-full text-left px-4 py-3 rounded-lg border-2 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary',
                             isSelected(item[itemKey])
                                 ? 'border-primary bg-primary text-white font-medium'
                                 : 'border-gray-300 bg-white hover:border-pressed hover:bg-pressed hover:text-white',
@@ -151,6 +153,7 @@ const getItemLabel = (item) => {
                                 stroke-width="2"
                                 stroke="currentColor"
                                 class="w-5 h-5 text-white"
+                                aria-hidden="true"
                             >
                                 <path
                                     stroke-linecap="round"

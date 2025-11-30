@@ -79,6 +79,7 @@ onUnmounted(() => {
             role="dialog"
             aria-modal="true"
             aria-labelledby="letter-modal-title"
+            aria-describedby="letter-content"
         >
             <!-- Letter Modal -->
             <transition
@@ -127,13 +128,17 @@ onUnmounted(() => {
                 v-if="letter"
                 class="overflow-y-auto p-4 sm:p-6 md:p-8 lg:p-12 flex flex-col"
                 style="flex: 1 1 0; min-height: 0"
+                id="letter-content"
+                role="region"
+                aria-label="Letter content"
             >
                 <!-- Date (top left) -->
-                <div
-                    class="text-left text-gray-600 mb-3 sm:mb-4 md:mb-6 text-xs sm:text-sm md:text-base"
+                <time
+                    class="text-left text-gray-600 mb-3 sm:mb-4 md:mb-6 text-xs sm:text-sm md:text-base block"
+                    :datetime="letter.sent_at"
                 >
                     {{ formatDate(letter.sent_at) }}
-                </div>
+                </time>
 
                 <!-- To (top left, larger font) -->
                 <div class="mb-4 sm:mb-5 md:mb-6 text-left">
@@ -186,13 +191,15 @@ onUnmounted(() => {
             >
                 <button
                     @click="$emit('report', letter)"
-                    class="px-3 py-1.5 sm:px-4 sm:py-2 border-2 border-red-300 text-red-600 rounded-lg font-medium hover:bg-red-50 transition-colors flex items-center gap-1 sm:gap-2 text-sm sm:text-base"
+                    class="px-3 py-1.5 sm:px-4 sm:py-2 border-2 border-red-300 text-red-600 rounded-lg font-medium hover:bg-red-50 transition-colors flex items-center gap-1 sm:gap-2 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                    aria-label="Report this letter"
                 >
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 24 24"
                         fill="currentColor"
                         class="size-4 sm:size-5"
+                        aria-hidden="true"
                     >
                         <path
                             fill-rule="evenodd"

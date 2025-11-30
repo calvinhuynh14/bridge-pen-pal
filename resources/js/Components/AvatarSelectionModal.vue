@@ -98,8 +98,10 @@ const getAvatarUrl = (avatar) => {
                         type="button"
                         @click="selectAvatar(avatar)"
                         :disabled="form.processing"
+                        :aria-label="selectedAvatar === avatar ? `Selected avatar: ${avatar}. Click to keep selected` : `Select avatar: ${avatar}`"
+                        :aria-pressed="selectedAvatar === avatar"
                         :class="[
-                            'relative w-24 h-24 mx-auto rounded-full overflow-hidden border-4 transition-all',
+                            'relative w-24 h-24 mx-auto rounded-full overflow-hidden border-4 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary',
                             selectedAvatar === avatar
                                 ? 'border-primary ring-4 ring-primary ring-offset-2 ring-offset-background scale-105'
                                 : 'border-gray-300 hover:border-primary/50',
@@ -141,8 +143,10 @@ const getAvatarUrl = (avatar) => {
                         type="button"
                         @click="selectAvatar(avatar)"
                         :disabled="form.processing"
+                        :aria-label="selectedAvatar === avatar ? `Selected avatar: ${avatar}. Click to keep selected` : `Select avatar: ${avatar}`"
+                        :aria-pressed="selectedAvatar === avatar"
                         :class="[
-                            'relative w-24 h-24 rounded-full overflow-hidden border-4 transition-all',
+                            'relative w-24 h-24 rounded-full overflow-hidden border-4 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary',
                             selectedAvatar === avatar
                                 ? 'border-primary ring-4 ring-primary ring-offset-2 ring-offset-background scale-105'
                                 : 'border-gray-300 hover:border-primary/50',
@@ -186,7 +190,8 @@ const getAvatarUrl = (avatar) => {
                     type="button"
                     @click="selectAvatar(null)"
                     :disabled="form.processing"
-                            class="text-lg lg:text-xl text-gray-600 hover:text-gray-800 underline disabled:opacity-50 disabled:cursor-not-allowed"
+                    aria-label="Remove current avatar"
+                    class="text-lg lg:text-xl text-gray-600 hover:text-gray-800 underline disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
                 >
                     Remove Avatar
                 </button>

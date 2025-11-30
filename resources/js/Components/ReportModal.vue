@@ -63,22 +63,23 @@ const isCharacterCountValid = computed(() => {
 
 // Character count color classes
 const characterCountClass = computed(() => {
-    if (characterCount.value === 0) return "text-gray-500";
-    if (characterCount.value < 20) return "text-yellow-600";
-    if (characterCount.value > 500) return "text-red-600";
-    return "text-gray-600";
+    if (characterCount.value === 0) return "text-gray-700";
+    if (characterCount.value < 20) return "text-yellow-700";
+    if (characterCount.value > 500) return "text-red-700";
+    return "text-gray-800";
 });
 </script>
 
 <template>
     <Modal :show="show" @close="closeModal" max-width="md">
-        <div class="p-6 bg-background">
+        <div class="p-6 bg-white">
             <!-- Modal Header -->
             <div class="flex items-center justify-between mb-4">
                 <h3 class="text-xl font-bold text-black">Report Letter</h3>
                 <button
                     @click="closeModal"
-                    class="text-black hover:text-gray-600 transition-colors"
+                    class="text-black hover:text-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                    aria-label="Close report modal"
                 >
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -87,6 +88,7 @@ const characterCountClass = computed(() => {
                         stroke-width="1.5"
                         stroke="currentColor"
                         class="w-6 h-6"
+                        aria-hidden="true"
                     >
                         <path
                             stroke-linecap="round"
@@ -166,7 +168,7 @@ const characterCountClass = computed(() => {
 
                 <!-- Character Counter -->
                 <div class="mt-2 flex justify-between items-center">
-                    <p class="text-xs" :class="characterCountClass">
+                    <p class="text-sm font-medium text-gray-800" :class="characterCountClass">
                         <span v-if="characterCount < 20">
                             {{ 20 - characterCount }} more characters required
                         </span>
@@ -174,7 +176,7 @@ const characterCountClass = computed(() => {
                             {{ remainingCharacters }} characters remaining
                         </span>
                     </p>
-                    <p class="text-xs font-medium" :class="characterCountClass">
+                    <p class="text-sm font-medium" :class="characterCountClass">
                         {{ characterCount }}/500
                     </p>
                 </div>

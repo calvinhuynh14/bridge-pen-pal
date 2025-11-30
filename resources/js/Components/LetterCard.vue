@@ -143,7 +143,7 @@ const handleReport = (event) => {
 </script>
 
 <template>
-    <div
+    <article
         @click="handleCardClick"
         class="border-2 border-gray-300 rounded-sm p-1.5 sm:p-3 md:p-4 shadow-md hover:shadow-lg transition-shadow relative flex flex-col cursor-pointer w-full max-h-[300px] sm:max-h-none mx-auto sm:mx-0"
         style="
@@ -152,12 +152,16 @@ const handleReport = (event) => {
                 0 1px 2px rgba(0, 0, 0, 0.06);
             aspect-ratio: 3 / 4;
         "
+        :aria-label="`Letter from ${letter.sender_name} dated ${formatDate(letter.sent_at)}`"
+        role="article"
     >
         <!-- Status Icon (Bottom Right) -->
         <div
             v-if="showStatus && statusConfig"
             class="absolute bottom-1.5 right-1.5 sm:bottom-2 sm:right-2 z-10"
             :title="statusConfig.title"
+            role="img"
+            :aria-label="`Letter status: ${statusConfig.title}`"
         >
             <div
                 class="rounded-full p-1 sm:p-1.5"
@@ -169,6 +173,7 @@ const handleReport = (event) => {
                     fill="currentColor"
                     class="w-3 h-3 sm:w-4 sm:h-4"
                     :class="statusConfig.color"
+                    aria-hidden="true"
                 >
                     <path :d="statusConfig.icon" />
                     <path
@@ -182,7 +187,7 @@ const handleReport = (event) => {
         </div>
 
         <!-- Avatar and Name -->
-        <div class="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-3">
+        <header class="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-3">
             <div class="flex-shrink-0">
                 <Avatar
                     :src="letter.sender_avatar ? `/images/avatars/${letter.sender_avatar}` : null"
@@ -201,11 +206,14 @@ const handleReport = (event) => {
                 >
                     {{ letter.sender_name }}
                 </p>
-                <p class="text-xs sm:text-sm text-gray-500">
+                <time 
+                    class="text-xs sm:text-sm text-gray-500"
+                    :datetime="letter.sent_at"
+                >
                     {{ formatDate(letter.sent_at) }}
-                </p>
+                </time>
             </div>
-        </div>
+        </header>
 
         <!-- Letter Content Preview -->
         <div
@@ -262,14 +270,15 @@ const handleReport = (event) => {
             </button>
             <button
                 @click="handleReport"
-                class="px-1.5 py-1 sm:px-2.5 sm:py-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg font-medium transition-colors text-xs sm:text-sm md:text-base flex items-center justify-center min-h-[28px] sm:min-h-0"
-                title="Report this letter"
+                class="px-1.5 py-1 sm:px-2.5 sm:py-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg font-medium transition-colors text-xs sm:text-sm md:text-base flex items-center justify-center min-h-[28px] sm:min-h-0 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                aria-label="Report this letter"
             >
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 24 24"
                     fill="currentColor"
                     class="size-2.5 sm:size-4 md:size-5"
+                    aria-hidden="true"
                 >
                     <path
                         fill-rule="evenodd"
@@ -279,5 +288,5 @@ const handleReport = (event) => {
                 </svg>
             </button>
         </div>
-    </div>
+    </article>
 </template>

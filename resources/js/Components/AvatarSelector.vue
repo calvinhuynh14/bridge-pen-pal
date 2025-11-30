@@ -60,6 +60,7 @@ const getAvatarUrl = (avatar) => {
                 type="button"
                 @click="openModal"
                 class="relative group focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary rounded-full transition-transform hover:scale-105"
+                :aria-label="selectedAvatar ? `Change avatar. Current avatar: ${selectedAvatar}` : 'Select an avatar'"
             >
                 <Avatar
                     :src="selectedAvatar ? getAvatarUrl(selectedAvatar) : null"
@@ -76,6 +77,7 @@ const getAvatarUrl = (avatar) => {
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
+                        aria-hidden="true"
                     >
                         <path
                             stroke-linecap="round"

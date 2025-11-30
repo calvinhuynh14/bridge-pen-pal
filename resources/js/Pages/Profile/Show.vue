@@ -325,7 +325,7 @@ const getProfileTitle = () => {
                 <!-- Avatar Selection Section -->
                 <section
                     v-if="isResident || isVolunteer"
-                    class="bg-primary overflow-hidden shadow-xl sm:rounded-lg p-4 sm:p-6 mb-8"
+                    class="bg-primary overflow-hidden shadow-xl rounded-lg p-4 sm:p-6 mb-8"
                     aria-label="Avatar selection"
                 >
                     <AvatarSelector
@@ -337,7 +337,7 @@ const getProfileTitle = () => {
 
                 <!-- Profile Information Card -->
                 <section
-                    class="bg-primary overflow-hidden shadow-xl sm:rounded-lg p-4 sm:p-6 mb-8"
+                    class="bg-primary overflow-hidden shadow-xl rounded-lg p-4 sm:p-6 mb-8"
                     aria-label="Profile information"
                 >
                     <h2
@@ -414,7 +414,7 @@ const getProfileTitle = () => {
                                     readonly
                                     aria-label="Email address (read-only)"
                                 />
-                                <p class="mt-1 text-base text-white/80">
+                                <p class="mt-1 text-base text-white">
                                     Email address cannot be changed.
                                 </p>
                             </div>
@@ -488,7 +488,7 @@ const getProfileTitle = () => {
                 <!-- Account Settings Card (Volunteers and Admins) -->
                 <section
                     v-if="isVolunteer || isAdmin"
-                    class="bg-primary overflow-hidden shadow-xl sm:rounded-lg p-4 sm:p-6 mb-8"
+                    class="bg-primary overflow-hidden shadow-xl rounded-lg p-4 sm:p-6 mb-8"
                     aria-label="Account settings"
                 >
                     <h2
@@ -510,7 +510,7 @@ const getProfileTitle = () => {
                                 include:
                             </p>
                             <ul
-                                class="text-lg text-white/90 mb-4 list-disc list-inside space-y-1"
+                                class="text-lg text-white mb-4 list-disc list-inside space-y-1"
                                 role="list"
                                 aria-label="Password requirements"
                             >
@@ -683,7 +683,7 @@ const getProfileTitle = () => {
                 <!-- Interests Section -->
                 <section
                     v-if="isResident || isVolunteer"
-                    class="bg-primary overflow-hidden shadow-xl sm:rounded-lg p-4 sm:p-6 mb-8"
+                    class="bg-primary overflow-hidden shadow-xl rounded-lg p-4 sm:p-6 mb-8"
                     aria-label="Interests"
                 >
                     <h2
@@ -736,7 +736,7 @@ const getProfileTitle = () => {
                 <!-- Languages Section -->
                 <section
                     v-if="isResident || isVolunteer"
-                    class="bg-primary overflow-hidden shadow-xl sm:rounded-lg p-4 sm:p-6 mb-8"
+                    class="bg-primary overflow-hidden shadow-xl rounded-lg p-4 sm:p-6 mb-8"
                     aria-label="Languages"
                 >
                     <h2
@@ -789,7 +789,7 @@ const getProfileTitle = () => {
                 <!-- Anonymous Mode Section -->
                 <section
                     v-if="isResident || isVolunteer"
-                    class="bg-primary overflow-hidden shadow-xl sm:rounded-lg p-4 sm:p-6"
+                    class="bg-primary overflow-hidden shadow-xl rounded-lg p-4 sm:p-6"
                     aria-label="Privacy settings"
                 >
                     <h2
@@ -813,7 +813,7 @@ const getProfileTitle = () => {
                                         anonymousForm.is_anonymous &&
                                         anonymousName
                                     "
-                                    class="text-base text-white/80 mt-2 italic"
+                                    class="text-base text-white mt-2 italic"
                                     role="status"
                                     aria-live="polite"
                                     aria-atomic="true"
