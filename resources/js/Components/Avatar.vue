@@ -30,7 +30,7 @@ const props = defineProps({
     },
     bgColor: {
         type: String,
-        default: "pressed", // pressed, primary, or custom class
+        default: "primary", // pressed, primary, or custom class
     },
     textColor: {
         type: String,

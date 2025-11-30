@@ -543,6 +543,10 @@ const closeViewModal = () => {
 // Handle reply - fetch letter and open writing interface
 const handleReply = async (letterId) => {
     try {
+        // Close the view modal first
+        showViewModal.value = false;
+        viewingLetter.value = null;
+
         // Fetch letter details
         const response = await axios.get(`/api/letters/${letterId}`);
         const letter = response.data.letter;
@@ -816,20 +820,22 @@ onUnmounted(() => {
             </h2>
         </template>
 
-        <div class="py-2">
+        <main class="py-2" role="main">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <h1 class="sr-only">Write Letters</h1>
                 <div class="flex gap-6 justify-center lg:justify-start">
                     <!-- Correspondence Sidebar/List (Search, Incoming, Pen Pals) - Mobile: hidden when pen pal selected or writing, Desktop: always visible unless writing -->
-                    <div
+                    <aside
                         v-if="
                             (!selectedPenPal && !showWritingInterface) ||
                             (windowWidth >= 1024 && !showWritingInterface)
                         "
                         class="flex-shrink-0 transition-all duration-300 w-full max-w-md lg:max-w-[280px] mx-auto lg:mx-0"
+                        aria-label="Pen pals and incoming letters sidebar"
                     >
                         <!-- Incoming Letters Section - Hidden on mobile -->
-                        <div class="mb-2 hidden lg:block">
-                            <h3 class="text-lg font-bold text-pressed mb-1">
+                        <section class="mb-2 hidden lg:block" aria-label="Incoming letters">
+                            <h3 class="text-lg font-bold text-primary mb-1">
                                 Incoming Letters
                             </h3>
                             <div
@@ -842,6 +848,9 @@ onUnmounted(() => {
                                 <div
                                     v-if="isLoadingIncomingLetters"
                                     class="flex justify-center py-4"
+                                    role="status"
+                                    aria-live="polite"
+                                    aria-atomic="true"
                                 >
                                     <LoadingSpinner />
                                 </div>
@@ -850,6 +859,8 @@ onUnmounted(() => {
                                 <div
                                     v-else-if="incomingLetters.length > 0"
                                     class="flex gap-3 justify-center overflow-x-auto w-full"
+                                    role="list"
+                                    aria-label="Incoming letters from senders"
                                     style="
                                         scrollbar-width: thin;
                                         scrollbar-color: rgba(
@@ -866,6 +877,8 @@ onUnmounted(() => {
                                         v-for="letter in incomingLetters"
                                         :key="letter.id"
                                         class="flex-shrink-0 flex flex-col items-center gap-2"
+                                        role="listitem"
+                                        :aria-label="`Letter from ${letter.name}`"
                                     >
                                         <Avatar
                                             :src="letter.avatar"
@@ -881,20 +894,27 @@ onUnmounted(() => {
                                 <div
                                     v-else
                                     class="text-center py-4 text-white/60 text-sm"
+                                    role="status"
+                                    aria-live="polite"
+                                    aria-atomic="true"
                                 >
                                     No incoming letters
                                 </div>
                             </div>
-                        </div>
+                        </section>
 
                         <!-- Pen Pals Section -->
-                        <div class="mb-2">
-                            <h3 class="text-lg font-bold text-pressed mb-1">
+                        <section class="mb-2" aria-label="Pen pals list">
+                            <h3 class="text-lg font-bold text-primary mb-1">
                                 Pen Pals
                             </h3>
                             <!-- Search Bar for Pen Pals -->
                             <div class="mb-2">
+                                <label for="penPalSearch" class="sr-only">
+                                    Search pen pals
+                                </label>
                                 <SearchBar
+                                    id="penPalSearch"
                                     v-model="penPalSearchQuery"
                                     placeholder="Search pen pals..."
                                 />
@@ -904,6 +924,9 @@ onUnmounted(() => {
                                 <div
                                     v-if="isLoadingPenPals"
                                     class="text-center py-6"
+                                    role="status"
+                                    aria-live="polite"
+                                    aria-atomic="true"
                                 >
                                     <LoadingSpinner />
                                 </div>
@@ -912,13 +935,17 @@ onUnmounted(() => {
                                 <div
                                     v-else-if="penPalLoadError"
                                     class="text-center py-6 px-4"
+                                    role="alert"
+                                    aria-live="assertive"
+                                    aria-atomic="true"
                                 >
                                     <p class="text-sm text-white mb-4">
                                         {{ penPalLoadError }}
                                     </p>
                                     <button
                                         @click="reloadPenPals"
-                                        class="px-4 py-2 bg-pressed hover:bg-hover text-white rounded-lg transition-colors text-sm"
+                                        class="px-4 py-2 bg-pressed hover:bg-hover text-white rounded-lg transition-colors text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white"
+                                        aria-label="Retry loading pen pals"
                                     >
                                         Retry
                                     </button>
@@ -929,6 +956,8 @@ onUnmounted(() => {
                                     v-else-if="filteredPenPals.length > 0"
                                     ref="penPalContainer"
                                     class="max-h-[60vh] overflow-y-auto p-2"
+                                    role="list"
+                                    aria-label="Pen pals"
                                     style="
                                         scrollbar-width: thin;
                                         scrollbar-color: rgba(
@@ -947,12 +976,18 @@ onUnmounted(() => {
                                         ) in filteredPenPals"
                                         :key="penPal.id"
                                         @click="selectPenPal(penPal)"
-                                        class="flex items-center gap-4 p-4 hover:bg-hover transition-colors cursor-pointer bg-white/10 rounded-lg mb-2"
+                                        class="flex items-center gap-4 p-4 hover:bg-hover transition-colors cursor-pointer bg-white/10 rounded-lg mb-2 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white"
                                         :class="{
                                             'bg-pressed':
                                                 selectedPenPal &&
                                                 selectedPenPal.id === penPal.id,
                                         }"
+                                        role="listitem"
+                                        :aria-label="`${penPal.name}, ${penPal.unread_count > 0 ? penPal.unread_count + ' unread messages' : penPal.has_messages ? 'View messages' : 'Send letter'}`"
+                                        :aria-current="selectedPenPal && selectedPenPal.id === penPal.id ? 'true' : undefined"
+                                        tabindex="0"
+                                        @keydown.enter="selectPenPal(penPal)"
+                                        @keydown.space.prevent="selectPenPal(penPal)"
                                     >
                                         <!-- Avatar -->
                                         <div class="flex-shrink-0 relative">
@@ -991,7 +1026,7 @@ onUnmounted(() => {
                                         <!-- Write Icon Button -->
                                         <button
                                             @click.stop="selectPenPal(penPal)"
-                                            class="flex-shrink-0 p-2 text-white hover:text-white hover:bg-hover rounded-lg transition-colors"
+                                            class="flex-shrink-0 p-2 text-white hover:text-white hover:bg-hover rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white"
                                             :aria-label="`View correspondence with ${penPal.name}`"
                                         >
                                             <svg
@@ -999,6 +1034,7 @@ onUnmounted(() => {
                                                 viewBox="0 0 24 24"
                                                 fill="currentColor"
                                                 class="size-6"
+                                                aria-hidden="true"
                                             >
                                                 <path
                                                     d="M21.731 2.269a2.625 2.625 0 0 0-3.712 0l-1.157 1.157 3.712 3.712 1.157-1.157a2.625 2.625 0 0 0 0-3.712ZM19.513 8.199l-3.712-3.712-8.4 8.4a5.25 5.25 0 0 0-1.32 2.214l-.8 2.685a.75.75 0 0 0 .933.933l2.685-.8a5.25 5.25 0 0 0 2.214-1.32l8.4-8.4Z"
@@ -1019,6 +1055,9 @@ onUnmounted(() => {
                                         <div
                                             v-if="isLoadingMorePenPals"
                                             class="text-center py-4"
+                                            role="status"
+                                            aria-live="polite"
+                                            aria-atomic="true"
                                         >
                                             <LoadingSpinner />
                                         </div>
@@ -1030,13 +1069,17 @@ onUnmounted(() => {
                                                 filteredPenPals.length > 0
                                             "
                                             class="text-center py-4 px-4"
+                                            role="alert"
+                                            aria-live="assertive"
+                                            aria-atomic="true"
                                         >
                                             <p class="text-sm text-black mb-2">
                                                 {{ penPalLoadError }}
                                             </p>
                                             <button
                                                 @click="loadMorePenPals"
-                                                class="px-4 py-2 bg-pressed hover:bg-hover text-white rounded-lg transition-colors text-sm"
+                                                class="px-4 py-2 bg-pressed hover:bg-hover text-white rounded-lg transition-colors text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white"
+                                                aria-label="Retry loading more pen pals"
                                             >
                                                 Retry Loading
                                             </button>
@@ -1048,7 +1091,10 @@ onUnmounted(() => {
                                                 !penPalHasMorePages &&
                                                 filteredPenPals.length > 0
                                             "
-                                            class="text-center py-2 text-white/60 text-xs"
+                                            class="text-center py-2 text-white text-xs"
+                                            role="status"
+                                            aria-live="polite"
+                                            aria-atomic="true"
                                         >
                                             No more pen pals
                                         </div>
@@ -1057,6 +1103,9 @@ onUnmounted(() => {
                                 <div
                                     v-else
                                     class="text-center py-6 text-white/80"
+                                    role="status"
+                                    aria-live="polite"
+                                    aria-atomic="true"
                                 >
                                     <p class="text-sm">
                                         {{
@@ -1067,13 +1116,14 @@ onUnmounted(() => {
                                     </p>
                                 </div>
                             </div>
-                        </div>
-                    </div>
+                        </section>
+                    </aside>
 
                     <!-- Writing Interface - Mobile: replaces main content, Desktop: replaces search/filters/messages -->
-                    <div
+                    <section
                         v-if="showWritingInterface"
                         class="flex-1 transition-all duration-300 w-full"
+                        aria-label="Write letter form"
                     >
                         <!-- Mobile Back Button -->
                         <div
@@ -1081,7 +1131,7 @@ onUnmounted(() => {
                         >
                             <button
                                 @click="handleCancelWrite"
-                                class="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                                class="p-2 hover:bg-gray-100 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
                                 aria-label="Cancel writing"
                             >
                                 <svg
@@ -1089,6 +1139,7 @@ onUnmounted(() => {
                                     viewBox="0 0 24 24"
                                     fill="currentColor"
                                     class="size-6 text-hover"
+                                    aria-hidden="true"
                                 >
                                     <path
                                         fill-rule="evenodd"
@@ -1097,9 +1148,9 @@ onUnmounted(() => {
                                     />
                                 </svg>
                             </button>
-                            <h3 class="text-lg font-bold text-pressed">
+                            <h2 class="text-lg font-bold text-primary">
                                 Write Letter
-                            </h3>
+                            </h2>
                         </div>
 
                         <!-- Desktop Header -->
@@ -1109,7 +1160,7 @@ onUnmounted(() => {
                             <div class="flex items-center gap-2">
                                 <button
                                     @click="handleCancelWrite"
-                                    class="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                                    class="p-2 hover:bg-gray-100 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
                                     aria-label="Cancel writing"
                                 >
                                     <svg
@@ -1117,6 +1168,7 @@ onUnmounted(() => {
                                         viewBox="0 0 24 24"
                                         fill="currentColor"
                                         class="size-5 text-hover"
+                                        aria-hidden="true"
                                     >
                                         <path
                                             fill-rule="evenodd"
@@ -1125,14 +1177,14 @@ onUnmounted(() => {
                                         />
                                     </svg>
                                 </button>
-                                <h3 class="text-lg font-bold text-pressed">
+                                <h2 class="text-lg font-bold text-primary">
                                     Write Letter
-                                </h3>
+                                </h2>
                             </div>
                         </div>
 
                         <!-- Writing Form -->
-                        <div class="space-y-4">
+                        <form class="space-y-4" aria-label="Write letter form" @submit.prevent="handleSendLetter">
                             <!-- To Field (Recipient Dropdown) -->
                             <div>
                                 <div class="flex items-center justify-between mb-2">
@@ -1147,13 +1199,15 @@ onUnmounted(() => {
                                         v-if="originalLetter"
                                         @click="showPreviewModal = true"
                                         type="button"
-                                        class="inline-flex items-center gap-2 bg-primary hover:bg-pressed text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-colors shadow-sm"
+                                        class="inline-flex items-center gap-2 bg-primary hover:bg-pressed text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                                        aria-label="Preview original letter"
                                     >
                                         <svg
                                             xmlns="http://www.w3.org/2000/svg"
                                             viewBox="0 0 24 24"
                                             fill="currentColor"
                                             class="size-4"
+                                            aria-hidden="true"
                                         >
                                             <path
                                                 d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"
@@ -1190,6 +1244,9 @@ onUnmounted(() => {
                                     class="w-full px-4 py-3 border-2 border-gray-300 bg-white text-black rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none placeholder:text-gray-500"
                                     placeholder="Write your message here..."
                                     :maxlength="maxCharacters"
+                                    :aria-describedby="sendError ? 'letterContent-error' : 'letterContent-counter'"
+                                    :aria-invalid="sendError ? 'true' : 'false'"
+                                    aria-required="true"
                                 ></textarea>
 
                                 <!-- Character Counter -->
@@ -1198,23 +1255,35 @@ onUnmounted(() => {
                                 >
                                     <p
                                         v-if="sendError"
+                                        id="letterContent-error"
                                         class="text-sm text-red-600"
+                                        role="alert"
+                                        aria-live="assertive"
+                                        aria-atomic="true"
                                     >
                                         {{ sendError }}
                                     </p>
-                                    <p v-else class="text-sm text-gray-500">
+                                    <p 
+                                        v-else 
+                                        id="letterContent-counter"
+                                        class="text-sm text-primary"
+                                        role="status"
+                                        aria-live="polite"
+                                        aria-atomic="true"
+                                    >
                                         {{ characterCount }} /
                                         {{ maxCharacters }} characters
                                     </p>
                                 </div>
                             </div>
-                        </div>
-                    </div>
+                        </form>
+                    </section>
 
                     <!-- Message Section (Correspondence View) - Mobile: replaces main content, Desktop: takes remaining space -->
-                    <div
+                    <section
                         v-else-if="selectedPenPal"
                         class="flex-1 transition-all duration-300 w-full"
+                        :aria-label="`Correspondence with ${selectedPenPal.name}`"
                     >
                         <!-- Mobile Back Button -->
                         <div
@@ -1222,7 +1291,7 @@ onUnmounted(() => {
                         >
                             <button
                                 @click="goBack"
-                                class="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                                class="p-2 hover:bg-gray-100 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
                                 aria-label="Back to pen pals"
                             >
                                 <svg
@@ -1230,6 +1299,7 @@ onUnmounted(() => {
                                     viewBox="0 0 24 24"
                                     fill="currentColor"
                                     class="size-6 text-hover"
+                                    aria-hidden="true"
                                 >
                                     <path
                                         fill-rule="evenodd"
@@ -1247,9 +1317,9 @@ onUnmounted(() => {
                                     border-color="pressed"
                                 />
                             </div>
-                            <h3 class="text-lg font-bold text-pressed">
+                            <h2 class="text-lg font-bold text-primary">
                                 {{ selectedPenPal.name }}
-                            </h3>
+                            </h2>
                         </div>
 
                         <!-- Desktop Header -->
@@ -1266,16 +1336,20 @@ onUnmounted(() => {
                                         border-color="pressed"
                                     />
                                 </div>
-                                <h3 class="text-lg font-bold text-pressed">
+                                <h2 class="text-lg font-bold text-primary">
                                     {{ selectedPenPal.name }}
-                                </h3>
+                                </h2>
                             </div>
                         </div>
 
                         <!-- Search Bar and Filters for Correspondence -->
                         <div class="mb-3 space-y-2">
                             <!-- Search Bar -->
+                            <label for="correspondenceSearch" class="sr-only">
+                                Search messages or dates
+                            </label>
                             <SearchBar
+                                id="correspondenceSearch"
                                 v-model="correspondenceSearchQuery"
                                 placeholder="Search messages or dates..."
                             />
@@ -1315,6 +1389,9 @@ onUnmounted(() => {
                             <div
                                 v-if="isLoading"
                                 class="flex items-center justify-center py-12"
+                                role="status"
+                                aria-live="polite"
+                                aria-atomic="true"
                             >
                                 <LoadingSpinner size="lg" color="pressed" />
                             </div>
@@ -1325,13 +1402,17 @@ onUnmounted(() => {
                                     loadError && correspondence.length === 0
                                 "
                                 class="text-center py-8"
+                                role="alert"
+                                aria-live="assertive"
+                                aria-atomic="true"
                             >
                                 <p class="text-sm text-black mb-4">
                                     {{ loadError }}
                                 </p>
                                 <button
                                     @click="reloadCorrespondence"
-                                    class="px-4 py-2 bg-pressed hover:bg-hover text-white rounded-lg transition-colors"
+                                    class="px-4 py-2 bg-pressed hover:bg-hover text-white rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white"
+                                    aria-label="Retry loading correspondence"
                                 >
                                     Retry
                                 </button>
@@ -1341,12 +1422,18 @@ onUnmounted(() => {
                             <div
                                 v-else-if="filteredCorrespondence.length > 0"
                                 class="grid grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3"
+                                role="list"
+                                aria-label="Correspondence messages"
                             >
                                 <div
                                     v-for="letter in filteredCorrespondence"
                                     :key="letter.id"
                                     @click="handleView(letter)"
-                                    class="cursor-pointer"
+                                    class="cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white"
+                                    role="listitem"
+                                    tabindex="0"
+                                    @keydown.enter="handleView(letter)"
+                                    @keydown.space.prevent="handleView(letter)"
                                 >
                                     <LetterCard
                                         :letter="letter"
@@ -1362,6 +1449,9 @@ onUnmounted(() => {
                             <div
                                 v-else-if="!isLoading"
                                 class="text-center py-8 text-gray-500"
+                                role="status"
+                                aria-live="polite"
+                                aria-atomic="true"
                             >
                                 <p class="text-sm">
                                     {{
@@ -1382,7 +1472,13 @@ onUnmounted(() => {
                                 class="flex flex-col items-center justify-center py-4"
                             >
                                 <!-- Loading More Indicator -->
-                                <div v-if="isLoadingMore" class="py-4">
+                                <div 
+                                    v-if="isLoadingMore" 
+                                    class="py-4"
+                                    role="status"
+                                    aria-live="polite"
+                                    aria-atomic="true"
+                                >
                                     <LoadingSpinner size="md" color="pressed" />
                                 </div>
 
@@ -1392,13 +1488,17 @@ onUnmounted(() => {
                                         loadError && correspondence.length > 0
                                     "
                                     class="text-center py-4"
+                                    role="alert"
+                                    aria-live="assertive"
+                                    aria-atomic="true"
                                 >
                                     <p class="text-sm text-black mb-2">
                                         {{ loadError }}
                                     </p>
                                     <button
                                         @click="loadMoreMessages"
-                                        class="px-4 py-2 bg-pressed hover:bg-hover text-white rounded-lg transition-colors text-sm"
+                                        class="px-4 py-2 bg-pressed hover:bg-hover text-white rounded-lg transition-colors text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white"
+                                        aria-label="Retry loading more messages"
                                     >
                                         Retry Loading
                                     </button>
@@ -1408,14 +1508,17 @@ onUnmounted(() => {
                                 <div
                                     v-else-if="!hasMorePages"
                                     class="text-center py-4"
+                                    role="status"
+                                    aria-live="polite"
+                                    aria-atomic="true"
                                 >
-                                    <p class="text-xs text-gray-500">
+                                    <p class="text-xs text-white">
                                         No more messages
                                     </p>
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </section>
                 </div>
             </div>
 
@@ -1423,7 +1526,7 @@ onUnmounted(() => {
             <button
                 v-if="!showWritingInterface"
                 @click="handleWriteNew"
-                class="fixed bottom-20 right-4 lg:bottom-4 bg-accent hover:bg-pressed text-hover rounded-full p-4 lg:p-6 transition-colors flex items-center justify-center z-50 w-fit shadow-lg"
+                class="fixed bottom-20 right-4 lg:bottom-4 bg-accent hover:bg-pressed text-hover rounded-full p-4 lg:p-6 transition-colors flex items-center justify-center z-50 w-fit shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent"
                 aria-label="Write new letter"
             >
                 <svg
@@ -1431,6 +1534,7 @@ onUnmounted(() => {
                     viewBox="0 0 24 24"
                     fill="currentColor"
                     class="size-6 lg:size-8"
+                    aria-hidden="true"
                 >
                     <path
                         d="M21.731 2.269a2.625 2.625 0 0 0-3.712 0l-1.157 1.157 3.712 3.712 1.157-1.157a2.625 2.625 0 0 0 0-3.712ZM19.513 8.199l-3.712-3.712-8.4 8.4a5.25 5.25 0 0 0-1.32 2.214l-.8 2.685a.75.75 0 0 0 .933.933l2.685-.8a5.25 5.25 0 0 0 2.214-1.32l8.4-8.4Z"
@@ -1446,8 +1550,9 @@ onUnmounted(() => {
                 v-if="showWritingInterface"
                 @click="handleSendLetter"
                 :disabled="isSending || !letterContent.trim() || isOverLimit"
-                class="fixed bottom-20 right-4 lg:bottom-4 bg-accent hover:bg-pressed text-hover rounded-full p-4 lg:p-6 transition-colors flex items-center justify-center z-50 w-fit shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                aria-label="Send letter"
+                class="fixed bottom-20 right-4 lg:bottom-4 bg-accent hover:bg-pressed text-hover rounded-full p-4 lg:p-6 transition-colors flex items-center justify-center z-50 w-fit shadow-lg disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent"
+                :aria-label="isSending ? 'Sending letter...' : 'Send letter'"
+                :aria-busy="isSending"
             >
                 <svg
                     v-if="isSending"
@@ -1457,6 +1562,7 @@ onUnmounted(() => {
                     stroke="currentColor"
                     stroke-width="2"
                     class="size-6 lg:size-8 animate-spin"
+                    aria-hidden="true"
                 >
                     <path
                         stroke-linecap="round"
@@ -1470,13 +1576,14 @@ onUnmounted(() => {
                     viewBox="0 0 24 24"
                     fill="currentColor"
                     class="size-6 lg:size-8"
+                    aria-hidden="true"
                 >
                     <path
                         d="M3.478 2.404a.75.75 0 0 0-.926.941l2.432 7.905H13.5a.75.75 0 0 1 0 1.5H4.984l-2.432 7.905a.75.75 0 0 0 .926.94 60.519 60.519 0 0 0 18.445-8.986.75.75 0 0 0 0-1.218A60.517 60.517 0 0 0 3.478 2.404Z"
                     />
                 </svg>
             </button>
-        </div>
+        </main>
 
         <!-- View Letter Modal -->
         <LetterViewModal

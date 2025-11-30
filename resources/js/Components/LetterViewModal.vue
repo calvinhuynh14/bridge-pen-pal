@@ -63,37 +63,64 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <div
-        v-if="show"
-        class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4"
-        @click.self="closeModal"
-        @keydown.esc="handleEscape"
+    <transition
+        enter-active-class="ease-out duration-300"
+        enter-from-class="opacity-0"
+        enter-to-class="opacity-100"
+        leave-active-class="ease-in duration-200"
+        leave-from-class="opacity-100"
+        leave-to-class="opacity-0"
     >
-        <!-- Letter Modal -->
         <div
-            class="relative bg-white rounded-lg shadow-2xl w-[95vw] sm:max-w-lg sm:w-full overflow-hidden flex flex-col"
-            style="height: 90vh; max-height: 90vh"
-            @click.stop
+            v-if="show"
+            class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4"
+            @click.self="closeModal"
+            @keydown.esc="handleEscape"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="letter-modal-title"
         >
-            <!-- Close Button -->
-            <button
-                @click="closeModal"
-                class="absolute top-2 right-2 sm:top-4 sm:right-4 text-gray-400 hover:text-gray-600 transition-colors z-10 bg-white rounded-full p-1 shadow-sm"
+            <!-- Letter Modal -->
+            <transition
+                enter-active-class="ease-out duration-300"
+                enter-from-class="opacity-0 scale-95"
+                enter-to-class="opacity-100 scale-100"
+                leave-active-class="ease-in duration-200"
+                leave-from-class="opacity-100 scale-100"
+                leave-to-class="opacity-0 scale-95"
             >
-                <svg
-                    class="w-5 h-5 sm:w-6 sm:h-6"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                <div
+                    v-if="show"
+                    class="relative bg-white rounded-lg shadow-2xl w-[95vw] sm:max-w-lg sm:w-full overflow-hidden flex flex-col"
+                    style="height: 90vh; max-height: 90vh"
+                    @click.stop
                 >
-                    <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M6 18L18 6M6 6l12 12"
-                    ></path>
-                </svg>
-            </button>
+                    <!-- Visually hidden heading for screen readers -->
+                    <h2 id="letter-modal-title" class="sr-only">
+                        {{ letter && letter.sender_name ? `Letter from ${letter.sender_name}` : 'Letter View' }}
+                    </h2>
+                    
+                    <!-- Close Button -->
+                    <button
+                        @click="closeModal"
+                        class="absolute top-2 right-2 sm:top-4 sm:right-4 text-gray-400 hover:text-gray-600 transition-colors z-10 bg-white rounded-full p-1 shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                        aria-label="Close letter modal"
+                    >
+                        <svg
+                            class="w-5 h-5 sm:w-6 sm:h-6"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12"
+                            ></path>
+                        </svg>
+                    </button>
 
             <!-- Letter Content (scrollable) -->
             <div
@@ -134,7 +161,7 @@ onUnmounted(() => {
                     </p>
                 </div>
 
-                <!-- From (bottom, left-aligned, larger font, pressed color) -->
+                <!-- From (bottom, left-aligned, larger font, primary color) -->
                 <div class="mt-auto pt-4 sm:pt-6 md:pt-8 text-left">
                     <div class="flex items-center gap-3">
                         <Avatar
@@ -144,7 +171,7 @@ onUnmounted(() => {
                             border-color="pressed"
                         />
                         <p
-                            class="text-pressed font-semibold text-base sm:text-lg md:text-xl"
+                            class="text-primary font-semibold text-base sm:text-lg md:text-xl"
                         >
                             <span class="font-medium">From:</span>
                             {{ letter.sender_name }}
@@ -178,13 +205,15 @@ onUnmounted(() => {
                 <button
                     v-if="!hideReplyButton"
                     @click="$emit('reply', letter.id)"
-                    class="bg-primary hover:bg-pressed text-black px-4 py-2 sm:px-6 sm:py-3 rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center gap-1 sm:gap-2"
+                    class="bg-primary hover:bg-pressed text-white px-4 py-2 sm:px-6 sm:py-3 rounded-lg text-lg sm:text-xl font-medium transition-colors shadow-sm flex items-center gap-1 sm:gap-2 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                    aria-label="Reply to this letter"
                 >
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 24 24"
                         fill="currentColor"
                         class="size-4 sm:size-5"
+                        aria-hidden="true"
                     >
                         <path
                             d="M21.731 2.269a2.625 2.625 0 0 0-3.712 0l-1.157 1.157 3.712 3.712 1.157-1.157a2.625 2.625 0 0 0 0-3.712ZM19.513 8.199l-3.712-3.712-8.4 8.4a5.25 5.25 0 0 0-1.32 2.214l-.8 2.685a.75.75 0 0 0 .933.933l2.685-.8a5.25 5.25 0 0 0 2.214-1.32l8.4-8.4Z"
@@ -196,6 +225,8 @@ onUnmounted(() => {
                     Reply
                 </button>
             </div>
+                </div>
+            </transition>
         </div>
-    </div>
+    </transition>
 </template>

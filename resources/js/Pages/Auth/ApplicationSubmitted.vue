@@ -30,8 +30,10 @@ const logoutAndRedirect = () => {
 
 // Check if user just verified email (from query param)
 const justVerified = computed(() => {
-    if (typeof window !== 'undefined') {
-        return new URLSearchParams(window.location.search).get("verified") === "1";
+    if (typeof window !== "undefined") {
+        return (
+            new URLSearchParams(window.location.search).get("verified") === "1"
+        );
     }
     return false;
 });
@@ -51,8 +53,8 @@ const steps = computed(() => {
                 props.volunteerStatus === "approved"
                     ? "check"
                     : props.volunteerStatus === "rejected"
-                      ? "x"
-                      : "pending",
+                    ? "x"
+                    : "pending",
         },
     ];
 });
@@ -62,10 +64,14 @@ onMounted(() => {
     if (justVerified.value) {
         // Remove query param after showing message
         setTimeout(() => {
-            router.get(route("application.submitted"), {}, {
-                preserveState: true,
-                preserveScroll: true,
-            });
+            router.get(
+                route("application.submitted"),
+                {},
+                {
+                    preserveState: true,
+                    preserveScroll: true,
+                }
+            );
         }, 5000);
     }
 });
@@ -85,14 +91,10 @@ onMounted(() => {
             aria-label="Application submitted hero section"
         >
             <div class="flex-1">
-                <h1
-                    class="text-primary text-2xl lg:text-4xl xl:text-6xl"
-                >
+                <h1 class="text-primary text-2xl lg:text-4xl xl:text-6xl">
                     Application Submitted!
                 </h1>
-                <h2
-                    class="text-hover text-lg lg:text-2xl xl:text-4xl mt-2"
-                >
+                <h2 class="text-hover text-lg lg:text-2xl xl:text-4xl mt-2">
                     Thank you for your interest
                 </h2>
             </div>
@@ -141,7 +143,7 @@ onMounted(() => {
                             >Email verified successfully!</span
                         >
                     </div>
-            </div>
+                </div>
 
                 <!-- Success Message -->
                 <div class="text-center">
@@ -151,7 +153,9 @@ onMounted(() => {
                         Application Submitted Successfully!
                     </h2>
 
-                    <p class="text-primary lg:text-white text-base lg:text-lg font-medium mb-6">
+                    <p
+                        class="text-primary lg:text-white text-base lg:text-lg font-medium mb-6"
+                    >
                         Thank you for your interest in becoming a pen pal
                         volunteer. Your application has been submitted and is
                         currently under review.
@@ -174,17 +178,31 @@ onMounted(() => {
                             :key="index"
                             class="flex items-center"
                             role="listitem"
-                            :aria-label="`${step.label}: ${step.completed ? 'Completed' : step.icon === 'x' ? 'Rejected' : 'Pending'}`"
+                            :aria-label="`${step.label}: ${
+                                step.completed
+                                    ? 'Completed'
+                                    : step.icon === 'x'
+                                    ? 'Rejected'
+                                    : 'Pending'
+                            }`"
                         >
                             <div
                                 class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center mr-3"
                                 :class="{
                                     'bg-green-500': step.completed,
-                                    'bg-yellow-500': !step.completed && step.icon === 'pending',
+                                    'bg-yellow-500':
+                                        !step.completed &&
+                                        step.icon === 'pending',
                                     'bg-red-500': step.icon === 'x',
                                 }"
                                 role="img"
-                                :aria-label="step.completed ? 'Completed' : step.icon === 'x' ? 'Rejected' : 'Pending'"
+                                :aria-label="
+                                    step.completed
+                                        ? 'Completed'
+                                        : step.icon === 'x'
+                                        ? 'Rejected'
+                                        : 'Pending'
+                                "
                             >
                                 <svg
                                     v-if="step.icon === 'check'"
@@ -213,7 +231,9 @@ onMounted(() => {
                                     />
                                 </svg>
                                 <svg
-                                    v-else-if="step.label === 'Application Approved'"
+                                    v-else-if="
+                                        step.label === 'Application Approved'
+                                    "
                                     xmlns="http://www.w3.org/2000/svg"
                                     viewBox="0 0 24 24"
                                     fill="currentColor"
@@ -279,10 +299,10 @@ onMounted(() => {
                         </p>
                     </div>
                     <p class="text-yellow-700 text-sm mb-3">
-                        Please verify your email address to continue.
-                        Check your inbox for a verification link.
+                        Please verify your email address to continue. Check your
+                        inbox for a verification link.
                     </p>
-                    <Link 
+                    <Link
                         :href="route('verification.notice')"
                         aria-label="Go to email verification page"
                     >
@@ -300,15 +320,17 @@ onMounted(() => {
                 <div
                     v-if="isVolunteer && isEmailVerified"
                     :role="volunteerStatus === 'rejected' ? 'alert' : 'status'"
-                    :aria-live="volunteerStatus === 'rejected' ? 'assertive' : 'polite'"
+                    :aria-live="
+                        volunteerStatus === 'rejected' ? 'assertive' : 'polite'
+                    "
                     aria-atomic="true"
                     :class="[
                         'border rounded-lg p-4',
                         volunteerStatus === 'rejected'
                             ? 'bg-red-50 lg:bg-red-100 border-red-200'
                             : volunteerStatus === 'approved'
-                              ? 'bg-green-50 lg:bg-green-100 border-green-200'
-                              : 'bg-yellow-50 lg:bg-yellow-100 border-yellow-200'
+                            ? 'bg-green-50 lg:bg-green-100 border-green-200'
+                            : 'bg-yellow-50 lg:bg-yellow-100 border-yellow-200',
                     ]"
                 >
                     <div class="flex items-center">
@@ -357,33 +379,45 @@ onMounted(() => {
                                 volunteerStatus === 'rejected'
                                     ? 'text-red-800'
                                     : volunteerStatus === 'approved'
-                                      ? 'text-green-800'
-                                      : 'text-yellow-800'
+                                    ? 'text-green-800'
+                                    : 'text-yellow-800',
                             ]"
                         >
                             {{
                                 volunteerStatus === "approved"
                                     ? "Status: Approved"
                                     : volunteerStatus === "rejected"
-                                      ? "Status: Rejected"
-                                      : "Status: Pending Review"
+                                    ? "Status: Rejected"
+                                    : "Status: Pending Review"
                             }}
                         </span>
                     </div>
                     <p
-                        v-if="isEmailVerified && volunteerStatus === 'rejected' && rejectionReason"
+                        v-if="
+                            isEmailVerified &&
+                            volunteerStatus === 'rejected' &&
+                            rejectionReason
+                        "
                         class="text-red-700 text-sm mt-3 font-medium"
                     >
                         Reason for rejection:
                     </p>
                     <p
-                        v-if="isEmailVerified && volunteerStatus === 'rejected' && rejectionReason"
+                        v-if="
+                            isEmailVerified &&
+                            volunteerStatus === 'rejected' &&
+                            rejectionReason
+                        "
                         class="text-red-600 text-sm mt-1"
                     >
                         {{ rejectionReason }}
                     </p>
                     <p
-                        v-else-if="isEmailVerified && volunteerStatus !== 'approved' && volunteerStatus !== 'rejected'"
+                        v-else-if="
+                            isEmailVerified &&
+                            volunteerStatus !== 'approved' &&
+                            volunteerStatus !== 'rejected'
+                        "
                         class="text-yellow-700 text-sm mt-2"
                     >
                         Your email is verified. Your application is awaiting
@@ -416,8 +450,8 @@ onMounted(() => {
 
                 <!-- Action Buttons -->
                 <div>
-                    <Link 
-                        href="/" 
+                    <Link
+                        href="/"
                         class="block mb-6"
                         aria-label="Return to home page"
                     >

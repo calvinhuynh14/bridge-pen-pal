@@ -192,12 +192,12 @@ const handleReport = (event) => {
                     custom-text-size="text-xs sm:text-base md:text-lg"
                     border-color="pressed"
                     bg-color="primary"
-                    text-color="black"
+                    text-color="white"
                 />
             </div>
             <div class="flex-1 min-w-0">
                 <p
-                    class="font-semibold text-pressed text-xs sm:text-base md:text-lg truncate"
+                    class="font-semibold text-primary text-xs sm:text-base md:text-lg truncate"
                 >
                     {{ letter.sender_name }}
                 </p>
@@ -236,7 +236,8 @@ const handleReport = (event) => {
                 v-if="showReplyButton"
                 @click="handleReply"
                 :disabled="isClaiming"
-                class="px-1.5 py-1 sm:px-3 sm:py-2 bg-primary hover:bg-pressed text-black rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm md:text-base flex-1 flex items-center justify-center gap-0.5 sm:gap-1 min-h-[28px] sm:min-h-0 max-w-[100px] sm:max-w-none mx-auto"
+                class="px-1.5 py-1 sm:px-3 sm:py-2 bg-primary hover:bg-pressed text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm md:text-base flex-1 flex items-center justify-center gap-0.5 sm:gap-1 min-h-[28px] sm:min-h-0 max-w-[100px] sm:max-w-none mx-auto focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                aria-label="Reply to this letter"
             >
                 <span v-if="isClaiming" class="text-xs sm:text-sm">
                     Replying...
@@ -247,6 +248,7 @@ const handleReport = (event) => {
                         viewBox="0 0 24 24"
                         fill="currentColor"
                         class="size-3 sm:size-4 md:size-5"
+                        aria-hidden="true"
                     >
                         <path
                             d="M21.731 2.269a2.625 2.625 0 0 0-3.712 0l-1.157 1.157 3.712 3.712 1.157-1.157a2.625 2.625 0 0 0 0-3.712ZM19.513 8.199l-3.712-3.712-8.4 8.4a5.25 5.25 0 0 0-1.32 2.214l-.8 2.685a.75.75 0 0 0 .933.933l2.685-.8a5.25 5.25 0 0 0 2.214-1.32l8.4-8.4Z"

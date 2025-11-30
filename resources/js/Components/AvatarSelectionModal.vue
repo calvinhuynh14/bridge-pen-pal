@@ -64,7 +64,8 @@ const getAvatarUrl = (avatar) => {
                     </h3>
                 <button
                     @click="closeModal"
-                    class="text-gray-400 hover:text-gray-600 transition-colors"
+                    class="text-gray-400 hover:text-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                    aria-label="Close avatar selection modal"
                 >
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -73,6 +74,7 @@ const getAvatarUrl = (avatar) => {
                         stroke-width="1.5"
                         stroke="currentColor"
                         class="w-6 h-6"
+                        aria-hidden="true"
                     >
                         <path
                             stroke-linecap="round"
@@ -111,13 +113,14 @@ const getAvatarUrl = (avatar) => {
                         />
                         <div
                             v-if="selectedAvatar === avatar"
-                            class="absolute inset-0 bg-primary/20 flex items-center justify-center"
+                            class="absolute inset-0 bg-black/50 flex items-center justify-center"
                         >
                             <svg
                                 class="w-8 h-8 text-white drop-shadow-lg"
                                 fill="none"
                                 stroke="currentColor"
                                 viewBox="0 0 24 24"
+                                aria-hidden="true"
                             >
                                 <path
                                     stroke-linecap="round"
@@ -153,13 +156,14 @@ const getAvatarUrl = (avatar) => {
                         />
                         <div
                             v-if="selectedAvatar === avatar"
-                            class="absolute inset-0 bg-primary/20 flex items-center justify-center"
+                            class="absolute inset-0 bg-black/50 flex items-center justify-center"
                         >
                             <svg
                                 class="w-10 h-10 text-white drop-shadow-lg"
                                 fill="none"
                                 stroke="currentColor"
                                 viewBox="0 0 24 24"
+                                aria-hidden="true"
                             >
                                 <path
                                     stroke-linecap="round"

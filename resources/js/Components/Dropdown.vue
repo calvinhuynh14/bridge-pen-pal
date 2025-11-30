@@ -74,7 +74,6 @@ const alignmentClasses = computed(() => {
         >
             <div
                 v-show="open"
-                role="menu"
                 :aria-label="ariaLabel || 'Dropdown menu'"
                 class="absolute z-50 mt-2 rounded-md shadow-lg"
                 :class="[widthClass, alignmentClasses]"

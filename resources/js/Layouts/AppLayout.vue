@@ -151,7 +151,10 @@ const logout = () => {
                                     <NavLink
                                         :href="route('profile.show')"
                                         :active="
-                                            route().current('profile.show')
+                                            route().current('profile.show') ||
+                                            $page.url.startsWith(
+                                                '/user/profile'
+                                            )
                                         "
                                     >
                                         Profile
@@ -176,7 +179,9 @@ const logout = () => {
                                     <template #trigger="{ open }">
                                         <button
                                             type="button"
-                                            :aria-expanded="open ? 'true' : 'false'"
+                                            :aria-expanded="
+                                                open ? 'true' : 'false'
+                                            "
                                             aria-haspopup="true"
                                             aria-label="User menu"
                                             class="flex text-sm border-2 border-transparent rounded-full focus:outline-none focus:border-gray-300 focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary transition"
@@ -315,7 +320,6 @@ const logout = () => {
                         hidden: !showingNavigationDropdown,
                     }"
                     class="md:hidden"
-                    role="menu"
                     aria-label="Mobile navigation menu"
                 >
                     <!-- Responsive Settings Options -->
@@ -343,7 +347,11 @@ const logout = () => {
                             </div>
                         </div>
 
-                        <div class="mt-3 space-y-1">
+                        <div
+                            class="mt-3 space-y-1"
+                            role="group"
+                            aria-label="User account options"
+                        >
                             <ResponsiveNavLink
                                 :href="route('profile.show')"
                                 :active="route().current('profile.show')"
@@ -354,6 +362,7 @@ const logout = () => {
                                         viewBox="0 0 24 24"
                                         fill="currentColor"
                                         class="size-4"
+                                        aria-hidden="true"
                                     >
                                         <path
                                             fill-rule="evenodd"
@@ -374,6 +383,7 @@ const logout = () => {
                                             viewBox="0 0 24 24"
                                             fill="currentColor"
                                             class="size-4"
+                                            aria-hidden="true"
                                         >
                                             <path
                                                 fill-rule="evenodd"
@@ -423,7 +433,7 @@ const logout = () => {
                                     "
                                     class="flex items-center px-4 py-3 text-base font-medium rounded-md hover:bg-hover transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary"
                                     :class="{
-                                        'bg-pressed':
+                                        'bg-pressed text-black':
                                             $page.url.startsWith(
                                                 '/admin/dashboard'
                                             ),
@@ -455,7 +465,7 @@ const logout = () => {
                                     "
                                     class="flex items-center px-4 py-3 text-base font-medium rounded-md hover:bg-hover transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary"
                                     :class="{
-                                        'bg-pressed':
+                                        'bg-pressed text-black':
                                             $page.url.startsWith(
                                                 '/admin/residents'
                                             ),
@@ -483,13 +493,15 @@ const logout = () => {
                                 <Link
                                     :href="route('admin.volunteers')"
                                     :aria-current="
-                                        $page.url.startsWith('/admin/volunteers')
+                                        $page.url.startsWith(
+                                            '/admin/volunteers'
+                                        )
                                             ? 'page'
                                             : undefined
                                     "
                                     class="flex items-center px-4 py-3 text-base font-medium rounded-md hover:bg-hover transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary"
                                     :class="{
-                                        'bg-pressed':
+                                        'bg-pressed text-black':
                                             $page.url.startsWith(
                                                 '/admin/volunteers'
                                             ),
@@ -518,7 +530,7 @@ const logout = () => {
                                     "
                                     class="flex items-center px-4 py-3 text-base font-medium rounded-md hover:bg-hover transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary"
                                     :class="{
-                                        'bg-pressed':
+                                        'bg-pressed text-black':
                                             $page.url.startsWith(
                                                 '/admin/reports'
                                             ),
@@ -552,7 +564,7 @@ const logout = () => {
                                     "
                                     class="flex items-center px-4 py-3 text-base font-medium rounded-md hover:bg-hover transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary"
                                     :class="{
-                                        'bg-pressed':
+                                        'bg-pressed text-black':
                                             $page.url.startsWith(
                                                 '/platform/home'
                                             ),
@@ -578,13 +590,15 @@ const logout = () => {
                                 <Link
                                     :href="route('platform.discover')"
                                     :aria-current="
-                                        $page.url.startsWith('/platform/discover')
+                                        $page.url.startsWith(
+                                            '/platform/discover'
+                                        )
                                             ? 'page'
                                             : undefined
                                     "
                                     class="flex items-center px-4 py-3 text-base font-medium rounded-md hover:bg-hover transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary"
                                     :class="{
-                                        'bg-pressed':
+                                        'bg-pressed text-black':
                                             $page.url.startsWith(
                                                 '/platform/discover'
                                             ),
@@ -614,7 +628,7 @@ const logout = () => {
                                     "
                                     class="flex items-center px-4 py-3 text-base font-medium rounded-md hover:bg-hover transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary"
                                     :class="{
-                                        'bg-pressed':
+                                        'bg-pressed text-black':
                                             $page.url.startsWith(
                                                 '/platform/write'
                                             ),
@@ -639,14 +653,16 @@ const logout = () => {
                                 <Link
                                     :href="route('profile.show')"
                                     :aria-current="
-                                        $page.url.startsWith('/profile')
+                                        $page.url.startsWith('/user/profile')
                                             ? 'page'
                                             : undefined
                                     "
                                     class="flex items-center px-4 py-3 text-base font-medium rounded-md hover:bg-hover transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary"
                                     :class="{
-                                        'bg-pressed':
-                                            $page.url.startsWith('/profile'),
+                                        'bg-pressed text-black':
+                                            $page.url.startsWith(
+                                                '/user/profile'
+                                            ),
                                     }"
                                 >
                                     <svg
@@ -697,7 +713,7 @@ const logout = () => {
                             "
                             class="flex flex-col items-center py-2 px-3 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary"
                             :class="{
-                                'bg-pressed':
+                                'bg-pressed text-black':
                                     $page.url.startsWith('/admin/dashboard'),
                             }"
                         >
@@ -727,7 +743,7 @@ const logout = () => {
                             "
                             class="flex flex-col items-center py-2 px-3 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary"
                             :class="{
-                                'bg-pressed':
+                                'bg-pressed text-black':
                                     $page.url.startsWith('/admin/residents'),
                             }"
                         >
@@ -759,7 +775,7 @@ const logout = () => {
                             "
                             class="flex flex-col items-center py-2 px-3 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary"
                             :class="{
-                                'bg-pressed':
+                                'bg-pressed text-black':
                                     $page.url.startsWith('/admin/volunteers'),
                             }"
                         >
@@ -786,7 +802,7 @@ const logout = () => {
                             "
                             class="flex flex-col items-center py-2 px-3 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary"
                             :class="{
-                                'bg-pressed':
+                                'bg-pressed text-black':
                                     $page.url.startsWith('/admin/reports'),
                             }"
                         >
@@ -818,7 +834,7 @@ const logout = () => {
                             "
                             class="flex flex-col items-center py-2 px-3 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary"
                             :class="{
-                                'bg-pressed':
+                                'bg-pressed text-black':
                                     $page.url.startsWith('/platform/home'),
                             }"
                         >
@@ -848,7 +864,7 @@ const logout = () => {
                             "
                             class="flex flex-col items-center py-2 px-3 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary"
                             :class="{
-                                'bg-pressed':
+                                'bg-pressed text-black':
                                     $page.url.startsWith('/platform/discover'),
                             }"
                         >
@@ -877,7 +893,7 @@ const logout = () => {
                             "
                             class="flex flex-col items-center py-2 px-3 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary"
                             :class="{
-                                'bg-pressed':
+                                'bg-pressed text-black':
                                     $page.url.startsWith('/platform/write'),
                             }"
                         >
@@ -901,13 +917,14 @@ const logout = () => {
                         <Link
                             :href="route('profile.show')"
                             :aria-current="
-                                $page.url.startsWith('/profile')
+                                $page.url.startsWith('/user/profile')
                                     ? 'page'
                                     : undefined
                             "
                             class="flex flex-col items-center py-2 px-3 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary"
                             :class="{
-                                'bg-pressed': $page.url.startsWith('/profile'),
+                                'bg-pressed text-black':
+                                    $page.url.startsWith('/user/profile'),
                             }"
                         >
                             <svg

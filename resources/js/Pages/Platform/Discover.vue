@@ -161,9 +161,13 @@ const closeReportModal = () => {
         <div class="py-2">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <!-- Story of the Week Section -->
-                <div v-if="storyOfTheWeek" class="mb-2">
+                <section 
+                    v-if="storyOfTheWeek" 
+                    class="mb-2"
+                    aria-label="Story of the week"
+                >
                     <h2
-                        class="text-xl sm:text-2xl lg:text-3xl font-bold text-pressed mb-1"
+                        class="text-xl sm:text-2xl lg:text-3xl font-bold text-primary mb-1"
                     >
                         Story of the Week
                     </h2>
@@ -188,7 +192,7 @@ const closeReportModal = () => {
                                     text-color="white"
                                 />
                                 <h3
-                                    class="text-xl sm:text-2xl md:text-3xl font-bold text-pressed text-center"
+                                    class="text-xl sm:text-2xl md:text-3xl font-bold text-white text-center"
                                 >
                                     {{ storyOfTheWeek.name }}
                                 </h3>
@@ -199,7 +203,7 @@ const closeReportModal = () => {
                                 class="flex-1 min-w-0 flex flex-col items-center md:items-start"
                             >
                                 <div
-                                    class="text-sm sm:text-base md:text-lg text-gray-700 leading-relaxed space-y-3 text-center md:text-left"
+                                    class="text-sm sm:text-base md:text-lg text-white leading-relaxed space-y-3 text-center md:text-left"
                                 >
                                     <p
                                         v-for="(
@@ -214,28 +218,35 @@ const closeReportModal = () => {
                             </div>
                         </div>
                     </div>
-                </div>
+                </section>
 
-                <!-- Page Header -->
-                <div class="mb-2">
-                    <h1
-                        class="text-xl sm:text-2xl lg:text-3xl font-bold text-pressed mb-1"
+                <!-- Open Letters Section -->
+                <section aria-label="Open letters">
+                    <!-- Page Header -->
+                    <div class="mb-2">
+                        <h1
+                            class="text-xl sm:text-2xl lg:text-3xl font-bold text-primary mb-1"
+                        >
+                            Open Letters
+                        </h1>
+                        <p 
+                            v-if="letterCount > 0" 
+                            class="text-sm text-gray-600"
+                            role="status"
+                            aria-live="polite"
+                        >
+                            {{ letterCount }} open
+                            {{ letterCount === 1 ? "letter" : "letters" }}
+                            available
+                        </p>
+                    </div>
+
+                    <!-- Open Letters Grid Container -->
+                    <div
+                        v-if="openLetters.length > 0"
+                        class="bg-primary rounded-lg"
+                        style="padding: 2px"
                     >
-                        Open Letters
-                    </h1>
-                    <p v-if="letterCount > 0" class="text-sm text-gray-600">
-                        {{ letterCount }} open
-                        {{ letterCount === 1 ? "letter" : "letters" }}
-                        available
-                    </p>
-                </div>
-
-                <!-- Open Letters Grid Container -->
-                <div
-                    v-if="openLetters.length > 0"
-                    class="bg-primary rounded-lg"
-                    style="padding: 2px"
-                >
                     <div
                         class="p-2 sm:p-4 md:p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 items-start justify-items-center"
                     >
@@ -252,9 +263,10 @@ const closeReportModal = () => {
                     </div>
 
                     <!-- Pagination Controls -->
-                    <div
+                    <nav
                         v-if="totalPages > 1"
                         class="mt-6 bg-white border-t border-gray-200 px-6 py-4 rounded-b-lg"
+                        aria-label="Open letters pagination"
                     >
                         <!-- Simple pagination for mobile -->
                         <div
@@ -263,17 +275,22 @@ const closeReportModal = () => {
                             <button
                                 v-if="currentPage > 1"
                                 @click="prevPage"
-                                class="bg-primary hover:bg-pressed text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm"
+                                class="bg-primary hover:bg-pressed text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                                aria-label="Go to previous page"
                             >
                                 Previous
                             </button>
-                            <span class="text-sm text-black font-medium">
+                            <span 
+                                class="text-sm text-black font-medium"
+                                aria-current="page"
+                            >
                                 Page {{ currentPage }} of {{ totalPages }}
                             </span>
                             <button
                                 v-if="currentPage < totalPages"
                                 @click="nextPage"
-                                class="bg-primary hover:bg-pressed text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm"
+                                class="bg-primary hover:bg-pressed text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                                aria-label="Go to next page"
                             >
                                 Next
                             </button>
@@ -304,20 +321,24 @@ const closeReportModal = () => {
                                 </p>
                             </div>
                             <div>
-                                <nav
+                                <div
                                     class="relative z-0 inline-flex rounded-lg shadow-sm -space-x-px"
+                                    role="group"
+                                    aria-label="Pagination"
                                 >
                                     <!-- Previous button -->
                                     <button
                                         v-if="currentPage > 1"
                                         @click="prevPage"
-                                        class="relative inline-flex items-center px-3 py-2 rounded-l-lg border-2 border-primary bg-white text-sm font-medium text-primary hover:bg-pressed hover:text-white transition-colors"
+                                        class="relative inline-flex items-center px-3 py-2 rounded-l-lg border-2 border-primary bg-white text-sm font-medium text-primary hover:bg-pressed hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                                        aria-label="Go to previous page"
                                     >
                                         <span class="sr-only">Previous</span>
                                         <svg
                                             class="h-4 w-4"
                                             fill="currentColor"
                                             viewBox="0 0 20 20"
+                                            aria-hidden="true"
                                         >
                                             <path
                                                 fill-rule="evenodd"
@@ -335,14 +356,17 @@ const closeReportModal = () => {
                                         <button
                                             v-if="page === currentPage"
                                             @click="goToPage(page)"
-                                            class="relative inline-flex items-center px-4 py-2 border-2 border-primary bg-primary text-sm font-semibold text-white"
+                                            class="relative inline-flex items-center px-4 py-2 border-2 border-primary bg-primary text-sm font-semibold text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white"
+                                            :aria-label="`Current page, page ${page}`"
+                                            aria-current="page"
                                         >
                                             {{ page }}
                                         </button>
                                         <button
                                             v-else
                                             @click="goToPage(page)"
-                                            class="relative inline-flex items-center px-4 py-2 border-2 border-primary bg-white text-sm font-medium text-primary hover:bg-pressed hover:text-white transition-colors"
+                                            class="relative inline-flex items-center px-4 py-2 border-2 border-primary bg-white text-sm font-medium text-primary hover:bg-pressed hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                                            :aria-label="`Go to page ${page}`"
                                         >
                                             {{ page }}
                                         </button>
@@ -352,13 +376,15 @@ const closeReportModal = () => {
                                     <button
                                         v-if="currentPage < totalPages"
                                         @click="nextPage"
-                                        class="relative inline-flex items-center px-3 py-2 rounded-r-lg border-2 border-primary bg-white text-sm font-medium text-primary hover:bg-pressed hover:text-white transition-colors"
+                                        class="relative inline-flex items-center px-3 py-2 rounded-r-lg border-2 border-primary bg-white text-sm font-medium text-primary hover:bg-pressed hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                                        aria-label="Go to next page"
                                     >
                                         <span class="sr-only">Next</span>
                                         <svg
                                             class="h-4 w-4"
                                             fill="currentColor"
                                             viewBox="0 0 20 20"
+                                            aria-hidden="true"
                                         >
                                             <path
                                                 fill-rule="evenodd"
@@ -367,16 +393,19 @@ const closeReportModal = () => {
                                             />
                                         </svg>
                                     </button>
-                                </nav>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    </nav>
                 </div>
 
                 <!-- Empty State -->
                 <div
                     v-if="openLetters.length === 0"
                     class="bg-white border-2 border-primary rounded-lg p-12 text-center"
+                    role="status"
+                    aria-live="polite"
+                    aria-atomic="true"
                 >
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -385,6 +414,7 @@ const closeReportModal = () => {
                         stroke-width="1.5"
                         stroke="currentColor"
                         class="size-16 mx-auto text-gray-400 mb-4"
+                        aria-hidden="true"
                     >
                         <path
                             stroke-linecap="round"
@@ -400,6 +430,7 @@ const closeReportModal = () => {
                         back later!
                     </p>
                 </div>
+                </section>
             </div>
         </div>
 

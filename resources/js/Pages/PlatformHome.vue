@@ -177,28 +177,32 @@ onMounted(() => {
         </template>
 
         <div class="py-10 sm:py-12">
-            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
                 <!-- Welcome Section -->
-                <div
-                    class="bg-primary text-white overflow-hidden shadow-xl sm:rounded-2xl p-6 sm:p-8"
+                <section
+                    class="bg-primary text-white overflow-hidden shadow-xl rounded-lg p-6 sm:p-8"
+                    aria-label="Welcome section"
                 >
                     <h1 class="text-2xl sm:text-3xl font-bold mb-2">
                         {{ getWelcomeMessage() }}
                     </h1>
-                    <p class="text-white/90 text-sm sm:text-base max-w-3xl">
+                    <p class="text-white text-sm sm:text-base max-w-3xl">
                         {{ getWelcomeDescription() }}
                     </p>
-                </div>
+                </section>
 
                 <!-- Story of the Week -->
-                <div v-if="props.storyOfTheWeek">
+                <section
+                    v-if="props.storyOfTheWeek"
+                    aria-label="Story of the week"
+                >
                     <h2
-                        class="text-xl sm:text-2xl lg:text-3xl font-bold text-pressed mb-4"
+                        class="text-xl sm:text-2xl lg:text-3xl font-bold text-primary mb-4"
                     >
                         Story of the Week
                     </h2>
                     <div
-                        class="bg-primary rounded-2xl shadow-lg p-4 sm:p-6 md:p-8 lg:p-10"
+                        class="bg-primary rounded-lg shadow-lg p-4 sm:p-6 md:p-8 lg:p-10"
                     >
                         <div
                             class="flex flex-col md:flex-row items-center md:items-start justify-center md:justify-start gap-4 sm:gap-6 md:gap-8"
@@ -219,7 +223,7 @@ onMounted(() => {
                                     text-color="white"
                                 />
                                 <h3
-                                    class="text-xl sm:text-2xl md:text-3xl font-bold text-pressed text-center"
+                                    class="text-xl sm:text-2xl md:text-3xl font-bold text-white text-center"
                                 >
                                     {{ props.storyOfTheWeek.name }}
                                 </h3>
@@ -229,7 +233,7 @@ onMounted(() => {
                                 class="flex-1 min-w-0 flex flex-col items-center md:items-start"
                             >
                                 <div
-                                    class="text-sm sm:text-base md:text-lg text-white/90 leading-relaxed space-y-3 text-center md:text-left"
+                                    class="text-sm sm:text-base md:text-lg text-white leading-relaxed space-y-3 text-center md:text-left"
                                 >
                                     <p
                                         v-for="(
@@ -245,22 +249,25 @@ onMounted(() => {
                             </div>
                         </div>
                     </div>
-                </div>
+                </section>
 
                 <!-- Unread Letters -->
-                <div>
+                <section aria-label="Unread messages">
                     <h2
-                        class="text-xl sm:text-2xl lg:text-3xl font-bold text-pressed mb-4"
+                        class="text-xl sm:text-2xl lg:text-3xl font-bold text-primary mb-4"
                     >
                         Unread Messages
                     </h2>
                     <div
-                        class="bg-primary border border-primary/20 rounded-2xl shadow-sm"
+                        class="bg-primary border border-primary/20 rounded-lg shadow-sm"
                         style="padding: 2px"
                     >
                         <div
                             v-if="isLoadingLetters"
                             class="p-10 text-center text-white/90"
+                            role="status"
+                            aria-live="polite"
+                            aria-atomic="true"
                         >
                             Loading unread messages...
                         </div>
@@ -284,9 +291,10 @@ onMounted(() => {
                             </div>
 
                             <!-- Pagination Controls -->
-                            <div
+                            <nav
                                 v-if="totalPages > 1"
                                 class="mt-6 bg-white border-t border-gray-200 px-6 py-4 rounded-b-lg"
+                                aria-label="Unread messages pagination"
                             >
                                 <!-- Simple pagination for mobile -->
                                 <div
@@ -295,12 +303,14 @@ onMounted(() => {
                                     <button
                                         v-if="currentPage > 1"
                                         @click="prevPage"
-                                        class="bg-primary hover:bg-pressed text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm"
+                                        class="bg-primary hover:bg-pressed text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                                        aria-label="Go to previous page"
                                     >
                                         Previous
                                     </button>
                                     <span
                                         class="text-sm text-black font-medium"
+                                        aria-current="page"
                                     >
                                         Page {{ currentPage }} of
                                         {{ totalPages }}
@@ -308,7 +318,8 @@ onMounted(() => {
                                     <button
                                         v-if="currentPage < totalPages"
                                         @click="nextPage"
-                                        class="bg-primary hover:bg-pressed text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm"
+                                        class="bg-primary hover:bg-pressed text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                                        aria-label="Go to next page"
                                     >
                                         Next
                                     </button>
@@ -341,14 +352,17 @@ onMounted(() => {
                                         </p>
                                     </div>
                                     <div>
-                                        <nav
+                                        <div
                                             class="relative z-0 inline-flex rounded-lg shadow-sm -space-x-px"
+                                            role="group"
+                                            aria-label="Pagination"
                                         >
                                             <!-- Previous button -->
                                             <button
                                                 v-if="currentPage > 1"
                                                 @click="prevPage"
-                                                class="relative inline-flex items-center px-3 py-2 rounded-l-lg border-2 border-primary bg-white text-sm font-medium text-primary hover:bg-pressed hover:text-white transition-colors"
+                                                class="relative inline-flex items-center px-3 py-2 rounded-l-lg border-2 border-primary bg-white text-sm font-medium text-primary hover:bg-pressed hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                                                aria-label="Go to previous page"
                                             >
                                                 <span class="sr-only"
                                                     >Previous</span
@@ -357,6 +371,7 @@ onMounted(() => {
                                                     class="h-4 w-4"
                                                     fill="currentColor"
                                                     viewBox="0 0 20 20"
+                                                    aria-hidden="true"
                                                 >
                                                     <path
                                                         fill-rule="evenodd"
@@ -374,14 +389,17 @@ onMounted(() => {
                                                 <button
                                                     v-if="page === currentPage"
                                                     @click="goToPage(page)"
-                                                    class="relative inline-flex items-center px-4 py-2 border-2 border-primary bg-primary text-sm font-semibold text-white"
+                                                    class="relative inline-flex items-center px-4 py-2 border-2 border-primary bg-primary text-sm font-semibold text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white"
+                                                    :aria-label="`Current page, page ${page}`"
+                                                    aria-current="page"
                                                 >
                                                     {{ page }}
                                                 </button>
                                                 <button
                                                     v-else
                                                     @click="goToPage(page)"
-                                                    class="relative inline-flex items-center px-4 py-2 border-2 border-primary bg-white text-sm font-medium text-primary hover:bg-pressed hover:text-white transition-colors"
+                                                    class="relative inline-flex items-center px-4 py-2 border-2 border-primary bg-white text-sm font-medium text-primary hover:bg-pressed hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                                                    :aria-label="`Go to page ${page}`"
                                                 >
                                                     {{ page }}
                                                 </button>
@@ -391,7 +409,8 @@ onMounted(() => {
                                             <button
                                                 v-if="currentPage < totalPages"
                                                 @click="nextPage"
-                                                class="relative inline-flex items-center px-3 py-2 rounded-r-lg border-2 border-primary bg-white text-sm font-medium text-primary hover:bg-pressed hover:text-white transition-colors"
+                                                class="relative inline-flex items-center px-3 py-2 rounded-r-lg border-2 border-primary bg-white text-sm font-medium text-primary hover:bg-pressed hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                                                aria-label="Go to next page"
                                             >
                                                 <span class="sr-only"
                                                     >Next</span
@@ -400,6 +419,7 @@ onMounted(() => {
                                                     class="h-4 w-4"
                                                     fill="currentColor"
                                                     viewBox="0 0 20 20"
+                                                    aria-hidden="true"
                                                 >
                                                     <path
                                                         fill-rule="evenodd"
@@ -408,95 +428,106 @@ onMounted(() => {
                                                     />
                                                 </svg>
                                             </button>
-                                        </nav>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            </nav>
                         </div>
-                        <div v-else class="p-10 text-center text-white/90">
+                        <div
+                            v-else
+                            class="p-10 text-center text-white"
+                            role="status"
+                            aria-live="polite"
+                            aria-atomic="true"
+                        >
                             No unread messages right now. Check back soon!
                         </div>
                     </div>
-                </div>
+                </section>
 
                 <!-- Main Platform Features -->
-                <div
+                <section
                     class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                    aria-label="Platform features"
                 >
                     <!-- Profile Settings Card -->
-                    <div
-                        class="bg-primary border border-primary/10 rounded-2xl p-6 flex flex-col justify-between shadow-sm"
+                    <article
+                        class="bg-primary border border-primary/10 rounded-lg p-6 flex flex-col justify-between shadow-sm"
                     >
                         <h3 class="text-lg font-semibold text-white mb-4">
                             Profile Settings
                         </h3>
-                        <p class="text-white/90 mb-4">
+                        <p class="text-white mb-4">
                             Update your profile information and preferences
                         </p>
                         <Link
                             :href="route('profile.show')"
-                            class="inline-flex items-center justify-center rounded-full bg-white text-primary px-4 py-2 font-semibold shadow hover:bg-hover hover:text-white transition-colors"
+                            class="inline-flex items-center justify-center rounded-full bg-white text-primary px-4 py-2 font-semibold shadow hover:bg-hover hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white"
+                            aria-label="Go to profile settings"
                         >
                             View Profile
                         </Link>
-                    </div>
+                    </article>
 
                     <!-- Volunteer-specific features -->
-                    <div
+                    <article
                         v-if="isVolunteer"
-                        class="bg-primary border border-primary/10 rounded-2xl p-6 flex flex-col justify-between shadow-sm"
+                        class="bg-primary border border-primary/10 rounded-lg p-6 flex flex-col justify-between shadow-sm"
                     >
                         <h3 class="text-lg font-semibold text-white mb-4">
                             Volunteer Opportunities
                         </h3>
-                        <p class="text-white/90 mb-4">
+                        <p class="text-white mb-4">
                             Find and join volunteer opportunities in your
                             community
                         </p>
                         <button
-                            class="inline-flex items-center justify-center rounded-full bg-white text-primary px-4 py-2 font-semibold shadow hover:bg-hover hover:text-white transition-colors"
+                            class="inline-flex items-center justify-center rounded-full bg-white text-primary px-4 py-2 font-semibold shadow hover:bg-hover hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white"
+                            aria-label="Browse volunteer opportunities"
                         >
                             Browse Opportunities
                         </button>
-                    </div>
+                    </article>
 
                     <!-- Resident-specific features -->
-                    <div
+                    <article
                         v-if="isResident"
-                        class="bg-primary border border-primary/10 rounded-2xl p-6 flex flex-col justify-between shadow-sm"
+                        class="bg-primary border border-primary/10 rounded-lg p-6 flex flex-col justify-between shadow-sm"
                     >
                         <h3 class="text-lg font-semibold text-white mb-4">
                             Community Updates
                         </h3>
-                        <p class="text-white/90 mb-4">
+                        <p class="text-white mb-4">
                             Stay updated with your community news and events
                         </p>
                         <Link
                             :href="route('platform.discover')"
-                            class="inline-flex items-center justify-center rounded-full bg-white text-primary px-4 py-2 font-semibold shadow hover:bg-hover hover:text-white transition-colors"
+                            class="inline-flex items-center justify-center rounded-full bg-white text-primary px-4 py-2 font-semibold shadow hover:bg-hover hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white"
+                            aria-label="View community updates"
                         >
                             View Updates
                         </Link>
-                    </div>
+                    </article>
 
                     <!-- Messages/Communication -->
-                    <div
-                        class="bg-primary border border-primary/10 rounded-2xl p-6 flex flex-col justify-between shadow-sm"
+                    <article
+                        class="bg-primary border border-primary/10 rounded-lg p-6 flex flex-col justify-between shadow-sm"
                     >
                         <h3 class="text-lg font-semibold text-white mb-4">
                             Messages
                         </h3>
-                        <p class="text-white/90 mb-4">
+                        <p class="text-white mb-4">
                             Connect with other community members
                         </p>
                         <Link
                             :href="route('platform.write')"
-                            class="inline-flex items-center justify-center rounded-full bg-white text-primary px-4 py-2 font-semibold shadow hover:bg-hover hover:text-white transition-colors"
+                            class="inline-flex items-center justify-center rounded-full bg-white text-primary px-4 py-2 font-semibold shadow hover:bg-hover hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white"
+                            aria-label="View messages and write new messages"
                         >
                             View Messages
                         </Link>
-                    </div>
-                </div>
+                    </article>
+                </section>
             </div>
         </div>
 

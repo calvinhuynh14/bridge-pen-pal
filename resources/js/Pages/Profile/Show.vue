@@ -319,34 +319,43 @@ const getProfileTitle = () => {
             </h2>
         </template>
 
-        <div class="py-12">
+        <main class="py-12" role="main">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <h1 class="sr-only">{{ getProfileTitle() }}</h1>
                 <!-- Avatar Selection Section -->
-                <div
+                <section
                     v-if="isResident || isVolunteer"
                     class="bg-primary overflow-hidden shadow-xl sm:rounded-lg p-4 sm:p-6 mb-8"
+                    aria-label="Avatar selection"
                 >
                     <AvatarSelector
                         :available-avatars="availableAvatars"
                         :current-avatar="currentAvatar"
                         :user-name="user?.name || ''"
                     />
-                </div>
+                </section>
 
                 <!-- Profile Information Card -->
-                <div
+                <section
                     class="bg-primary overflow-hidden shadow-xl sm:rounded-lg p-4 sm:p-6 mb-8"
+                    aria-label="Profile information"
                 >
-                    <h3
+                    <h2
                         class="text-2xl lg:text-3xl font-semibold text-white mb-4"
                     >
                         Profile Information
-                    </h3>
+                    </h2>
 
-                    <form @submit.prevent="updateProfile">
+                    <form
+                        @submit.prevent="updateProfile"
+                        aria-label="Profile information form"
+                    >
                         <!-- Success Message -->
                         <div
                             v-if="profileUpdateSuccess"
+                            role="status"
+                            aria-live="polite"
+                            aria-atomic="true"
                             class="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg"
                         >
                             <p class="text-base text-green-600 font-medium">
@@ -356,12 +365,12 @@ const getProfileTitle = () => {
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <!-- Name Field (Editable for volunteers only, read-only for residents, hidden for admins) -->
                             <div v-if="!isAdmin">
-                                <label
+                                <InputLabel
                                     for="name"
-                                    class="block text-lg lg:text-xl font-medium text-white mb-2"
-                                >
-                                    Name
-                                </label>
+                                    value="Name"
+                                    color="white"
+                                    size="lg"
+                                />
                                 <TextInput
                                     id="name"
                                     v-model="profileForm.name"
@@ -375,8 +384,14 @@ const getProfileTitle = () => {
                                     :disabled="isResident"
                                     required
                                     :autofocus="!isResident"
+                                    :error-id="
+                                        profileForm.errors.name
+                                            ? 'name-error'
+                                            : undefined
+                                    "
                                 />
                                 <InputError
+                                    id="name-error"
                                     class="mt-2"
                                     :message="profileForm.errors.name"
                                 />
@@ -384,12 +399,12 @@ const getProfileTitle = () => {
 
                             <!-- Email Field (Read-only for volunteers and admins) -->
                             <div v-if="isVolunteer || isAdmin">
-                                <label
+                                <InputLabel
                                     for="email"
-                                    class="block text-lg lg:text-xl font-medium text-white mb-2"
-                                >
-                                    Email Address
-                                </label>
+                                    value="Email Address"
+                                    color="white"
+                                    size="lg"
+                                />
                                 <TextInput
                                     id="email"
                                     :value="user?.email || ''"
@@ -397,6 +412,7 @@ const getProfileTitle = () => {
                                     class="mt-2 block w-full text-base bg-gray-100 cursor-not-allowed opacity-75"
                                     disabled
                                     readonly
+                                    aria-label="Email address (read-only)"
                                 />
                                 <p class="mt-1 text-base text-white/80">
                                     Email address cannot be changed.
@@ -405,20 +421,26 @@ const getProfileTitle = () => {
 
                             <!-- Organization Field (Editable for admins, read-only for volunteers and residents) -->
                             <div v-if="isAdmin">
-                                <label
+                                <InputLabel
                                     for="organization_name"
-                                    class="block text-lg lg:text-xl font-medium text-white mb-2"
-                                >
-                                    Organization Name
-                                </label>
+                                    value="Organization Name"
+                                    color="white"
+                                    size="lg"
+                                />
                                 <TextInput
                                     id="organization_name"
                                     v-model="profileForm.organization_name"
                                     type="text"
                                     class="mt-2 block w-full text-lg"
                                     required
+                                    :error-id="
+                                        profileForm.errors.organization_name
+                                            ? 'organization_name-error'
+                                            : undefined
+                                    "
                                 />
                                 <InputError
+                                    id="organization_name-error"
                                     class="mt-2"
                                     :message="
                                         profileForm.errors.organization_name
@@ -428,18 +450,19 @@ const getProfileTitle = () => {
 
                             <!-- Organization Field (Read-only for volunteers and residents) -->
                             <div v-if="isVolunteer || isResident">
-                                <label
+                                <InputLabel
                                     for="organization"
-                                    class="block text-lg lg:text-xl font-medium text-white mb-2"
-                                >
-                                    Organization
-                                </label>
+                                    value="Organization"
+                                    color="white"
+                                    size="lg"
+                                />
                                 <TextInput
                                     id="organization"
                                     :value="organizationName"
                                     type="text"
                                     class="mt-2 block w-full text-base bg-gray-100 cursor-not-allowed opacity-75"
                                     disabled
+                                    aria-label="Organization (read-only)"
                                 />
                             </div>
                         </div>
@@ -455,43 +478,55 @@ const getProfileTitle = () => {
                                 preset="neutral"
                                 size="small"
                                 :disabled="profileForm.processing"
+                                :isLoading="profileForm.processing"
+                                ariaLabel="Save profile changes"
                             />
                         </div>
                     </form>
-                </div>
+                </section>
 
                 <!-- Account Settings Card (Volunteers and Admins) -->
-                <div
+                <section
                     v-if="isVolunteer || isAdmin"
                     class="bg-primary overflow-hidden shadow-xl sm:rounded-lg p-4 sm:p-6 mb-8"
+                    aria-label="Account settings"
                 >
-                    <h3
+                    <h2
                         class="text-2xl lg:text-3xl font-semibold text-white mb-4"
                     >
                         Account Settings
-                    </h3>
+                    </h2>
 
                     <div class="space-y-6">
                         <!-- Change Password Section -->
                         <div>
-                            <h4
+                            <h3
                                 class="text-base lg:text-lg font-medium text-white mb-2"
                             >
                                 Change Password
-                            </h4>
+                            </h3>
                             <p class="text-lg text-white mb-4">
                                 Update your account password. Your password must
                                 include:
                             </p>
                             <ul
                                 class="text-lg text-white/90 mb-4 list-disc list-inside space-y-1"
+                                role="list"
+                                aria-label="Password requirements"
                             >
-                                <li>At least 8 characters</li>
-                                <li>At least one capital letter</li>
-                                <li>At least one number</li>
-                                <li>At least one special character</li>
+                                <li role="listitem">At least 8 characters</li>
+                                <li role="listitem">
+                                    At least one capital letter
+                                </li>
+                                <li role="listitem">At least one number</li>
+                                <li role="listitem">
+                                    At least one special character
+                                </li>
                             </ul>
-                            <form @submit.prevent="updatePassword">
+                            <form
+                                @submit.prevent="updatePassword"
+                                aria-label="Change password form"
+                            >
                                 <!-- Success Message -->
                                 <div
                                     v-if="passwordUpdateSuccess"
@@ -528,12 +563,12 @@ const getProfileTitle = () => {
                                 </div>
                                 <div class="space-y-4">
                                     <div>
-                                        <label
+                                        <InputLabel
                                             for="current_password"
-                                            class="block text-lg lg:text-xl font-medium text-white mb-2"
-                                        >
-                                            Current Password
-                                        </label>
+                                            value="Current Password"
+                                            color="white"
+                                            size="lg"
+                                        />
                                         <TextInput
                                             id="current_password"
                                             v-model="
@@ -543,15 +578,29 @@ const getProfileTitle = () => {
                                             class="mt-2 block w-full text-lg"
                                             required
                                             autocomplete="current-password"
+                                            :error-id="
+                                                passwordForm.errors
+                                                    .current_password
+                                                    ? 'current_password-error'
+                                                    : undefined
+                                            "
+                                        />
+                                        <InputError
+                                            id="current_password-error"
+                                            class="mt-2"
+                                            :message="
+                                                passwordForm.errors
+                                                    .current_password
+                                            "
                                         />
                                     </div>
                                     <div>
-                                        <label
+                                        <InputLabel
                                             for="password"
-                                            class="block text-lg lg:text-xl font-medium text-white mb-2"
-                                        >
-                                            New Password
-                                        </label>
+                                            value="New Password"
+                                            color="white"
+                                            size="lg"
+                                        />
                                         <TextInput
                                             id="password"
                                             v-model="passwordForm.password"
@@ -559,15 +608,33 @@ const getProfileTitle = () => {
                                             class="mt-2 block w-full text-lg"
                                             required
                                             autocomplete="new-password"
+                                            :error-id="
+                                                getPasswordErrorMessages()
+                                                    .length > 0
+                                                    ? 'password-error'
+                                                    : undefined
+                                            "
+                                        />
+                                        <InputError
+                                            id="password-error"
+                                            class="mt-2"
+                                            :message="
+                                                getPasswordErrorMessages()
+                                                    .length > 0
+                                                    ? getPasswordErrorMessages().join(
+                                                          ' '
+                                                      )
+                                                    : undefined
+                                            "
                                         />
                                     </div>
                                     <div>
-                                        <label
+                                        <InputLabel
                                             for="password_confirmation"
-                                            class="block text-lg lg:text-xl font-medium text-white mb-2"
-                                        >
-                                            Confirm New Password
-                                        </label>
+                                            value="Confirm New Password"
+                                            color="white"
+                                            size="lg"
+                                        />
                                         <TextInput
                                             id="password_confirmation"
                                             v-model="
@@ -577,6 +644,20 @@ const getProfileTitle = () => {
                                             class="mt-2 block w-full text-lg"
                                             required
                                             autocomplete="new-password"
+                                            :error-id="
+                                                passwordForm.errors
+                                                    .password_confirmation
+                                                    ? 'password_confirmation-error'
+                                                    : undefined
+                                            "
+                                        />
+                                        <InputError
+                                            id="password_confirmation-error"
+                                            class="mt-2"
+                                            :message="
+                                                passwordForm.errors
+                                                    .password_confirmation
+                                            "
                                         />
                                     </div>
                                     <div>
@@ -589,24 +670,27 @@ const getProfileTitle = () => {
                                             preset="neutral"
                                             size="small"
                                             :disabled="passwordForm.processing"
+                                            :isLoading="passwordForm.processing"
+                                            ariaLabel="Update password"
                                         />
                                     </div>
                                 </div>
                             </form>
                         </div>
                     </div>
-                </div>
+                </section>
 
                 <!-- Interests Section -->
-                <div
+                <section
                     v-if="isResident || isVolunteer"
                     class="bg-primary overflow-hidden shadow-xl sm:rounded-lg p-4 sm:p-6 mb-8"
+                    aria-label="Interests"
                 >
-                    <h3
+                    <h2
                         class="text-2xl lg:text-3xl font-semibold text-white mb-4"
                     >
                         Interests
-                    </h3>
+                    </h2>
                     <div class="space-y-4">
                         <p class="text-lg text-white mb-4">
                             Select your interests to help match you with pen
@@ -615,6 +699,8 @@ const getProfileTitle = () => {
                         <div
                             v-if="selectedInterestsNames.length > 0"
                             class="flex flex-wrap gap-2 mb-4"
+                            role="list"
+                            aria-label="Selected interests"
                         >
                             <span
                                 v-for="(
@@ -622,12 +708,18 @@ const getProfileTitle = () => {
                                 ) in selectedInterestsNames"
                                 :key="index"
                                 class="px-3 py-1 bg-white text-black rounded-full text-lg font-medium"
+                                role="listitem"
                             >
                                 {{ interestName }}
                             </span>
                         </div>
                         <div v-else class="mb-4">
-                            <p class="text-lg text-white/80 italic">
+                            <p
+                                class="text-base text-white italic"
+                                role="status"
+                                aria-live="polite"
+                                aria-atomic="true"
+                            >
                                 No interests selected yet
                             </p>
                         </div>
@@ -636,20 +728,22 @@ const getProfileTitle = () => {
                             preset="neutral"
                             size="small"
                             @click="showInterestModal = true"
+                            ariaLabel="Open interests selection modal"
                         />
                     </div>
-                </div>
+                </section>
 
                 <!-- Languages Section -->
-                <div
+                <section
                     v-if="isResident || isVolunteer"
                     class="bg-primary overflow-hidden shadow-xl sm:rounded-lg p-4 sm:p-6 mb-8"
+                    aria-label="Languages"
                 >
-                    <h3
+                    <h2
                         class="text-2xl lg:text-3xl font-semibold text-white mb-4"
                     >
                         Languages
-                    </h3>
+                    </h2>
                     <div class="space-y-4">
                         <p class="text-lg text-white mb-4">
                             Select languages you speak to help match you with
@@ -658,6 +752,8 @@ const getProfileTitle = () => {
                         <div
                             v-if="selectedLanguagesNames.length > 0"
                             class="flex flex-wrap gap-2 mb-4"
+                            role="list"
+                            aria-label="Selected languages"
                         >
                             <span
                                 v-for="(
@@ -665,12 +761,18 @@ const getProfileTitle = () => {
                                 ) in selectedLanguagesNames"
                                 :key="index"
                                 class="px-3 py-1 bg-white text-black rounded-full text-lg font-medium"
+                                role="listitem"
                             >
                                 {{ languageName }}
                             </span>
                         </div>
                         <div v-else class="mb-4">
-                            <p class="text-lg text-white/80 italic">
+                            <p
+                                class="text-base text-white italic"
+                                role="status"
+                                aria-live="polite"
+                                aria-atomic="true"
+                            >
                                 No languages selected yet
                             </p>
                         </div>
@@ -679,26 +781,28 @@ const getProfileTitle = () => {
                             preset="neutral"
                             size="small"
                             @click="showLanguageModal = true"
+                            ariaLabel="Open languages selection modal"
                         />
                     </div>
-                </div>
+                </section>
 
                 <!-- Anonymous Mode Section -->
-                <div
+                <section
                     v-if="isResident || isVolunteer"
                     class="bg-primary overflow-hidden shadow-xl sm:rounded-lg p-4 sm:p-6"
+                    aria-label="Privacy settings"
                 >
-                    <h3
+                    <h2
                         class="text-2xl lg:text-3xl font-semibold text-white mb-4"
                     >
                         Privacy Settings
-                    </h3>
+                    </h2>
                     <div class="space-y-4">
                         <div class="flex items-center justify-between">
                             <div>
-                                <h4 class="text-lg font-medium text-white">
+                                <h3 class="text-lg font-medium text-white">
                                     Anonymous Mode
-                                </h4>
+                                </h3>
                                 <p class="text-base text-white mt-1">
                                     Hide your real name in communications. Your
                                     name will be replaced with a random
@@ -710,19 +814,41 @@ const getProfileTitle = () => {
                                         anonymousName
                                     "
                                     class="text-base text-white/80 mt-2 italic"
+                                    role="status"
+                                    aria-live="polite"
+                                    aria-atomic="true"
                                 >
                                     Your anonymous name: {{ anonymousName }}
                                 </p>
                             </div>
                             <label
                                 class="relative inline-flex items-center cursor-pointer"
+                                :for="
+                                    anonymousForm.processing
+                                        ? undefined
+                                        : 'anonymousModeToggle'
+                                "
                             >
+                                <span class="sr-only">
+                                    {{
+                                        anonymousForm.is_anonymous
+                                            ? "Disable anonymous mode"
+                                            : "Enable anonymous mode"
+                                    }}
+                                </span>
                                 <input
+                                    id="anonymousModeToggle"
                                     type="checkbox"
                                     :checked="anonymousForm.is_anonymous"
                                     @change="updateAnonymousMode"
                                     class="sr-only peer"
                                     :disabled="anonymousForm.processing"
+                                    :aria-label="
+                                        anonymousForm.is_anonymous
+                                            ? 'Disable anonymous mode'
+                                            : 'Enable anonymous mode'
+                                    "
+                                    :aria-busy="anonymousForm.processing"
                                 />
                                 <div
                                     :class="[
@@ -735,9 +861,9 @@ const getProfileTitle = () => {
                             </label>
                         </div>
                     </div>
-                </div>
+                </section>
             </div>
-        </div>
+        </main>
 
         <!-- Interest Selection Modal -->
         <InterestSelectionModal

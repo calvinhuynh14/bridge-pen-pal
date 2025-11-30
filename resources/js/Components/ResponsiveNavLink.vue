@@ -6,6 +6,7 @@ const props = defineProps({
     active: Boolean,
     href: String,
     as: String,
+    role: String,
 });
 
 const classes = computed(() => {
@@ -21,6 +22,7 @@ const classes = computed(() => {
             v-if="as == 'button'"
             :class="classes"
             class="w-full text-start"
+            :role="role"
         >
             <slot />
         </button>
@@ -30,11 +32,17 @@ const classes = computed(() => {
             :class="classes"
             class="w-full text-start"
             :href="href"
+            :role="role"
         >
             <slot />
         </a>
 
-        <Link v-else :href="href" :class="classes">
+        <Link 
+            v-else 
+            :href="href" 
+            :class="classes"
+            v-bind="role ? { role } : {}"
+        >
             <slot />
         </Link>
     </div>

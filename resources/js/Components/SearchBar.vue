@@ -10,6 +10,10 @@ const props = defineProps({
         type: String,
         default: "Search...",
     },
+    id: {
+        type: String,
+        default: null,
+    },
 });
 
 const emit = defineEmits(["update:modelValue"]);
@@ -38,6 +42,7 @@ const emit = defineEmits(["update:modelValue"]);
             </svg>
         </div>
         <input
+            :id="id"
             :value="modelValue"
             @input="emit('update:modelValue', $event.target.value)"
             type="text"

@@ -98,7 +98,8 @@ const getItemLabel = (item) => {
                 </h3>
                 <button
                     @click="closeModal"
-                    class="text-gray-400 hover:text-gray-600 transition-colors"
+                    class="text-gray-400 hover:text-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                    aria-label="Close modal"
                 >
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -107,6 +108,7 @@ const getItemLabel = (item) => {
                         stroke-width="1.5"
                         stroke="currentColor"
                         class="w-6 h-6"
+                        aria-hidden="true"
                     >
                         <path
                             stroke-linecap="round"
