@@ -184,7 +184,7 @@ const logout = () => {
                                             "
                                             aria-haspopup="true"
                                             aria-label="User menu"
-                                            class="flex text-sm border-2 border-transparent rounded-full focus:outline-none focus:border-gray-300 focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary transition"
+                                            class="flex items-center gap-1 text-sm border-2 border-transparent rounded-full focus:outline-none focus:border-gray-300 focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary transition"
                                         >
                                             <Avatar
                                                 :src="
@@ -199,6 +199,24 @@ const logout = () => {
                                                 size="sm"
                                                 border-color="white"
                                             />
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                                stroke-width="1.5"
+                                                stroke="currentColor"
+                                                :class="[
+                                                    'size-3 text-white transition-transform',
+                                                    open ? 'rotate-180' : '',
+                                                ]"
+                                                aria-hidden="true"
+                                            >
+                                                <path
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    d="m19.5 8.25-7.5 7.5-7.5-7.5"
+                                                />
+                                            </svg>
                                         </button>
                                     </template>
 

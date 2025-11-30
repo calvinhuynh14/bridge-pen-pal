@@ -144,6 +144,33 @@ Route::middleware([
                     WHERE r.organization_id = ?
                 ', [$organizationId]);
                 $totalResidents = $residentsCount[0]->total ?? 0;
+                
+                // Get featured story for this organization
+                $featuredStoryData = DB::selectOne('
+                    SELECT 
+                        fs.id,
+                        fs.organization_id,
+                        fs.resident_id,
+                        fs.bio,
+                        u.name as resident_name,
+                        u.avatar as resident_avatar,
+                        fs.created_at,
+                        fs.updated_at
+                    FROM featured_story fs
+                    JOIN users u ON fs.resident_id = u.id
+                    WHERE fs.organization_id = ?
+                ', [$organizationId]);
+                
+                $featuredStory = null;
+                if ($featuredStoryData) {
+                    $featuredStory = [
+                        'id' => $featuredStoryData->id,
+                        'resident_id' => $featuredStoryData->resident_id,
+                        'resident_name' => $featuredStoryData->resident_name,
+                        'resident_avatar' => $featuredStoryData->resident_avatar,
+                        'bio' => $featuredStoryData->bio,
+                    ];
+                }
             }
         }
         
@@ -152,6 +179,7 @@ Route::middleware([
             'volunteerApplications' => $volunteerApplications,
             'totalResidents' => $totalResidents,
             'isEmailVerified' => $user->hasVerifiedEmail(),
+            'featuredStory' => $featuredStory ?? null,
         ]);
     })->name('admin.dashboard');
     
@@ -872,6 +900,14 @@ Route::middleware([
     Route::post('/organization', [App\Http\Controllers\OrganizationController::class, 'store']);
     Route::get('/organization/check', [App\Http\Controllers\OrganizationController::class, 'check']);
     
+    // Featured Story routes (require organization setup)
+    Route::middleware(['admin.has.organization'])->group(function () {
+        Route::get('/admin/featured-story', [App\Http\Controllers\FeaturedStoryController::class, 'index'])->name('admin.featured-story.index');
+        Route::get('/admin/featured-story/residents', [App\Http\Controllers\FeaturedStoryController::class, 'getResidents'])->name('admin.featured-story.residents');
+        Route::post('/admin/featured-story', [App\Http\Controllers\FeaturedStoryController::class, 'store'])->name('admin.featured-story.store');
+        Route::delete('/admin/featured-story', [App\Http\Controllers\FeaturedStoryController::class, 'destroy'])->name('admin.featured-story.destroy');
+    });
+    
     // Admin management routes (require organization setup) - Volunteer application actions
     Route::middleware(['admin.has.organization'])->group(function () {
         Route::post('/admin/volunteers/{id}/approve', function ($id) {
@@ -1026,20 +1062,47 @@ Route::middleware([
     Route::get('/platform/home', function () {
         $user = auth()->user();
         
-        // TODO: Fetch story of the week from database
-        $storyOfTheWeek = [
-            'name' => 'Margaret Randy',
-            'profile_photo_url' => null,
-            'bio' => "At 82, Margaret has a way with plants—and people. A former flower shop owner, she knows that even a small bouquet can brighten someone's day.\n\nNow, at Willow Creek Retirement Home, she shares her love of nature through the pen pal platform. Her letters are filled with gardening tips, seasonal stories, and hand-drawn flower sketches. In return, volunteers send her pictures of their own plants—some thriving, some... still learning!\n\nFor Margaret, letters are like seeds—small connections that blossom into something beautiful. Would you like to be her next pen pal?"
-        ];
-        // Set to null to hide story: $storyOfTheWeek = null;
+        // Fetch featured story from database
+        $featuredStory = null;
+        
+        // Get user's organization ID
+        $organizationId = null;
+        if ($user->isResident()) {
+            $resident = DB::selectOne('SELECT organization_id FROM resident WHERE user_id = ?', [$user->id]);
+            $organizationId = $resident?->organization_id;
+        } elseif ($user->isVolunteer()) {
+            $volunteer = DB::selectOne('SELECT organization_id FROM volunteer WHERE user_id = ?', [$user->id]);
+            $organizationId = $volunteer?->organization_id;
+        }
+        
+        if ($organizationId) {
+            $storyData = DB::selectOne('
+                SELECT 
+                    u.name,
+                    u.avatar,
+                    fs.bio
+                FROM featured_story fs
+                JOIN users u ON fs.resident_id = u.id
+                WHERE fs.organization_id = ?
+            ', [$organizationId]);
+            
+            if ($storyData) {
+                $profilePhotoUrl = $storyData->avatar ? '/images/avatars/' . $storyData->avatar : null;
+                
+                $featuredStory = [
+                    'name' => $storyData->name,
+                    'profile_photo_url' => $profilePhotoUrl,
+                    'bio' => $storyData->bio,
+                ];
+            }
+        }
         
         // Unread letters will be fetched via API call on the frontend
         // This allows for pagination without reloading the page
         $unreadLetters = [];
         
         return Inertia::render('PlatformHome', [
-            'storyOfTheWeek' => $storyOfTheWeek,
+            'storyOfTheWeek' => $featuredStory,
             'unreadLetters' => $unreadLetters,
         ]);
     })->name('platform.home');
@@ -1047,7 +1110,7 @@ Route::middleware([
     // Discover page - for finding open letters
     Route::get('/platform/discover', function (Request $request) {
         $user = auth()->user();
-        $userType = $user->user_type;
+        $userType = $user->getUserTypeName();
 
         // Base query for open letters
         $query = "
@@ -1097,20 +1160,63 @@ Route::middleware([
 
         $openLetters = DB::select($query, $params);
 
-        // TODO: Fetch story of the week from database
-        // For now, using placeholder data that can be set by admin
-        // Example structure:
-        $storyOfTheWeek = [
-            'name' => 'Margaret Randy',
-            'profile_photo_url' => null, // or URL to profile photo
-            'bio' => "At 82, Margaret has a way with plants—and people. A former flower shop owner, she knows that even a small bouquet can brighten someone's day.\n\nNow, at Willow Creek Retirement Home, she shares her love of nature through the pen pal platform. Her letters are filled with gardening tips, seasonal stories, and hand-drawn flower sketches. In return, volunteers send her pictures of their own plants—some thriving, some... still learning!\n\nFor Margaret, letters are like seeds—small connections that blossom into something beautiful. Would you like to be her next pen pal?"
-        ];
-        // Set to null to hide: $storyOfTheWeek = null;
+        // Fetch featured story from database
+        $featuredStory = null;
+        
+        // Get user's organization ID
+        $organizationId = null;
+        \Log::info('Discover page - User ID: ' . $user->id);
+        \Log::info('Discover page - User type: ' . $user->getUserTypeName());
+        \Log::info('Discover page - isResident: ' . ($user->isResident() ? 'true' : 'false'));
+        \Log::info('Discover page - isVolunteer: ' . ($user->isVolunteer() ? 'true' : 'false'));
+        
+        if ($user->isResident()) {
+            $resident = DB::selectOne('SELECT organization_id FROM resident WHERE user_id = ?', [$user->id]);
+            \Log::info('Discover page - Resident record: ' . json_encode($resident));
+            $organizationId = $resident?->organization_id;
+            \Log::info('Discover page - Organization ID (resident): ' . ($organizationId ?? 'null'));
+        } elseif ($user->isVolunteer()) {
+            $volunteer = DB::selectOne('SELECT organization_id FROM volunteer WHERE user_id = ?', [$user->id]);
+            \Log::info('Discover page - Volunteer record: ' . json_encode($volunteer));
+            $organizationId = $volunteer?->organization_id;
+            \Log::info('Discover page - Organization ID (volunteer): ' . ($organizationId ?? 'null'));
+        }
+        
+        if ($organizationId) {
+            $storyData = DB::selectOne('
+                SELECT 
+                    u.name,
+                    u.avatar,
+                    fs.bio
+                FROM featured_story fs
+                JOIN users u ON fs.resident_id = u.id
+                WHERE fs.organization_id = ?
+            ', [$organizationId]);
+            
+            \Log::info('Discover page - Featured story query result: ' . json_encode($storyData));
+            
+            if ($storyData) {
+                $profilePhotoUrl = $storyData->avatar ? '/images/avatars/' . $storyData->avatar : null;
+                
+                $featuredStory = [
+                    'name' => $storyData->name,
+                    'profile_photo_url' => $profilePhotoUrl,
+                    'bio' => $storyData->bio,
+                ];
+                \Log::info('Discover page - Featured story data: ' . json_encode($featuredStory));
+            } else {
+                \Log::info('Discover page - No featured story found for organization ID: ' . $organizationId);
+            }
+        } else {
+            \Log::info('Discover page - No organization ID found for user');
+        }
+        
+        \Log::info('Discover page - Final featured story: ' . json_encode($featuredStory));
 
         return Inertia::render('Platform/Discover', [
             'openLetters' => $openLetters,
             'letterCount' => count($openLetters),
-            'storyOfTheWeek' => $storyOfTheWeek
+            'storyOfTheWeek' => $featuredStory
         ]);
     })->name('platform.discover');
     

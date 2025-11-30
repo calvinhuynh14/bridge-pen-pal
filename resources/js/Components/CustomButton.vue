@@ -34,8 +34,8 @@ const props = defineProps({
 });
 
 const sizeClasses = {
-    small: "px-4 py-2 text-lg md:px-6 md:py-3 md:text-lg",
-    medium: "px-6 py-3 text-lg md:px-8 md:py-4 md:text-xl",
+    small: "px-2 py-1 text-sm md:px-4 md:py-2 md:text-sm",
+    medium: "px-4 py-2 text-md md:px-6 md:py-3 md:text-md",
     large: "px-8 py-4 text-xl md:px-12 md:py-6 md:text-2xl",
 };
 
@@ -46,7 +46,8 @@ const presetClasses = {
     neutral:
         "bg-white text-primary hover:bg-hover hover:text-white border-4 border-primary hover:border-hover",
     success: "bg-green-600 text-white hover:bg-green-700 hover:text-white",
-    warning: "bg-accent text-black hover:bg-primary hover:text-white",
+    warning: "bg-red-600 text-white hover:bg-red-700 hover:text-white",
+    error: "bg-red-600 text-white hover:bg-red-700 hover:text-white",
     dark: "bg-hover text-white hover:bg-pressed hover:text-white",
 };
 </script>

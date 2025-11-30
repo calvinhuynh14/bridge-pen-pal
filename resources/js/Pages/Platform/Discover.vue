@@ -24,6 +24,16 @@ const props = defineProps({
     },
 });
 
+// Debug logging
+console.log('Discover page - Props received:', {
+    openLetters: props.openLetters?.length || 0,
+    letterCount: props.letterCount,
+    storyOfTheWeek: props.storyOfTheWeek,
+    storyOfTheWeekType: typeof props.storyOfTheWeek,
+    storyOfTheWeekIsNull: props.storyOfTheWeek === null,
+    storyOfTheWeekIsUndefined: props.storyOfTheWeek === undefined,
+});
+
 // Get current user from page props
 const page = usePage();
 const user = computed(() => page.props.auth.user);
@@ -160,20 +170,20 @@ const closeReportModal = () => {
 
         <div class="py-2">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <!-- Story of the Week Section -->
+                <!-- Featured Story Section -->
                 <section 
-                    v-if="storyOfTheWeek" 
-                    class="mb-2"
-                    aria-label="Story of the week"
+                    v-if="props.storyOfTheWeek" 
+                    class="mb-6"
+                    aria-label="Featured story"
                 >
-                    <h2
-                        class="text-xl sm:text-2xl lg:text-3xl font-bold text-primary mb-1"
-                    >
-                        Story of the Week
-                    </h2>
                     <div
-                        class="bg-primary rounded-lg p-4 sm:p-6 md:p-8 lg:p-10"
+                        class="bg-primary text-white overflow-hidden shadow-xl rounded-lg p-6 sm:p-8"
                     >
+                        <h2
+                            class="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-4"
+                        >
+                            Featured Story
+                        </h2>
                         <div
                             class="flex flex-col md:flex-row items-center md:items-start justify-center md:justify-start gap-4 sm:gap-6 md:gap-8"
                         >
@@ -182,8 +192,8 @@ const closeReportModal = () => {
                                 class="flex-shrink-0 flex flex-col items-center gap-3 sm:gap-4"
                             >
                                 <Avatar
-                                    :src="storyOfTheWeek.profile_photo_url"
-                                    :name="storyOfTheWeek.name"
+                                    :src="props.storyOfTheWeek.profile_photo_url"
+                                    :name="props.storyOfTheWeek.name"
                                     size="custom"
                                     custom-size="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40"
                                     custom-text-size="text-3xl sm:text-4xl md:text-5xl"
@@ -194,7 +204,7 @@ const closeReportModal = () => {
                                 <h3
                                     class="text-xl sm:text-2xl md:text-3xl font-bold text-white text-center"
                                 >
-                                    {{ storyOfTheWeek.name }}
+                                    {{ props.storyOfTheWeek.name }}
                                 </h3>
                             </div>
 
@@ -208,7 +218,7 @@ const closeReportModal = () => {
                                     <p
                                         v-for="(
                                             paragraph, index
-                                        ) in storyOfTheWeek.bio?.split('\n') ||
+                                        ) in props.storyOfTheWeek.bio?.split('\n') ||
                                         []"
                                         :key="index"
                                     >

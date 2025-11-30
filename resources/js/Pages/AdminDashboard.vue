@@ -3,6 +3,7 @@ import AppLayout from "@/Layouts/AppLayout.vue";
 import { Head, Link, router, useForm } from "@inertiajs/vue3";
 import CustomButton from "@/Components/CustomButton.vue";
 import OrganizationSetupModal from "@/Components/OrganizationSetupModal.vue";
+import FeaturedStoryManagement from "@/Components/FeaturedStoryManagement.vue";
 import { ref, onMounted, computed } from "vue";
 
 const props = defineProps({
@@ -21,6 +22,10 @@ const props = defineProps({
     isEmailVerified: {
         type: Boolean,
         default: true,
+    },
+    featuredStory: {
+        type: Object,
+        default: null,
     },
 });
 
@@ -205,6 +210,12 @@ const pendingVolunteers = computed(() => {
                         </div>
                     </div>
                 </div>
+
+                <!-- Featured Story Management -->
+                <FeaturedStoryManagement
+                    v-if="!needsOrganizationSetup"
+                    :featuredStory="featuredStory"
+                />
             </div>
         </div>
 

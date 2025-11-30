@@ -191,19 +191,19 @@ onMounted(() => {
                     </p>
                 </section>
 
-                <!-- Story of the Week -->
+                <!-- Featured Story -->
                 <section
                     v-if="props.storyOfTheWeek"
-                    aria-label="Story of the week"
+                    aria-label="Featured story"
                 >
-                    <h2
-                        class="text-xl sm:text-2xl lg:text-3xl font-bold text-primary mb-4"
-                    >
-                        Story of the Week
-                    </h2>
                     <div
-                        class="bg-primary rounded-lg shadow-lg p-4 sm:p-6 md:p-8 lg:p-10"
+                        class="bg-primary text-white overflow-hidden shadow-xl rounded-lg p-6 sm:p-8"
                     >
+                        <h2
+                            class="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-4"
+                        >
+                            Featured Story
+                        </h2>
                         <div
                             class="flex flex-col md:flex-row items-center md:items-start justify-center md:justify-start gap-4 sm:gap-6 md:gap-8"
                         >

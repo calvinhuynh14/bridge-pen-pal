@@ -3,6 +3,7 @@ import { ref, watch } from "vue";
 import { useForm } from "@inertiajs/vue3";
 import axios from "axios";
 import Modal from "@/Components/Modal.vue";
+import CustomButton from "@/Components/CustomButton.vue";
 
 const props = defineProps({
     show: {
@@ -105,32 +106,14 @@ const regenerateUsername = async () => {
 </script>
 
 <template>
-    <Modal :show="show" @close="closeModal" max-width="md">
-        <div class="p-6 bg-background">
-            <!-- Modal Header -->
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-lg font-semibold text-black">
-                    Create Resident
-                </h3>
-                <button
-                    @click="closeModal"
-                    class="text-black hover:text-gray-600 transition-colors"
-                >
-                    <svg
-                        class="w-6 h-6"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                    >
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M6 18L18 6M6 6l12 12"
-                        ></path>
-                    </svg>
-                </button>
-            </div>
+    <Modal 
+        :show="show" 
+        @close="closeModal" 
+        max-width="md"
+        title="Create Resident"
+        header-bg="primary"
+    >
+        <div class="bg-white px-6 py-4">
 
             <!-- Form -->
             <form @submit.prevent="submitForm" class="space-y-6">
@@ -300,24 +283,24 @@ const regenerateUsername = async () => {
                 </div>
 
                 <!-- Action Buttons -->
-                <div
-                    class="flex justify-end space-x-3 pt-4 border-t border-gray-200"
-                >
-                    <button
-                        type="button"
-                        @click="closeModal"
-                        class="px-6 py-3 bg-white border-2 border-primary text-primary rounded-lg font-medium hover:bg-pressed hover:text-white transition-colors"
-                    >
-                        Cancel
-                    </button>
-                    <button
+                <div class="bg-gray-50 -mx-6 -mb-4 px-6 py-4 mt-6 sm:flex sm:flex-row-reverse sm:gap-3">
+                    <CustomButton
+                        :text="form.processing ? 'Creating...' : 'Create Resident'"
+                        preset="primary"
+                        size="small"
                         type="submit"
+                        class="w-full sm:w-auto"
                         :disabled="form.processing"
-                        class="px-6 py-3 bg-primary hover:bg-pressed text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        <span v-if="form.processing">Creating...</span>
-                        <span v-else>Create Resident</span>
-                    </button>
+                    />
+                    <CustomButton
+                        text="Cancel"
+                        preset="neutral"
+                        size="small"
+                        type="button"
+                        class="mt-3 w-full sm:mt-0 sm:w-auto"
+                        @click="closeModal"
+                        :disabled="form.processing"
+                    />
                 </div>
             </form>
         </div>

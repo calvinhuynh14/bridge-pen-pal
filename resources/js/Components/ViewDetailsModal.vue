@@ -1,6 +1,7 @@
 <script setup>
 import Modal from "@/Components/Modal.vue";
 import Avatar from "@/Components/Avatar.vue";
+import CustomButton from "@/Components/CustomButton.vue";
 import { ref } from "vue";
 
 const props = defineProps({
@@ -64,32 +65,14 @@ const formatDate = (dateString) => {
 </script>
 
 <template>
-    <Modal :show="show" @close="closeModal" max-width="md">
-        <div class="p-6 bg-background">
-            <!-- Modal Header -->
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-lg font-semibold text-black">
-                    {{ getItemTitle() }}
-                </h3>
-                <button
-                    @click="closeModal"
-                    class="text-gray-400 hover:text-pressed transition-colors"
-                >
-                    <svg
-                        class="w-6 h-6"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                    >
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M6 18L18 6M6 6l12 12"
-                        ></path>
-                    </svg>
-                </button>
-            </div>
+    <Modal 
+        :show="show" 
+        @close="closeModal" 
+        max-width="md"
+        :title="getItemTitle()"
+        header-bg="primary"
+    >
+        <div class="bg-white px-6 py-4">
 
             <!-- Modal Body -->
             <div v-if="selectedItem" class="space-y-6">
@@ -239,13 +222,14 @@ const formatDate = (dateString) => {
             </div>
 
             <!-- Modal Footer -->
-            <div class="flex justify-end mt-8 pt-6 border-t-2 border-primary">
-                <button
+            <div class="bg-gray-50 px-6 py-4 sm:flex sm:flex-row-reverse sm:gap-3">
+                <CustomButton
+                    text="Close"
+                    preset="neutral"
+                    size="small"
+                    class="w-full sm:w-auto"
                     @click="closeModal"
-                    class="bg-primary hover:bg-pressed text-black px-6 py-3 rounded-lg text-sm font-medium transition-colors shadow-sm"
-                >
-                    Close
-                </button>
+                />
             </div>
         </div>
     </Modal>

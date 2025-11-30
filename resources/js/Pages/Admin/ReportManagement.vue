@@ -5,6 +5,7 @@ import { ref, computed, watch, onUnmounted } from "vue";
 import DataTable from "@/Components/DataTable.vue";
 import Modal from "@/Components/Modal.vue";
 import CustomButton from "@/Components/CustomButton.vue";
+import Dropdown from "@/Components/Dropdown.vue";
 
 const props = defineProps({
     reports: {
@@ -230,47 +231,99 @@ const statusFilters = [
                     </div>
                 </div>
 
-                <!-- Status Filter Buttons -->
-                <div class="mb-6 flex flex-wrap gap-2">
-                    <button
-                        v-for="filter in statusFilters"
-                        :key="filter.value"
-                        @click="setStatusFilter(filter.value)"
-                        :class="[
-                            'px-4 py-2 rounded-lg font-medium text-white transition-colors',
-                            activeStatusFilter === filter.value
-                                ? filter.color + ' opacity-100'
-                                : filter.color + ' opacity-60 hover:opacity-80',
-                        ]"
+                <!-- Status Filter Dropdown -->
+                <div class="mb-6">
+                    <Dropdown
+                        align="left"
+                        width="48"
+                        aria-label="Filter reports by status"
                     >
-                        {{ filter.label }}
-                    </button>
+                        <template #trigger="{ open }">
+                            <button
+                                type="button"
+                                :aria-expanded="open ? 'true' : 'false'"
+                                aria-haspopup="true"
+                                aria-label="Filter reports by status"
+                                class="inline-flex items-center gap-2 px-2 py-1 text-sm md:px-4 md:py-2 md:text-sm rounded-lg font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 bg-primary text-white hover:bg-hover hover:text-white cursor-pointer"
+                            >
+                                <span>
+                                    {{
+                                        statusFilters.find(
+                                            (f) =>
+                                                f.value === activeStatusFilter
+                                        )?.label || "Filter Status"
+                                    }}
+                                </span>
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke-width="1.5"
+                                    stroke="currentColor"
+                                    :class="[
+                                        'size-4 transition-transform',
+                                        open ? 'rotate-180' : '',
+                                    ]"
+                                    aria-hidden="true"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        d="m19.5 8.25-7.5 7.5-7.5-7.5"
+                                    />
+                                </svg>
+                            </button>
+                        </template>
+                        <template #content>
+                            <div class="py-1">
+                                <button
+                                    v-for="filter in statusFilters"
+                                    :key="filter.value"
+                                    @click="setStatusFilter(filter.value)"
+                                    :class="[
+                                        'block w-full text-left px-4 py-2 text-sm text-white transition-colors',
+                                        activeStatusFilter === filter.value
+                                            ? 'bg-pressed font-semibold'
+                                            : 'hover:bg-pressed hover:bg-opacity-80',
+                                    ]"
+                                    :aria-label="`Filter by ${filter.label}`"
+                                    :aria-pressed="
+                                        activeStatusFilter === filter.value
+                                    "
+                                >
+                                    {{ filter.label }}
+                                </button>
+                            </div>
+                        </template>
+                    </Dropdown>
                 </div>
 
                 <!-- DataTable -->
-                <DataTable
-                    type="report"
-                    :items="formattedReports"
-                    :search-query="searchQuery"
-                    @update:search-query="searchQuery = $event"
-                    @view="openDetailsModal"
-                    @resolve="handleResolve"
-                    @dismiss="handleDismiss"
-                    @ban="handleBan"
-                    @view-user="handleViewUser"
-                />
+                <div
+                    class="bg-white overflow-hidden shadow-lg rounded-lg border-2 border-primary p-6"
+                >
+                    <DataTable
+                        type="report"
+                        :items="formattedReports"
+                        :search-query="searchQuery"
+                        @update:search-query="searchQuery = $event"
+                        @view="openDetailsModal"
+                        @resolve="handleResolve"
+                        @dismiss="handleDismiss"
+                        @ban="handleBan"
+                        @view-user="handleViewUser"
+                    />
+                </div>
 
                 <!-- Report Details Modal -->
                 <Modal
                     :show="showDetailsModal"
                     @close="closeDetailsModal"
                     max-width="2xl"
+                    title="Report Details"
+                    header-bg="primary"
                 >
-                    <div class="p-6 bg-background" v-if="selectedReport">
-                        <h2 class="text-2xl font-bold text-black mb-4">
-                            Report Details
-                        </h2>
-
+                    <div class="bg-white px-6 py-4" v-if="selectedReport">
                         <div class="space-y-4">
                             <!-- Report Info -->
                             <div>
@@ -501,6 +554,19 @@ const statusFilters = [
                                 />
                             </div>
                         </div>
+                    </div>
+
+                    <!-- Footer -->
+                    <div
+                        class="bg-gray-50 px-6 py-4 sm:flex sm:flex-row-reverse sm:gap-3"
+                    >
+                        <CustomButton
+                            text="Close"
+                            preset="neutral"
+                            size="small"
+                            class="w-full sm:w-auto"
+                            @click="closeDetailsModal"
+                        />
                     </div>
                 </Modal>
             </div>

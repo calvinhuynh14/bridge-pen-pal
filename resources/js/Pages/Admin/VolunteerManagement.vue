@@ -4,6 +4,7 @@ import { Head, Link, useForm } from "@inertiajs/vue3";
 import { ref, computed } from "vue";
 import ViewDetailsModal from "@/Components/ViewDetailsModal.vue";
 import RejectionReasonModal from "@/Components/RejectionReasonModal.vue";
+import DeleteConfirmationModal from "@/Components/DeleteConfirmationModal.vue";
 import DataTable from "@/Components/DataTable.vue";
 
 const props = defineProps({
@@ -43,6 +44,8 @@ const showModal = ref(false);
 const selectedApplication = ref(null);
 const showRejectionModal = ref(false);
 const applicationToReject = ref(null);
+const showDeleteModal = ref(false);
+const applicationToDelete = ref(null);
 
 // Computed properties for total counts from backend
 const pendingCount = computed(() => {
@@ -97,14 +100,24 @@ const handleRejectionClose = () => {
 };
 
 const deleteApplication = (applicationId) => {
-    if (
-        confirm(
-            "Are you sure you want to delete this volunteer application? This action cannot be undone."
-        )
-    ) {
-        const form = useForm({});
-        form.delete(route("admin.volunteers.delete", applicationId));
+    // Find the application object
+    const application = props.volunteerApplications.find(
+        (app) => app.id === applicationId
+    );
+    if (application) {
+        applicationToDelete.value = application;
+        showDeleteModal.value = true;
     }
+};
+
+const closeDeleteModal = () => {
+    showDeleteModal.value = false;
+    applicationToDelete.value = null;
+};
+
+const handleVolunteerDeleted = () => {
+    // Refresh the page to show updated data
+    window.location.reload();
 };
 
 // DataTable event handlers
@@ -219,6 +232,15 @@ const handleDelete = (application) => {
             :application="applicationToReject"
             @close="handleRejectionClose"
             @confirm="handleRejectionConfirm"
+        />
+
+        <!-- Delete Confirmation Modal -->
+        <DeleteConfirmationModal
+            :show="showDeleteModal"
+            :item="applicationToDelete"
+            item-type="volunteer"
+            @close="closeDeleteModal"
+            @deleted="handleVolunteerDeleted"
         />
     </AppLayout>
 </template>

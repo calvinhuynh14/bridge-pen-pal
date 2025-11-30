@@ -22,6 +22,14 @@ const props = defineProps({
         type: String,
         default: null,
     },
+    showCloseButton: {
+        type: Boolean,
+        default: true,
+    },
+    headerBg: {
+        type: String,
+        default: 'primary', // 'primary' or 'white'
+    },
 });
 
 const emit = defineEmits(['close']);
@@ -115,6 +123,18 @@ const maxWidthClass = computed(() => {
         '2xl': 'sm:max-w-2xl',
     }[props.maxWidth];
 });
+
+const headerBgClass = computed(() => {
+    return props.headerBg === 'primary' 
+        ? 'bg-primary' 
+        : 'bg-white';
+});
+
+const headerTextClass = computed(() => {
+    return props.headerBg === 'primary' 
+        ? 'text-black' 
+        : 'text-gray-900';
+});
 </script>
 
 <template>
@@ -156,12 +176,53 @@ const maxWidthClass = computed(() => {
             >
                 <div 
                     v-show="show" 
-                    class="mb-6 bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-xl transform transition-all sm:w-full sm:mx-auto" 
+                    class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:mx-auto" 
                     :class="maxWidthClass"
+                    @click.stop
                 >
-                    <!-- Hidden title and description for screen readers if provided -->
-                    <h2 v-if="props.title && titleId" :id="titleId" class="sr-only">{{ props.title }}</h2>
-                    <p v-if="props.description && descriptionId" :id="descriptionId" class="sr-only">{{ props.description }}</p>
+                    <!-- Header with title and close button -->
+                    <div v-if="props.title || props.showCloseButton" :class="['px-6 py-4', headerBgClass]">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <h3 
+                                    v-if="props.title"
+                                    :id="titleId"
+                                    :class="['text-lg font-semibold', headerTextClass]"
+                                >
+                                    {{ props.title }}
+                                </h3>
+                                <p 
+                                    v-if="props.description" 
+                                    :id="descriptionId"
+                                    :class="['mt-1 text-sm', headerBg === 'primary' ? 'text-black/80' : 'text-gray-600']"
+                                >
+                                    {{ props.description }}
+                                </p>
+                            </div>
+                            <button
+                                v-if="props.showCloseButton && props.closeable"
+                                @click="close"
+                                :class="['ml-4 flex-shrink-0', headerBg === 'primary' ? 'text-black hover:text-black/80' : 'text-gray-400 hover:text-gray-600']"
+                                aria-label="Close modal"
+                            >
+                                <svg
+                                    class="w-6 h-6"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                    aria-hidden="true"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M6 18L18 6M6 6l12 12"
+                                    />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Content slot -->
                     <slot v-if="showSlot"/>
                 </div>
             </transition>
