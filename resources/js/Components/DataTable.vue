@@ -359,7 +359,11 @@ const truncateText = (text, maxLength = 50) => {
     <div>
         <!-- Search Bar -->
         <div class="mb-4">
+            <label :for="`search-${type}`" class="sr-only">
+                Search {{ type }}s
+            </label>
             <SearchBar
+                :id="`search-${type}`"
                 v-model="localSearchQuery"
                 :placeholder="`Search ${type}s...`"
             />

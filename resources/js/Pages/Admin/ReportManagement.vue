@@ -180,59 +180,68 @@ const statusFilters = [
     <Head title="Report Management" />
 
     <AppLayout title="Report Management">
-        <div class="py-12">
-            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                <!-- Statistics -->
-                <div
-                    class="bg-primary overflow-hidden shadow-lg rounded-lg p-6 mb-6 border-2 border-primary"
-                >
-                    <h3
-                        class="text-lg font-semibold text-white mb-4 text-center"
+        <main role="main" aria-label="Report Management">
+            <div class="py-12">
+                <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                    <h1 class="sr-only">Report Management</h1>
+                    <!-- Statistics -->
+                    <section
+                        aria-label="Report Statistics"
+                        class="bg-primary overflow-hidden shadow-lg rounded-lg p-6 mb-6 border-2 border-primary"
                     >
-                        Report Statistics
-                    </h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                        <div
-                            class="text-center bg-white bg-opacity-20 rounded-lg p-4"
+                        <h2
+                            class="text-lg font-semibold text-white mb-4 text-center"
                         >
-                            <div class="text-3xl font-bold text-white mb-2">
-                                {{ statistics.total }}
+                            Report Statistics
+                        </h2>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6" role="list">
+                            <div
+                                class="text-center bg-white bg-opacity-20 rounded-lg p-4"
+                                role="listitem"
+                                aria-label="Total Reports"
+                            >
+                                <div class="text-3xl font-bold text-white mb-2" aria-hidden="true">
+                                    {{ statistics.total }}
+                                </div>
+                                <div
+                                    class="text-white sm:text-sm lg:text-lg font-medium"
+                                >
+                                    Total Reports: {{ statistics.total }}
+                                </div>
                             </div>
                             <div
-                                class="text-white sm:text-sm lg:text-lg font-medium"
+                                class="text-center bg-white bg-opacity-20 rounded-lg p-4"
+                                role="listitem"
+                                aria-label="Pending Reports"
                             >
-                                Total Reports
-                            </div>
-                        </div>
-                        <div
-                            class="text-center bg-white bg-opacity-20 rounded-lg p-4"
-                        >
-                            <div class="text-3xl font-bold text-accent mb-2">
-                                {{ statistics.pending }}
+                                <div class="text-3xl font-bold text-accent mb-2" aria-hidden="true">
+                                    {{ statistics.pending }}
+                                </div>
+                                <div
+                                    class="text-white sm:text-sm lg:text-lg font-medium"
+                                >
+                                    Pending Reports: {{ statistics.pending }}
+                                </div>
                             </div>
                             <div
-                                class="text-white sm:text-sm lg:text-lg font-medium"
+                                class="text-center bg-white bg-opacity-20 rounded-lg p-4"
+                                role="listitem"
+                                aria-label="Resolved Reports"
                             >
-                                Pending Reports
+                                <div class="text-3xl font-bold text-green-300 mb-2" aria-hidden="true">
+                                    {{ statistics.resolved }}
+                                </div>
+                                <div
+                                    class="text-white sm:text-sm lg:text-lg font-medium"
+                                >
+                                    Resolved Reports: {{ statistics.resolved }}
+                                </div>
                             </div>
                         </div>
-                        <div
-                            class="text-center bg-white bg-opacity-20 rounded-lg p-4"
-                        >
-                            <div class="text-3xl font-bold text-green-300 mb-2">
-                                {{ statistics.resolved }}
-                            </div>
-                            <div
-                                class="text-white sm:text-sm lg:text-lg font-medium"
-                            >
-                                Resolved Reports
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                    </section>
 
-                <!-- Status Filter Dropdown -->
-                <div class="mb-6">
+                    <!-- Status Filter Dropdown -->
+                    <section aria-label="Filter Reports" class="mb-6">
                     <Dropdown
                         align="left"
                         width="48"
@@ -296,23 +305,25 @@ const statusFilters = [
                             </div>
                         </template>
                     </Dropdown>
-                </div>
+                    </section>
 
-                <!-- DataTable -->
-                <div
-                    class="bg-white overflow-hidden shadow-lg rounded-lg border-2 border-primary p-6"
-                >
-                    <DataTable
-                        type="report"
-                        :items="formattedReports"
-                        :search-query="searchQuery"
-                        @update:search-query="searchQuery = $event"
-                        @view="openDetailsModal"
-                        @resolve="handleResolve"
-                        @dismiss="handleDismiss"
-                        @ban="handleBan"
-                        @view-user="handleViewUser"
-                    />
+                    <!-- DataTable -->
+                    <section
+                        aria-label="Reports Table"
+                        class="bg-white overflow-hidden shadow-lg rounded-lg border-2 border-primary p-6"
+                    >
+                        <DataTable
+                            type="report"
+                            :items="formattedReports"
+                            :search-query="searchQuery"
+                            @update:search-query="searchQuery = $event"
+                            @view="openDetailsModal"
+                            @resolve="handleResolve"
+                            @dismiss="handleDismiss"
+                            @ban="handleBan"
+                            @view-user="handleViewUser"
+                        />
+                    </section>
                 </div>
 
                 <!-- Report Details Modal -->
@@ -551,10 +562,11 @@ const statusFilters = [
                                             selectedReport.reported_user_id
                                         )
                                     "
-                                />
-                            </div>
-                        </div>
-                    </div>
+                    />
+                    </section>
+                </div>
+            </div>
+        </main>
 
                     <!-- Footer -->
                     <div

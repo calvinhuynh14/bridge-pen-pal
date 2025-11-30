@@ -119,10 +119,11 @@ const regenerateUsername = async () => {
             <form @submit.prevent="submitForm" class="space-y-6">
                 <!-- Name Field -->
                 <div>
-                    <label class="block text-sm font-medium text-black mb-2">
+                    <label for="create-resident-name" class="block text-sm font-medium text-black mb-2">
                         Full Name
                     </label>
                     <input
+                        id="create-resident-name"
                         v-model="form.name"
                         type="text"
                         class="w-full px-4 py-3 border-2 border-primary rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
@@ -140,11 +141,12 @@ const regenerateUsername = async () => {
 
                 <!-- Resident ID Field (Auto-generated) -->
                 <div>
-                    <label class="block text-sm font-medium text-black mb-2">
+                    <label for="create-resident-username" class="block text-sm font-medium text-black mb-2">
                         Resident ID (Username)
                     </label>
                     <div class="flex flex-col sm:flex-row gap-2">
                         <input
+                            id="create-resident-username"
                             v-model="form.username"
                             type="text"
                             maxlength="6"
@@ -181,10 +183,11 @@ const regenerateUsername = async () => {
 
                 <!-- Date of Birth Field -->
                 <div>
-                    <label class="block text-sm font-medium text-black mb-2">
+                    <label for="create-resident-dob" class="block text-sm font-medium text-black mb-2">
                         Date of Birth
                     </label>
                     <input
+                        id="create-resident-dob"
                         v-model="form.date_of_birth"
                         type="date"
                         class="w-full px-4 py-3 border-2 border-primary rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
@@ -203,11 +206,13 @@ const regenerateUsername = async () => {
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label
+                            for="create-resident-room"
                             class="block text-sm font-medium text-black mb-2"
                         >
                             Room Number
                         </label>
                         <input
+                            id="create-resident-room"
                             v-model="form.room_number"
                             type="text"
                             class="w-full px-4 py-3 border-2 border-primary rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
@@ -226,11 +231,13 @@ const regenerateUsername = async () => {
 
                     <div>
                         <label
+                            for="create-resident-floor"
                             class="block text-sm font-medium text-black mb-2"
                         >
                             Floor Number
                         </label>
                         <input
+                            id="create-resident-floor"
                             v-model="form.floor_number"
                             type="text"
                             class="w-full px-4 py-3 border-2 border-primary rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
@@ -250,11 +257,12 @@ const regenerateUsername = async () => {
 
                 <!-- PIN Code Field -->
                 <div>
-                    <label class="block text-sm font-medium text-black mb-2">
+                    <label for="create-resident-pin" class="block text-sm font-medium text-black mb-2">
                         PIN Code
                     </label>
                     <div class="flex flex-col sm:flex-row gap-2">
                         <input
+                            id="create-resident-pin"
                             v-model="form.pin_code"
                             type="text"
                             maxlength="6"

@@ -132,7 +132,7 @@ const headerBgClass = computed(() => {
 
 const headerTextClass = computed(() => {
     return props.headerBg === 'primary' 
-        ? 'text-black' 
+        ? 'text-white' 
         : 'text-gray-900';
 });
 </script>
@@ -194,7 +194,7 @@ const headerTextClass = computed(() => {
                                 <p 
                                     v-if="props.description" 
                                     :id="descriptionId"
-                                    :class="['mt-1 text-sm', headerBg === 'primary' ? 'text-black/80' : 'text-gray-600']"
+                                    :class="['mt-1 text-sm', headerBg === 'primary' ? 'text-white' : 'text-gray-600']"
                                 >
                                     {{ props.description }}
                                 </p>
@@ -202,7 +202,7 @@ const headerTextClass = computed(() => {
                             <button
                                 v-if="props.showCloseButton && props.closeable"
                                 @click="close"
-                                :class="['ml-4 flex-shrink-0', headerBg === 'primary' ? 'text-black hover:text-black/80' : 'text-gray-400 hover:text-gray-600']"
+                                :class="['ml-4 flex-shrink-0 transition-colors', headerBg === 'primary' ? 'text-white hover:text-white/80' : 'text-gray-400 hover:text-gray-600']"
                                 aria-label="Close modal"
                             >
                                 <svg

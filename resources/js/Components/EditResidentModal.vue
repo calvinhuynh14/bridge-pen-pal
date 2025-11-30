@@ -78,10 +78,11 @@ const generateNewPin = () => {
             <form @submit.prevent="submitForm" class="space-y-6">
                 <!-- Name Field -->
                 <div>
-                    <label class="block text-sm font-medium text-black mb-2">
+                    <label for="edit-resident-name" class="block text-sm font-medium text-black mb-2">
                         Full Name
                     </label>
                     <input
+                        id="edit-resident-name"
                         v-model="form.name"
                         type="text"
                         class="w-full px-4 py-3 border-2 border-primary rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
@@ -100,11 +101,13 @@ const generateNewPin = () => {
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label
+                            for="edit-resident-room"
                             class="block text-sm font-medium text-black mb-2"
                         >
                             Room Number
                         </label>
                         <input
+                            id="edit-resident-room"
                             v-model="form.room_number"
                             type="text"
                             class="w-full px-4 py-3 border-2 border-primary rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
@@ -123,11 +126,13 @@ const generateNewPin = () => {
 
                     <div>
                         <label
+                            for="edit-resident-floor"
                             class="block text-sm font-medium text-black mb-2"
                         >
                             Floor Number
                         </label>
                         <input
+                            id="edit-resident-floor"
                             v-model="form.floor_number"
                             type="text"
                             class="w-full px-4 py-3 border-2 border-primary rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
@@ -147,11 +152,12 @@ const generateNewPin = () => {
 
                 <!-- PIN Code Field -->
                 <div>
-                    <label class="block text-sm font-medium text-black mb-2">
+                    <label for="edit-resident-pin" class="block text-sm font-medium text-black mb-2">
                         PIN Code
                     </label>
                     <div class="flex flex-col sm:flex-row gap-2">
                         <input
+                            id="edit-resident-pin"
                             v-model="form.pin_code"
                             type="text"
                             maxlength="6"

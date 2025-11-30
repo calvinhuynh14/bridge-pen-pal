@@ -46,7 +46,7 @@ const presetClasses = {
     neutral:
         "bg-white text-primary hover:bg-hover hover:text-white border-4 border-primary hover:border-hover",
     success: "bg-green-600 text-white hover:bg-green-700 hover:text-white",
-    warning: "bg-red-600 text-white hover:bg-red-700 hover:text-white",
+    warning: "bg-red-700 text-white hover:bg-red-800 hover:text-white",
     error: "bg-red-600 text-white hover:bg-red-700 hover:text-white",
     dark: "bg-hover text-white hover:bg-pressed hover:text-white",
 };

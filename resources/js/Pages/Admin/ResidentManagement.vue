@@ -145,86 +145,102 @@ const handleResidentDeleted = () => {
     <AppLayout>
         <Head title="Resident Management" />
 
-        <div class="py-12">
-            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                <!-- Success Message -->
-                <div
-                    v-if="flash.success"
-                    class="mb-6 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative"
-                    role="alert"
-                >
-                    <span class="block sm:inline">{{ flash.success }}</span>
-                </div>
-
-                <!-- Quick Stats -->
-                <div
-                    class="bg-primary overflow-hidden shadow-lg rounded-lg p-6 mb-6 border-2 border-primary"
-                >
-                    <h3
-                        class="text-lg font-semibold text-white mb-4 text-center"
+        <main role="main" aria-label="Resident Management">
+            <div class="py-12">
+                <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                    <h1 class="sr-only">Resident Management</h1>
+                    <!-- Success Message -->
+                    <div
+                        v-if="flash.success"
+                        class="mb-6 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative"
+                        role="alert"
+                        aria-live="assertive"
+                        aria-atomic="true"
                     >
-                        Resident Statistics
-                    </h3>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div
-                            class="text-center bg-white bg-opacity-20 rounded-lg p-4"
-                        >
-                            <div class="text-3xl font-bold text-white mb-2">
-                                {{ totalCount }}
-                            </div>
-                            <div
-                                class="text-white sm:text-sm lg:text-lg font-medium"
-                            >
-                                Total Residents
-                            </div>
-                        </div>
-                        <div
-                            class="text-center bg-white bg-opacity-20 rounded-lg p-4"
-                        >
-                            <div class="text-3xl font-bold text-white mb-2">
-                                {{ pendingCount }}
-                            </div>
-                            <div
-                                class="text-white sm:text-sm lg:text-lg font-medium"
-                            >
-                                Pending
-                            </div>
-                        </div>
-                        <div
-                            class="text-center bg-white bg-opacity-20 rounded-lg p-4"
-                        >
-                            <div class="text-3xl font-bold text-white mb-2">
-                                {{ approvedCount }}
-                            </div>
-                            <div
-                                class="text-white sm:text-sm lg:text-lg font-medium"
-                            >
-                                Approved
-                            </div>
-                        </div>
+                        <span class="block sm:inline">{{ flash.success }}</span>
                     </div>
-                </div>
 
-                <!-- Action Buttons -->
-                <div class="mb-6 flex flex-col md:flex-row gap-4">
-                    <button
-                        @click="openBatchModal"
-                        class="bg-primary hover:bg-pressed text-white px-6 py-3 rounded-lg font-medium transition-colors shadow-sm"
+                    <!-- Quick Stats -->
+                    <section
+                        aria-label="Resident Statistics"
+                        class="bg-primary overflow-hidden shadow-lg rounded-lg p-6 mb-6 border-2 border-primary"
                     >
-                        Batch Create
-                    </button>
-                    <button
-                        @click="createResident"
-                        class="bg-primary hover:bg-pressed text-white px-6 py-3 rounded-lg font-medium transition-colors shadow-sm"
-                    >
-                        Manual Create
-                    </button>
-                </div>
+                        <h2
+                            class="text-lg font-semibold text-white mb-4 text-center"
+                        >
+                            Resident Statistics
+                        </h2>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6" role="list">
+                            <div
+                                class="text-center bg-white bg-opacity-20 rounded-lg p-4"
+                                role="listitem"
+                                aria-label="Total Residents"
+                            >
+                                <div class="text-3xl font-bold text-white mb-2" aria-hidden="true">
+                                    {{ totalCount }}
+                                </div>
+                                <div
+                                    class="text-white sm:text-sm lg:text-lg font-medium"
+                                >
+                                    Total Residents: {{ totalCount }}
+                                </div>
+                            </div>
+                            <div
+                                class="text-center bg-white bg-opacity-20 rounded-lg p-4"
+                                role="listitem"
+                                aria-label="Pending Residents"
+                            >
+                                <div class="text-3xl font-bold text-white mb-2" aria-hidden="true">
+                                    {{ pendingCount }}
+                                </div>
+                                <div
+                                    class="text-white sm:text-sm lg:text-lg font-medium"
+                                >
+                                    Pending: {{ pendingCount }}
+                                </div>
+                            </div>
+                            <div
+                                class="text-center bg-white bg-opacity-20 rounded-lg p-4"
+                                role="listitem"
+                                aria-label="Approved Residents"
+                            >
+                                <div class="text-3xl font-bold text-white mb-2" aria-hidden="true">
+                                    {{ approvedCount }}
+                                </div>
+                                <div
+                                    class="text-white sm:text-sm lg:text-lg font-medium"
+                                >
+                                    Approved: {{ approvedCount }}
+                                </div>
+                            </div>
+                        </div>
+                    </section>
 
-                <!-- Residents Table -->
-                <div
-                    class="bg-white overflow-hidden shadow-lg rounded-lg border-2 border-primary p-6"
-                >
+                    <!-- Action Buttons -->
+                    <section aria-label="Resident Actions" class="mb-6">
+                        <div class="flex flex-col md:flex-row gap-4" role="group" aria-label="Create resident options">
+                            <button
+                                @click="openBatchModal"
+                                aria-label="Open batch create residents modal"
+                                class="bg-primary hover:bg-pressed text-white px-6 py-3 rounded-lg font-medium transition-colors shadow-sm"
+                            >
+                                Batch Create
+                            </button>
+                            <button
+                                @click="createResident"
+                                aria-label="Open manual create resident modal"
+                                class="bg-primary hover:bg-pressed text-white px-6 py-3 rounded-lg font-medium transition-colors shadow-sm"
+                            >
+                                Manual Create
+                            </button>
+                        </div>
+                    </section>
+
+                    <!-- Residents Table -->
+                    <section
+                        aria-label="Residents Table"
+                        class="bg-white overflow-hidden shadow-lg rounded-lg border-2 border-primary p-6"
+                    >
                     <!-- DataTable Component -->
                     <DataTable
                         :items="residents"
@@ -233,9 +249,10 @@ const handleResidentDeleted = () => {
                         @edit="handleEdit"
                         @delete="handleDelete"
                     />
+                    </section>
                 </div>
             </div>
-        </div>
+        </main>
 
         <!-- View Details Modal -->
         <ViewDetailsModal

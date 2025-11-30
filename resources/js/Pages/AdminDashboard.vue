@@ -84,19 +84,23 @@ const pendingVolunteers = computed(() => {
     <Head title="Admin Dashboard" />
 
     <AppLayout title="Admin Dashboard">
-        <div class="py-12">
-            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                <!-- Email Verification Notice -->
-                <div
-                    v-if="!isEmailVerified"
-                    class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 rounded-lg shadow-sm"
-                >
+        <main role="main" aria-label="Admin Dashboard">
+            <div class="py-12">
+                <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                    <h1 class="sr-only">Admin Dashboard</h1>
+                    <!-- Email Verification Notice -->
+                    <section
+                        v-if="!isEmailVerified"
+                        aria-label="Email Verification Notice"
+                        class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 rounded-lg shadow-sm"
+                    >
                     <div class="flex items-start">
                         <div class="flex-shrink-0">
                             <svg
                                 class="h-5 w-5 text-yellow-400"
                                 fill="currentColor"
                                 viewBox="0 0 20 20"
+                                aria-hidden="true"
                             >
                                 <path
                                     fill-rule="evenodd"
@@ -110,12 +114,16 @@ const pendingVolunteers = computed(() => {
                             <div
                                 v-if="verificationLinkSent"
                                 class="mb-3 p-3 bg-green-50 border border-green-200 rounded-lg"
+                                role="status"
+                                aria-live="polite"
+                                aria-atomic="true"
                             >
                                 <div class="flex items-center">
                                     <svg
                                         class="h-5 w-5 text-green-600 mr-2"
                                         fill="currentColor"
                                         viewBox="0 0 20 20"
+                                        aria-hidden="true"
                                     >
                                         <path
                                             fill-rule="evenodd"
@@ -148,6 +156,9 @@ const pendingVolunteers = computed(() => {
                                         type="button"
                                         @click="sendVerificationEmail"
                                         :disabled="verificationForm.processing"
+                                        :aria-busy="verificationForm.processing"
+                                        :aria-disabled="verificationForm.processing"
+                                        aria-label="Send email verification link"
                                         class="inline-flex items-center px-4 py-2 border border-yellow-400 text-sm font-medium rounded-lg text-yellow-800 bg-white hover:bg-yellow-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         {{
@@ -160,64 +171,74 @@ const pendingVolunteers = computed(() => {
                             </div>
                         </div>
                     </div>
-                </div>
+                    </section>
 
-                <!-- Platform Statistics -->
-                <div
-                    class="bg-primary overflow-hidden shadow-lg rounded-lg p-6 mb-6 border-2 border-primary"
-                >
-                    <h3
-                        class="text-lg font-semibold text-white mb-4 text-center"
+                    <!-- Platform Statistics -->
+                    <section
+                        aria-label="Platform Statistics"
+                        class="bg-primary overflow-hidden shadow-lg rounded-lg p-6 mb-6 border-2 border-primary"
                     >
-                        Platform Statistics
-                    </h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                        <div
-                            class="text-center bg-white bg-opacity-20 rounded-lg p-4"
+                        <h2
+                            class="text-lg font-semibold text-white mb-4 text-center"
                         >
-                            <div class="text-3xl font-bold text-white mb-2">
-                                {{ totalResidents }}
+                            Platform Statistics
+                        </h2>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6" role="list">
+                            <div
+                                class="text-center bg-white bg-opacity-20 rounded-lg p-4"
+                                role="listitem"
+                                aria-label="Total Residents"
+                            >
+                                <div class="text-3xl font-bold text-white mb-2" aria-hidden="true">
+                                    {{ totalResidents }}
+                                </div>
+                                <div
+                                    class="text-white sm:text-sm lg:text-lg font-medium"
+                                >
+                                    Total Residents: {{ totalResidents }}
+                                </div>
                             </div>
                             <div
-                                class="text-white sm:text-sm lg:text-lg font-medium"
+                                class="text-center bg-white bg-opacity-20 rounded-lg p-4"
+                                role="listitem"
+                                aria-label="Active Volunteers"
                             >
-                                Total Residents
-                            </div>
-                        </div>
-                        <div
-                            class="text-center bg-white bg-opacity-20 rounded-lg p-4"
-                        >
-                            <div class="text-3xl font-bold text-white mb-2">
-                                {{ approvedVolunteers }}
+                                <div class="text-3xl font-bold text-white mb-2" aria-hidden="true">
+                                    {{ approvedVolunteers }}
+                                </div>
+                                <div
+                                    class="text-white sm:text-sm lg:text-lg font-medium"
+                                >
+                                    Active Volunteers: {{ approvedVolunteers }}
+                                </div>
                             </div>
                             <div
-                                class="text-white sm:text-sm lg:text-lg font-medium"
+                                class="text-center bg-white bg-opacity-20 rounded-lg p-4"
+                                role="listitem"
+                                aria-label="Pending Approvals"
                             >
-                                Active Volunteers
+                                <div class="text-3xl font-bold text-accent mb-2" aria-hidden="true">
+                                    {{ pendingVolunteers }}
+                                </div>
+                                <div
+                                    class="text-white sm:text-sm lg:text-lg font-medium"
+                                >
+                                    Pending Approvals: {{ pendingVolunteers }}
+                                </div>
                             </div>
                         </div>
-                        <div
-                            class="text-center bg-white bg-opacity-20 rounded-lg p-4"
-                        >
-                            <div class="text-3xl font-bold text-accent mb-2">
-                                {{ pendingVolunteers }}
-                            </div>
-                            <div
-                                class="text-white sm:text-sm lg:text-lg font-medium"
-                            >
-                                Pending Approvals
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                    </section>
 
-                <!-- Featured Story Management -->
-                <FeaturedStoryManagement
-                    v-if="!needsOrganizationSetup"
-                    :featuredStory="featuredStory"
-                />
+                    <!-- Featured Story Management -->
+                    <section aria-label="Featured Story Management">
+                        <FeaturedStoryManagement
+                            v-if="!needsOrganizationSetup"
+                            :featuredStory="featuredStory"
+                        />
+                    </section>
+                </div>
             </div>
-        </div>
+        </main>
 
         <!-- Organization Setup Modal -->
         <OrganizationSetupModal

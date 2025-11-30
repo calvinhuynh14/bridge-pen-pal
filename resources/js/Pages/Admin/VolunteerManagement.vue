@@ -142,69 +142,81 @@ const handleDelete = (application) => {
     <Head title="Volunteer Management" />
 
     <AppLayout title="Volunteer Management">
-        <div class="py-12">
-            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                <!-- Success Message -->
-                <div
-                    v-if="flash.success"
-                    class="mb-6 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative"
-                    role="alert"
-                >
-                    <span class="block sm:inline">{{ flash.success }}</span>
-                </div>
-                <!-- Quick Stats -->
-                <div
-                    class="bg-primary overflow-hidden shadow-lg rounded-lg p-6 mb-6 border-2 border-primary"
-                >
-                    <h3
-                        class="text-lg font-semibold text-white mb-4 text-center"
+        <main role="main" aria-label="Volunteer Management">
+            <div class="py-12">
+                <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                    <h1 class="sr-only">Volunteer Management</h1>
+                    <!-- Success Message -->
+                    <div
+                        v-if="flash.success"
+                        class="mb-6 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative"
+                        role="alert"
+                        aria-live="assertive"
+                        aria-atomic="true"
                     >
-                        Volunteer Statistics
-                    </h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                        <div
-                            class="text-center bg-white bg-opacity-20 rounded-lg p-4"
-                        >
-                            <div class="text-3xl font-bold text-white mb-2">
-                                {{ pagination.total }}
-                            </div>
-                            <div
-                                class="text-white sm:text-sm lg:text-lg font-medium"
-                            >
-                                Total Applications
-                            </div>
-                        </div>
-                        <div
-                            class="text-center bg-white bg-opacity-20 rounded-lg p-4"
-                        >
-                            <div class="text-3xl font-bold text-accent mb-2">
-                                {{ pendingCount }}
-                            </div>
-                            <div
-                                class="text-white sm:text-sm lg:text-lg font-medium"
-                            >
-                                Pending Applications
-                            </div>
-                        </div>
-                        <div
-                            class="text-center bg-white bg-opacity-20 rounded-lg p-4"
-                        >
-                            <div class="text-3xl font-bold text-white mb-2">
-                                {{ approvedCount }}
-                            </div>
-                            <div
-                                class="text-white sm:text-sm lg:text-lg font-medium"
-                            >
-                                Approved Volunteers
-                            </div>
-                        </div>
+                        <span class="block sm:inline">{{ flash.success }}</span>
                     </div>
-                </div>
+                    <!-- Quick Stats -->
+                    <section
+                        aria-label="Volunteer Statistics"
+                        class="bg-primary overflow-hidden shadow-lg rounded-lg p-6 mb-6 border-2 border-primary"
+                    >
+                        <h2
+                            class="text-lg font-semibold text-white mb-4 text-center"
+                        >
+                            Volunteer Statistics
+                        </h2>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6" role="list">
+                            <div
+                                class="text-center bg-white bg-opacity-20 rounded-lg p-4"
+                                role="listitem"
+                                aria-label="Total Applications"
+                            >
+                                <div class="text-3xl font-bold text-white mb-2" aria-hidden="true">
+                                    {{ pagination.total }}
+                                </div>
+                                <div
+                                    class="text-white sm:text-sm lg:text-lg font-medium"
+                                >
+                                    Total Applications: {{ pagination.total }}
+                                </div>
+                            </div>
+                            <div
+                                class="text-center bg-white bg-opacity-20 rounded-lg p-4"
+                                role="listitem"
+                                aria-label="Pending Applications"
+                            >
+                                <div class="text-3xl font-bold text-accent mb-2" aria-hidden="true">
+                                    {{ pendingCount }}
+                                </div>
+                                <div
+                                    class="text-white sm:text-sm lg:text-lg font-medium"
+                                >
+                                    Pending Applications: {{ pendingCount }}
+                                </div>
+                            </div>
+                            <div
+                                class="text-center bg-white bg-opacity-20 rounded-lg p-4"
+                                role="listitem"
+                                aria-label="Approved Volunteers"
+                            >
+                                <div class="text-3xl font-bold text-white mb-2" aria-hidden="true">
+                                    {{ approvedCount }}
+                                </div>
+                                <div
+                                    class="text-white sm:text-sm lg:text-lg font-medium"
+                                >
+                                    Approved Volunteers: {{ approvedCount }}
+                                </div>
+                            </div>
+                        </div>
+                    </section>
 
-                <!-- Volunteer Applications Table -->
-                <div
-                    class="bg-white overflow-hidden shadow-lg rounded-lg border-2 border-primary p-6"
-                >
+                    <!-- Volunteer Applications Table -->
+                    <section
+                        aria-label="Volunteer Applications Table"
+                        class="bg-white overflow-hidden shadow-lg rounded-lg border-2 border-primary p-6"
+                    >
                     <!-- DataTable Component -->
                     <DataTable
                         :items="volunteerApplications"
@@ -214,9 +226,10 @@ const handleDelete = (application) => {
                         @reject="handleReject"
                         @delete="handleDelete"
                     />
+                    </section>
                 </div>
             </div>
-        </div>
+        </main>
 
         <!-- View Details Modal -->
         <ViewDetailsModal

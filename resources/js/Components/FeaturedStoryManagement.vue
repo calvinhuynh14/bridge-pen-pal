@@ -179,7 +179,7 @@ onMounted(() => {
                     <h4 class="text-xl font-semibold text-white mb-2">
                         {{ props.featuredStory.resident_name }}
                     </h4>
-                    <p class="text-sm text-white/90 whitespace-pre-line mb-4">
+                    <p class="text-sm text-white whitespace-pre-line mb-4">
                         {{ props.featuredStory.bio }}
                     </p>
                     <div class="flex flex-wrap gap-3">

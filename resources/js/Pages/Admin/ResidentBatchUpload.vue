@@ -65,10 +65,11 @@ const uploadFile = () => {
     <Head title="Resident Batch Upload" />
 
     <AppLayout>
-        <div class="py-12">
-            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                    <div class="p-6 text-gray-900">
+        <main role="main" aria-label="Resident Batch Upload">
+            <div class="py-12">
+                <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                        <div class="p-6 text-gray-900">
                         <div class="mb-6">
                             <div class="flex items-center justify-between mb-4">
                                 <div>
@@ -85,19 +86,23 @@ const uploadFile = () => {
                                 <Link
                                     :href="route('admin.residents')"
                                     class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
+                                    aria-label="Return to resident management page"
                                 >
                                     ← Back to Residents
                                 </Link>
                             </div>
                         </div>
 
-                        <!-- Success Message -->
-                        <div
-                            v-if="success"
-                            class="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded"
-                        >
-                            {{ success }}
-                        </div>
+                            <!-- Success Message -->
+                            <div
+                                v-if="success"
+                                class="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded"
+                                role="status"
+                                aria-live="polite"
+                                aria-atomic="true"
+                            >
+                                {{ success }}
+                            </div>
 
                         <!-- Error Messages -->
                         <div
@@ -184,11 +189,11 @@ const uploadFile = () => {
                             </div>
                         </div>
 
-                        <!-- Upload Form -->
-                        <div class="bg-gray-50 p-6 rounded-lg">
-                            <h2 class="text-lg font-semibold mb-4">
-                                Upload CSV File
-                            </h2>
+                            <!-- Upload Form -->
+                            <section aria-label="Upload CSV File" class="bg-gray-50 p-6 rounded-lg">
+                                <h2 class="text-lg font-semibold mb-4">
+                                    Upload CSV File
+                                </h2>
 
                             <div class="mb-4">
                                 <label
@@ -236,30 +241,34 @@ const uploadFile = () => {
                                 </ul>
                             </div>
 
-                            <div class="flex gap-4">
-                                <button
-                                    @click="uploadFile"
-                                    :disabled="isUploading || form.processing"
-                                    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
-                                >
-                                    {{
-                                        isUploading || form.processing
-                                            ? "Uploading..."
-                                            : "Upload File"
-                                    }}
-                                </button>
+                                <div class="flex gap-4" role="group" aria-label="File actions">
+                                    <button
+                                        @click="uploadFile"
+                                        :disabled="isUploading || form.processing"
+                                        :aria-busy="isUploading || form.processing"
+                                        :aria-disabled="isUploading || form.processing"
+                                        aria-label="Upload CSV file to create residents"
+                                        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
+                                    >
+                                        {{
+                                            isUploading || form.processing
+                                                ? "Uploading..."
+                                                : "Upload File"
+                                        }}
+                                    </button>
 
-                                <button
-                                    @click="downloadTemplate"
-                                    class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
-                                >
-                                    Download Template
-                                </button>
-                            </div>
-                        </div>
+                                    <button
+                                        @click="downloadTemplate"
+                                        aria-label="Download CSV template file"
+                                        class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
+                                    >
+                                        Download Template
+                                    </button>
+                                </div>
+                            </section>
 
-                        <!-- Instructions -->
-                        <div class="mt-6 bg-yellow-50 p-4 rounded-lg">
+                            <!-- Instructions -->
+                            <section aria-label="Upload Instructions" class="mt-6 bg-yellow-50 p-4 rounded-lg">
                             <h3 class="font-bold text-yellow-800 mb-2">
                                 Instructions:
                             </h3>
@@ -281,10 +290,11 @@ const uploadFile = () => {
                                     for each resident
                                 </li>
                             </ol>
+                            </section>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </main>
     </AppLayout>
 </template>
