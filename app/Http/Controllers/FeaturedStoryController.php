@@ -131,19 +131,22 @@ class FeaturedStoryController extends Controller
             // Check if featured story already exists
             $existing = DB::selectOne('SELECT id FROM featured_story WHERE organization_id = ?', [$organizationId]);
             
+            // Sanitize bio to prevent XSS
+            $sanitizedBio = strip_tags(trim($request->bio));
+            
             if ($existing) {
                 // Update existing
                 DB::update('
                     UPDATE featured_story 
                     SET resident_id = ?, bio = ?, updated_at = ?
                     WHERE organization_id = ?
-                ', [$request->resident_id, $request->bio, now(), $organizationId]);
+                ', [$request->resident_id, $sanitizedBio, now(), $organizationId]);
             } else {
                 // Create new
                 DB::insert('
                     INSERT INTO featured_story (organization_id, resident_id, bio, created_at, updated_at)
                     VALUES (?, ?, ?, ?, ?)
-                ', [$organizationId, $request->resident_id, $request->bio, now(), now()]);
+                ', [$organizationId, $request->resident_id, $sanitizedBio, now(), now()]);
             }
             
             return redirect()->back()->with('success', 'Featured story updated successfully!');

@@ -4,9 +4,8 @@ import LetterCard from "@/Components/LetterCard.vue";
 import LetterViewModal from "@/Components/LetterViewModal.vue";
 import ReportModal from "@/Components/ReportModal.vue";
 import Avatar from "@/Components/Avatar.vue";
-import OnboardingModal from "@/Components/OnboardingModal.vue";
 import { Head, Link, router } from "@inertiajs/vue3";
-import { computed, ref, onMounted, watch } from "vue";
+import { computed, ref, onMounted } from "vue";
 import { usePage } from "@inertiajs/vue3";
 import axios from "axios";
 
@@ -16,26 +15,6 @@ const props = defineProps({
         default: () => null,
     },
     unreadLetters: {
-        type: Array,
-        default: () => [],
-    },
-    needsOnboarding: {
-        type: Boolean,
-        default: false,
-    },
-    availableInterests: {
-        type: Array,
-        default: () => [],
-    },
-    availableLanguages: {
-        type: Array,
-        default: () => [],
-    },
-    userInterests: {
-        type: Array,
-        default: () => [],
-    },
-    userLanguages: {
         type: Array,
         default: () => [],
     },
@@ -88,24 +67,6 @@ const showViewModal = ref(false);
 const viewingLetter = ref(null);
 const showReportModal = ref(false);
 const selectedLetter = ref(null);
-const showOnboardingModal = ref(props.needsOnboarding);
-
-// Handle onboarding completion
-const handleOnboardingCompleted = () => {
-    showOnboardingModal.value = false;
-    // Reload page to refresh props
-    router.reload({
-        only: ["needsOnboarding", "userInterests", "userLanguages"],
-    });
-};
-
-// Watch for needsOnboarding prop changes
-watch(
-    () => props.needsOnboarding,
-    (newValue) => {
-        showOnboardingModal.value = newValue;
-    }
-);
 
 // Fetch unread letters from API
 const loadUnreadLetters = async (page = 1) => {
@@ -116,6 +77,8 @@ const loadUnreadLetters = async (page = 1) => {
                 page: page,
             },
         });
+
+        console.log("Unread letters response:", response.data); // Debug log
 
         const { letters, pagination } = response.data;
         unreadLetters.value = letters || [];
@@ -196,6 +159,7 @@ const closeReportModal = () => {
 
 // Load unread letters on mount
 onMounted(() => {
+    console.log("PlatformHome mounted, loading unread letters...");
     loadUnreadLetters(1);
 });
 </script>
@@ -227,19 +191,19 @@ onMounted(() => {
                     </p>
                 </section>
 
-                <!-- Featured Story -->
+                <!-- Story of the Week -->
                 <section
                     v-if="props.storyOfTheWeek"
-                    aria-label="Featured story"
+                    aria-label="Story of the week"
                 >
-                    <div
-                        class="bg-primary text-white overflow-hidden shadow-xl rounded-lg p-6 sm:p-8"
+                    <h2
+                        class="text-xl sm:text-2xl lg:text-3xl font-bold text-primary mb-4"
                     >
-                        <h2
-                            class="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-4"
-                        >
-                            Featured Story
-                        </h2>
+                        Story of the Week
+                    </h2>
+                    <div
+                        class="bg-primary rounded-lg shadow-lg p-4 sm:p-6 md:p-8 lg:p-10"
+                    >
                         <div
                             class="flex flex-col md:flex-row items-center md:items-start justify-center md:justify-start gap-4 sm:gap-6 md:gap-8"
                         >
@@ -581,17 +545,6 @@ onMounted(() => {
             :show="showReportModal"
             :letter="selectedLetter"
             @close="closeReportModal"
-        />
-
-        <!-- Onboarding Modal -->
-        <OnboardingModal
-            :show="showOnboardingModal"
-            :available-interests="props.availableInterests"
-            :available-languages="props.availableLanguages"
-            :user-interests="props.userInterests"
-            :user-languages="props.userLanguages"
-            @completed="handleOnboardingCompleted"
-            @close="handleOnboardingCompleted"
         />
     </AppLayout>
 </template>

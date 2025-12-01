@@ -379,9 +379,14 @@ Route::middleware([
             return response()->json(['error' => 'Resident user type not found'], 500);
         }
         
+        // Sanitize inputs
+        $sanitizedName = strip_tags(trim($request->name));
+        $sanitizedRoomNumber = $request->room_number ? strip_tags(trim($request->room_number)) : null;
+        $sanitizedFloorNumber = $request->floor_number ? strip_tags(trim($request->floor_number)) : null;
+        
         // Create user record
         $userId = DB::table('users')->insertGetId([
-            'name' => $request->name,
+            'name' => $sanitizedName,
             'username' => $request->username, // Store 6-digit ID as username
             'email' => null, // Residents don't have email
             'password' => bcrypt($request->pin_code),
@@ -395,8 +400,8 @@ Route::middleware([
             'user_id' => $userId,
             'organization_id' => $organizationId,
             'date_of_birth' => $request->date_of_birth,
-            'room_number' => $request->room_number,
-            'floor_number' => $request->floor_number,
+            'room_number' => $sanitizedRoomNumber,
+            'floor_number' => $sanitizedFloorNumber,
             'pin_code' => $request->pin_code, // Store plain PIN for admin viewing
             'status' => 'approved', // New residents are approved by default
             'application_date' => now(), // Set application date to current date and time
@@ -418,10 +423,18 @@ Route::middleware([
             'pin_code' => 'required|string|size:6|regex:/^[0-9]{6}$/',
         ]);
         
-        // Get the resident
+        // Get admin's organization
+        $adminRecord = DB::selectOne('SELECT organization_id FROM admin WHERE user_id = ?', [$user->id]);
+        if (!$adminRecord) {
+            return response()->json(['error' => 'Admin organization not found'], 404);
+        }
+        $organizationId = $adminRecord->organization_id;
+        
+        // Get the resident and verify it belongs to admin's organization
         $resident = DB::table('resident')
             ->join('users', 'resident.user_id', '=', 'users.id')
             ->where('resident.id', $id)
+            ->where('resident.organization_id', $organizationId) // Verify organization ownership
             ->select('resident.*', 'users.id as user_id')
             ->first();
             
@@ -429,11 +442,16 @@ Route::middleware([
             return response()->json(['error' => 'Resident not found'], 404);
         }
         
+        // Sanitize inputs
+        $sanitizedName = strip_tags(trim($request->name));
+        $sanitizedRoomNumber = $request->room_number ? strip_tags(trim($request->room_number)) : null;
+        $sanitizedFloorNumber = $request->floor_number ? strip_tags(trim($request->floor_number)) : null;
+        
         // Update user name
         DB::table('users')
             ->where('id', $resident->user_id)
             ->update([
-                'name' => $request->name,
+                'name' => $sanitizedName,
                 'password' => bcrypt($request->pin_code), // Update password with new PIN
                 'updated_at' => now()
             ]);
@@ -442,8 +460,8 @@ Route::middleware([
         DB::table('resident')
             ->where('id', $id)
             ->update([
-                'room_number' => $request->room_number,
-                'floor_number' => $request->floor_number,
+                'room_number' => $sanitizedRoomNumber,
+                'floor_number' => $sanitizedFloorNumber,
                 'pin_code' => $request->pin_code, // Store plain PIN for admin viewing
                 'updated_at' => now()
             ]);
@@ -455,10 +473,18 @@ Route::middleware([
     Route::delete('/admin/residents/{id}', function (Request $request, $id) {
         $user = auth()->user();
         
-        // Get the resident
+        // Get admin's organization
+        $adminRecord = DB::selectOne('SELECT organization_id FROM admin WHERE user_id = ?', [$user->id]);
+        if (!$adminRecord) {
+            return response()->json(['error' => 'Admin organization not found'], 404);
+        }
+        $organizationId = $adminRecord->organization_id;
+        
+        // Get the resident and verify it belongs to admin's organization
         $resident = DB::table('resident')
             ->join('users', 'resident.user_id', '=', 'users.id')
             ->where('resident.id', $id)
+            ->where('resident.organization_id', $organizationId) // Verify organization ownership
             ->select('resident.*', 'users.id as user_id', 'users.name as user_name')
             ->first();
             
@@ -960,6 +986,11 @@ Route::middleware([
         Route::post('/admin/volunteers/{id}/reject', function ($id, Request $request) {
             $user = auth()->user();
             
+            // Validate rejection reason
+            $request->validate([
+                'rejection_reason' => 'nullable|string|max:1000',
+            ]);
+            
             // Verify admin has access to this volunteer
             $adminRecord = DB::select('SELECT organization_id FROM admin WHERE user_id = ?', [$user->id]);
             if (empty($adminRecord)) {
@@ -984,7 +1015,7 @@ Route::middleware([
             $volunteerName = $volunteerData->name;
             $organizationName = $volunteerData->organization_name;
             
-            // Get rejection reason (optional)
+            // Get rejection reason (optional) and sanitize
             $rejectionReason = $request->input('rejection_reason');
             if ($rejectionReason) {
                 $rejectionReason = trim(strip_tags($rejectionReason)); // Sanitize

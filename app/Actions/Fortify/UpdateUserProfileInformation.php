@@ -68,7 +68,7 @@ class UpdateUserProfileInformation implements UpdatesUserProfileInformation
             
             // Volunteers can only update name (email is read-only)
             if ($user->isVolunteer() && isset($input['name'])) {
-                $updateData['name'] = $input['name'];
+                $updateData['name'] = strip_tags(trim($input['name'])); // Sanitize input
             }
             
             // Admins don't update user fields (only organization name is updated separately)

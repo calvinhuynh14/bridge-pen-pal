@@ -152,9 +152,15 @@ class ResidentBatchService
             
             \Log::info('ResidentBatchService: Found resident user type', ['type_id' => $residentType->id]);
             
+            // Sanitize inputs to prevent XSS
+            $sanitizedFirstName = strip_tags(trim($data['first_name']));
+            $sanitizedLastName = strip_tags(trim($data['last_name']));
+            $sanitizedRoomNumber = isset($data['room_number']) && $data['room_number'] ? strip_tags(trim($data['room_number'])) : null;
+            $sanitizedFloorNumber = isset($data['floor_number']) && $data['floor_number'] ? strip_tags(trim($data['floor_number'])) : null;
+            
             // Create user account
             $userData = [
-                'name' => trim($data['first_name'] . ' ' . $data['last_name']),
+                'name' => trim($sanitizedFirstName . ' ' . $sanitizedLastName),
                 'email' => null, // Residents don't use email
                 'username' => $residentId,
                 'password' => $this->pinService->hashPin($pin),
@@ -172,8 +178,8 @@ class ResidentBatchService
             $residentData = [
                 'user_id' => $user->id,
                 'organization_id' => $organizationId,
-                'room_number' => $data['room_number'] ?? null,
-                'floor_number' => $data['floor_number'] ?? null,
+                'room_number' => $sanitizedRoomNumber,
+                'floor_number' => $sanitizedFloorNumber,
                 'date_of_birth' => $data['date_of_birth'],
                 'pin_code' => $pin, // Store plain PIN code for admin viewing
                 'status' => 'approved', // Auto-approve batch created residents

@@ -21,6 +21,9 @@ class DatabaseSeeder extends Seeder
         // Run the interest and language seeder
         $this->call(InterestLanguageSeeder::class);
         
+        // Add new interests
+        $this->call(AddNewInterestsSeeder::class);
+        
         // Run the test data seeder
         $this->call(TestDataSeeder::class);
     }

@@ -238,7 +238,6 @@ const getSubtitle = (type) => {
                             <InputLabel
                                 for="email"
                                 value="Email"
-                                color=""
                                 size="base"
                                 class="text-primary lg:text-white"
                             />
@@ -267,7 +266,6 @@ const getSubtitle = (type) => {
                             <InputLabel
                                 for="username"
                                 value="Username"
-                                color=""
                                 size="base"
                                 class="text-primary lg:text-white"
                             />
@@ -309,7 +307,6 @@ const getSubtitle = (type) => {
                                 :value="
                                     type === 'resident' ? 'PIN' : 'Password'
                                 "
-                                color=""
                                 size="base"
                                 class="text-primary lg:text-white"
                             />

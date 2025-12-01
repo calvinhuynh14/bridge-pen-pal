@@ -33,11 +33,14 @@ class OrganizationController extends Controller
 
         try {
             DB::transaction(function () use ($user, $request) {
+                // Sanitize organization name to prevent XSS
+                $sanitizedName = strip_tags(trim($request->organization_name));
+                
                 // Create organization using raw SQL
                 DB::insert(
                     'INSERT INTO organization (name, created_at, updated_at) VALUES (?, ?, ?)',
                     [
-                        $request->organization_name,
+                        $sanitizedName,
                         now(),
                         now()
                     ]

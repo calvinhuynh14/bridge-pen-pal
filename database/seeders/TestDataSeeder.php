@@ -280,6 +280,14 @@ class TestDataSeeder extends Seeder
         }
         $this->command->info('Created 30 Residents.');
 
+        // Assign interests and languages to users
+        $this->assignInterestsAndLanguages();
+        $this->command->info('Assigned interests and languages to users.');
+
+        // Create featured stories for organizations
+        $this->seedFeaturedStories($organizationIds);
+        $this->command->info('Created featured stories for organizations.');
+
         // Create mock letters (only if none exist)
         $existingLetters = DB::table('letters')->count();
         if ($existingLetters === 0) {
@@ -292,6 +300,10 @@ class TestDataSeeder extends Seeder
         // Seed correspondence for resident 100000 (for testing Write page)
         $this->seedCorrespondenceForResident100000();
         $this->command->info('Created correspondence data for resident 100000.');
+
+        // Create unread letters between corresponding users
+        $this->seedUnreadLetters();
+        $this->command->info('Created unread letters for testing.');
 
         $this->command->info('Test data seeded successfully!');
         $this->command->info('Created:');
@@ -374,10 +386,19 @@ class TestDataSeeder extends Seeder
 
         $now = now();
 
-        // Create 8-10 open letters from residents (for Discover page)
-        $openLetterCount = min(10, count($residents));
+        // Create 15-20 open letters from residents (for Discover page testing)
+        // Mix of residents with common interests and those without
+        $openLetterCount = min(20, count($residents));
         for ($i = 0; $i < $openLetterCount; $i++) {
-            $resident = $residents[array_rand($residents)];
+            // Select residents strategically: first few have common interests, others are random
+            if ($i < min(10, count($residents))) {
+                // Use residents with assigned interests (from assignInterestsAndLanguages)
+                $resident = $residents[$i % count($residents)];
+            } else {
+                // Random residents
+                $resident = $residents[array_rand($residents)];
+            }
+            
             $content = $letterContents[$i % count($letterContents)];
             
             // Random sent date within last 30 days
@@ -617,6 +638,286 @@ class TestDataSeeder extends Seeder
         }
 
         $this->command->info("Created correspondence for resident 100000 with " . count($penPals) . " pen pal(s).");
+    }
+
+    /**
+     * Assign interests and languages to users for testing discover page matching
+     */
+    private function assignInterestsAndLanguages()
+    {
+        // Get all interests and languages
+        $allInterests = DB::table('interests')->pluck('id', 'name')->toArray();
+        $allLanguages = DB::table('languages')->pluck('id', 'name')->toArray();
+
+        // Get approved volunteers and residents
+        $volunteers = DB::select("
+            SELECT u.id, u.name, u.email
+            FROM users u
+            JOIN volunteer v ON u.id = v.user_id
+            WHERE v.status = 'approved'
+        ");
+
+        $residents = DB::select("
+            SELECT u.id, u.name
+            FROM users u
+            JOIN resident r ON u.id = r.user_id
+            WHERE r.status = 'approved'
+        ");
+
+        // Define interest groups for testing common interests
+        $interestGroups = [
+            ['Reading', 'Books', 'Writing', 'Poetry'],
+            ['Art', 'Painting', 'Drawing', 'Photography'],
+            ['Music', 'Singing', 'Dancing'],
+            ['Cooking', 'Baking', 'Food'],
+            ['Gardening', 'Nature', 'Walking'],
+            ['Sports', 'Fitness', 'Yoga'],
+            ['Gaming', 'Video games', 'Board games'],
+            ['Movies', 'TV shows', 'Classic films'],
+            ['Travel', 'Culture', 'History'],
+            ['Technology', 'Computers', 'Programming'],
+        ];
+
+        // Define language groups for testing common languages
+        $languageGroups = [
+            ['English', 'Spanish'],
+            ['English', 'French'],
+            ['English', 'German'],
+            ['Spanish', 'French'],
+            ['English', 'Chinese'],
+        ];
+
+        // Assign interests to volunteers (ensure some have overlapping interests)
+        foreach ($volunteers as $index => $volunteer) {
+            $groupIndex = $index % count($interestGroups);
+            $selectedInterests = $interestGroups[$groupIndex];
+            
+            // Add 1-2 random additional interests
+            $availableInterests = array_diff_key($allInterests, array_flip($selectedInterests));
+            if (!empty($availableInterests)) {
+                $randomKeys = array_rand($availableInterests, min(rand(1, 2), count($availableInterests)));
+                if (!is_array($randomKeys)) {
+                    $randomKeys = [$randomKeys];
+                }
+                $randomInterests = array_keys(array_intersect_key($allInterests, array_flip($randomKeys)));
+                $selectedInterests = array_merge($selectedInterests, $randomInterests);
+            }
+
+            foreach ($selectedInterests as $interestName) {
+                if (isset($allInterests[$interestName])) {
+                    DB::table('user_interests')->updateOrInsert(
+                        ['user_id' => $volunteer->id, 'interest_id' => $allInterests[$interestName]],
+                        ['created_at' => now(), 'updated_at' => now()]
+                    );
+                }
+            }
+
+            // Assign languages
+            $langGroupIndex = $index % count($languageGroups);
+            $selectedLanguages = $languageGroups[$langGroupIndex];
+            foreach ($selectedLanguages as $langName) {
+                if (isset($allLanguages[$langName])) {
+                    DB::table('user_languages')->updateOrInsert(
+                        ['user_id' => $volunteer->id, 'language_id' => $allLanguages[$langName]],
+                        [
+                            'proficiency_level' => ['beginner', 'intermediate', 'fluent', 'native'][rand(0, 3)],
+                            'created_at' => now(),
+                            'updated_at' => now()
+                        ]
+                    );
+                }
+            }
+        }
+
+        // Assign interests to residents (ensure some match volunteers for testing)
+        foreach ($residents as $index => $resident) {
+            // Some residents share interests with volunteers (for testing matching)
+            if ($index < count($interestGroups)) {
+                $selectedInterests = $interestGroups[$index];
+            } else {
+                // Others get random interests
+                $randomKeys = array_rand($allInterests, min(3, count($allInterests)));
+                if (!is_array($randomKeys)) {
+                    $randomKeys = [$randomKeys];
+                }
+                $selectedInterests = array_keys(array_intersect_key($allInterests, array_flip($randomKeys)));
+            }
+
+            foreach ($selectedInterests as $interestName) {
+                if (isset($allInterests[$interestName])) {
+                    DB::table('user_interests')->updateOrInsert(
+                        ['user_id' => $resident->id, 'interest_id' => $allInterests[$interestName]],
+                        ['created_at' => now(), 'updated_at' => now()]
+                    );
+                }
+            }
+
+            // Assign languages (some match volunteers)
+            if ($index < count($languageGroups)) {
+                $selectedLanguages = $languageGroups[$index];
+            } else {
+                $randomKeys = array_rand($allLanguages, min(2, count($allLanguages)));
+                if (!is_array($randomKeys)) {
+                    $randomKeys = [$randomKeys];
+                }
+                $selectedLanguages = array_keys(array_intersect_key($allLanguages, array_flip($randomKeys)));
+            }
+
+            foreach ($selectedLanguages as $langName) {
+                if (isset($allLanguages[$langName])) {
+                    DB::table('user_languages')->updateOrInsert(
+                        ['user_id' => $resident->id, 'language_id' => $allLanguages[$langName]],
+                        [
+                            'proficiency_level' => ['beginner', 'intermediate', 'fluent', 'native'][rand(0, 3)],
+                            'created_at' => now(),
+                            'updated_at' => now()
+                        ]
+                    );
+                }
+            }
+        }
+
+        // Ensure nina.patel@email.com has NO interests and languages set (for onboarding testing)
+        $ninaPatel = DB::table('users')->where('email', 'nina.patel@email.com')->first();
+        if ($ninaPatel) {
+            // Clear existing interests/languages first
+            DB::table('user_interests')->where('user_id', $ninaPatel->id)->delete();
+            DB::table('user_languages')->where('user_id', $ninaPatel->id)->delete();
+            
+            // Leave empty for onboarding testing
+        }
+    }
+
+    /**
+     * Seed featured stories for organizations
+     */
+    private function seedFeaturedStories($organizationIds)
+    {
+        foreach ($organizationIds as $orgId) {
+            // Check if featured story already exists
+            $existing = DB::table('featured_story')->where('organization_id', $orgId)->first();
+            if ($existing) {
+                continue;
+            }
+
+            // Get a random approved resident from this organization
+            $resident = DB::selectOne("
+                SELECT u.id, u.name
+                FROM users u
+                JOIN resident r ON u.id = r.user_id
+                WHERE r.organization_id = ? AND r.status = 'approved'
+                ORDER BY RAND()
+                LIMIT 1
+            ", [$orgId]);
+
+            if ($resident) {
+                $bios = [
+                    "Meet {$resident->name}, a wonderful resident who loves sharing stories and connecting with others through letters. {$resident->name} has a passion for reading and enjoys discussing books with pen pals.",
+                    "{$resident->name} is a kind-hearted individual who finds joy in gardening and nature. Through this platform, {$resident->name} hopes to connect with others who share similar interests.",
+                    "We're excited to feature {$resident->name}, who brings warmth and wisdom to our community. {$resident->name} enjoys writing and receiving letters and looks forward to making new connections.",
+                    "{$resident->name} is an active member of our community who loves cooking and sharing recipes. Through letter writing, {$resident->name} hopes to exchange culinary ideas and stories.",
+                    "Meet {$resident->name}, a resident who finds fulfillment in art and creativity. {$resident->name} enjoys painting and would love to connect with others who appreciate the arts.",
+                ];
+
+                DB::table('featured_story')->insert([
+                    'organization_id' => $orgId,
+                    'resident_id' => $resident->id,
+                    'bio' => $bios[array_rand($bios)],
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+        }
+    }
+
+    /**
+     * Create unread letters between corresponding users for testing
+     */
+    private function seedUnreadLetters()
+    {
+        // Get some approved volunteers and residents
+        $volunteers = DB::select("
+            SELECT u.id, u.name, v.organization_id
+            FROM users u
+            JOIN volunteer v ON u.id = v.user_id
+            WHERE v.status = 'approved'
+            LIMIT 5
+        ");
+
+        $residents = DB::select("
+            SELECT u.id, u.name, r.organization_id
+            FROM users u
+            JOIN resident r ON u.id = r.user_id
+            WHERE r.status = 'approved'
+            LIMIT 5
+        ");
+
+        if (empty($volunteers) || empty($residents)) {
+            return;
+        }
+
+        $now = now();
+        $unreadMessages = [
+            "Hello! I hope this letter finds you well. I've been thinking about our last conversation and wanted to reach out.",
+            "Thank you for your thoughtful letter! I really enjoyed reading about your experiences. I wanted to share something with you.",
+            "I'm writing to check in and see how you're doing. I've been keeping you in my thoughts and wanted to send you a note.",
+            "Hello! I have some exciting news I wanted to share with you. I hope you're doing well!",
+            "I wanted to thank you for being such a wonderful pen pal. Your letters always brighten my day!",
+        ];
+
+        // Create unread letters: some from volunteers to residents, some from residents to volunteers
+        for ($i = 0; $i < min(5, count($volunteers), count($residents)); $i++) {
+            $sender = ($i % 2 === 0) ? $volunteers[$i] : $residents[$i];
+            $receiver = ($i % 2 === 0) ? $residents[$i] : $volunteers[$i];
+
+            // Create a letter that was delivered but not read (unread)
+            $sentAt = $now->copy()->subDays(rand(1, 7))->subHours(rand(0, 23));
+            $deliveredAt = $sentAt->copy()->addHours(8); // 8 hours after sent
+
+            // Ensure delivered_at is in the past but read_at is null (unread)
+            if ($deliveredAt->isPast()) {
+                DB::table('letters')->insert([
+                    'sender_id' => $sender->id,
+                    'receiver_id' => $receiver->id,
+                    'content' => $unreadMessages[$i % count($unreadMessages)],
+                    'is_open_letter' => false,
+                    'parent_letter_id' => null,
+                    'status' => 'delivered', // Delivered but not read
+                    'sent_at' => $sentAt,
+                    'delivered_at' => $deliveredAt,
+                    'read_at' => null, // Not read yet
+                    'created_at' => $sentAt,
+                    'updated_at' => $now,
+                ]);
+            }
+        }
+
+        // Also create some read letters between the same pairs to show correspondence history
+        for ($i = 0; $i < min(3, count($volunteers), count($residents)); $i++) {
+            $sender = ($i % 2 === 0) ? $volunteers[$i] : $residents[$i];
+            $receiver = ($i % 2 === 0) ? $residents[$i] : $volunteers[$i];
+
+            // Create older letters that were read (to show correspondence history)
+            $sentAt = $now->copy()->subDays(rand(10, 30))->subHours(rand(0, 23));
+            $deliveredAt = $sentAt->copy()->addHours(8);
+            $readAt = $deliveredAt->copy()->addHours(rand(1, 24));
+
+            if ($readAt->isPast()) {
+                DB::table('letters')->insert([
+                    'sender_id' => $sender->id,
+                    'receiver_id' => $receiver->id,
+                    'content' => $unreadMessages[($i + 2) % count($unreadMessages)],
+                    'is_open_letter' => false,
+                    'parent_letter_id' => null,
+                    'status' => 'read',
+                    'sent_at' => $sentAt,
+                    'delivered_at' => $deliveredAt,
+                    'read_at' => $readAt,
+                    'created_at' => $sentAt,
+                    'updated_at' => $now,
+                ]);
+            }
+        }
     }
 
     /**

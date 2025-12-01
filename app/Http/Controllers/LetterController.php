@@ -16,7 +16,14 @@ class LetterController extends Controller
     private function getValidationRules()
     {
         return [
-            'content' => 'required|string|max:1000',
+            'content' => ['required', 'string', 'max:1000', function ($attribute, $value, $fail) {
+                // Check if content is empty or only whitespace after trimming
+                // trim() removes whitespace including \n, \t, \r, spaces
+                $trimmed = trim($value);
+                if ($trimmed === '' || strlen($trimmed) === 0) {
+                    $fail('The content field cannot be empty or contain only whitespace.');
+                }
+            }],
             'receiver_id' => 'nullable|exists:users,id',
             'is_open_letter' => 'boolean',
             'parent_letter_id' => 'nullable|exists:letters,id',
@@ -183,12 +190,8 @@ class LetterController extends Controller
      */
     public function report(Request $request, $id)
     {
-        // Sanitize and validate the reason
-        $sanitizedReason = strip_tags(trim($request->reason ?? ''));
-        
-        $validator = Validator::make([
-            'reason' => $sanitizedReason,
-        ], [
+        // Validate first, then sanitize
+        $validator = Validator::make($request->all(), [
             'reason' => 'required|string|min:20|max:500',
         ], [
             'reason.required' => 'Please provide a reason for reporting this letter.',
@@ -197,7 +200,15 @@ class LetterController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return back()->withErrors($validator->errors());
+            return redirect()->route('platform.discover')->withErrors($validator->errors());
+        }
+        
+        // Sanitize after validation passes
+        $sanitizedReason = strip_tags(trim($request->reason));
+        
+        // Check if sanitized reason still meets minimum length
+        if (strlen($sanitizedReason) < 20) {
+            return redirect()->route('platform.discover')->withErrors(['reason' => 'The reason must be at least 20 characters after removing HTML tags.']);
         }
 
         $user = Auth::user();
@@ -214,26 +225,36 @@ class LetterController extends Controller
         ", [$id]);
 
         if (!$letter) {
-            return back()->withErrors(['message' => 'Letter not found.']);
+            return redirect()->route('platform.discover')->withErrors(['message' => 'Letter not found.']);
         }
 
         // Prevent users from reporting their own letters
-        if ($letter->sender_id == $user->id) {
-            return back()->withErrors(['message' => 'You cannot report your own letter.']);
+        // Cast to int for comparison to avoid type mismatch issues
+        if ((int)$letter->sender_id === (int)$user->id) {
+            return redirect()->route('platform.discover')->withErrors(['message' => 'You cannot report your own letter.']);
         }
 
         // Create the report
-        DB::table('reports')->insert([
-            'reporter_id' => $user->id,
-            'reported_user_id' => $letter->sender_id,
-            'reported_letter_id' => $id,
-            'reason' => $sanitizedReason, // Use sanitized reason
-            'status' => 'pending',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        try {
+            DB::table('reports')->insert([
+                'reporter_id' => $user->id,
+                'reported_user_id' => $letter->sender_id,
+                'reported_letter_id' => $id,
+                'reason' => $sanitizedReason, // Use sanitized reason
+                'status' => 'pending',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Failed to create report', [
+                'error' => $e->getMessage(),
+                'user_id' => $user->id,
+                'letter_id' => $id,
+            ]);
+            return redirect()->route('platform.discover')->withErrors(['message' => 'Failed to create report. Please try again.']);
+        }
 
-        return back()->with('success', 'Letter reported successfully. Our team will review it shortly.');
+        return redirect()->route('platform.discover')->with('success', 'Letter reported successfully. Our team will review it shortly.');
     }
 
     /**
@@ -263,11 +284,28 @@ class LetterController extends Controller
             ], 422);
         }
 
+        // Prevent users from sending letters to themselves
+        if (!$isOpenLetter && $receiverId == $user->id) {
+            return response()->json([
+                'errors' => ['receiver_id' => ['You cannot send a letter to yourself']]
+            ], 422);
+        }
+
+        // Sanitize content to prevent XSS
+        $sanitizedContent = strip_tags(trim($data['content']));
+        
+        // Check if content is empty after sanitization
+        if (empty($sanitizedContent)) {
+            return response()->json([
+                'errors' => ['content' => ['The content field cannot be empty or contain only whitespace.']]
+            ], 422);
+        }
+
         // Insert the letter
         $letterId = DB::table('letters')->insertGetId([
             'sender_id' => $user->id,
             'receiver_id' => $receiverId,
-            'content' => $data['content'],
+            'content' => $sanitizedContent,
             'is_open_letter' => $isOpenLetter,
             'parent_letter_id' => $data['parent_letter_id'] ?? null,
             'status' => 'sent',
@@ -459,22 +497,25 @@ class LetterController extends Controller
                         THEN sender.anonymous_name 
                         ELSE sender.name 
                     END as sender_name,
+                    CASE 
+                        WHEN sender.is_anonymous = 1 
+                        THEN NULL 
+                        ELSE sender.avatar 
+                    END as sender_avatar,
                     receiver.id as receiver_id,
                     CASE 
                         WHEN receiver.is_anonymous = 1 AND receiver.anonymous_name IS NOT NULL 
                         THEN receiver.anonymous_name 
                         ELSE receiver.name 
                     END as receiver_name,
-                    claimed_by_user.id as claimed_by_id,
                     CASE 
-                        WHEN claimed_by_user.is_anonymous = 1 AND claimed_by_user.anonymous_name IS NOT NULL 
-                        THEN claimed_by_user.anonymous_name 
-                        ELSE claimed_by_user.name 
-                    END as claimed_by_name
+                        WHEN receiver.is_anonymous = 1 
+                        THEN NULL 
+                        ELSE receiver.avatar 
+                    END as receiver_avatar
                 FROM letters l
                 JOIN users sender ON l.sender_id = sender.id
                 LEFT JOIN users receiver ON l.receiver_id = receiver.id
-                LEFT JOIN users claimed_by_user ON l.claimed_by = claimed_by_user.id
                 WHERE l.id = ?
                 AND l.deleted_at IS NULL
             ", [$id]);

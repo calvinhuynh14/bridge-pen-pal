@@ -352,7 +352,6 @@ const getProfileTitle = () => {
                                     "
                                     :disabled="isResident"
                                     required
-                                    :autofocus="!isResident"
                                     :error-id="
                                         profileForm.errors.name
                                             ? 'name-error'
