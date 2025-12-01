@@ -145,7 +145,6 @@ const handleBan = (reportId) => {
 
 const handleViewUser = (userId) => {
     // TODO: Navigate to user profile or open user details modal
-    console.log("View user:", userId);
 };
 
 // Format reports for DataTable

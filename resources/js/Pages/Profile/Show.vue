@@ -82,13 +82,6 @@ const showLanguageModal = ref(false);
 // Anonymous name prop
 const anonymousName = computed(() => props.anonymousName);
 
-// Debug: Log initial props
-console.log("Profile Show - Initial props:", {
-    isAnonymous: props.isAnonymous,
-    anonymousName: props.anonymousName,
-    isAnonymousType: typeof props.isAnonymous,
-});
-
 // Anonymous mode state - use computed to sync with props
 const isAnonymousMode = computed({
     get: () => props.isAnonymous || false,
@@ -102,26 +95,11 @@ const anonymousForm = useForm({
     is_anonymous: props.isAnonymous || false,
 });
 
-// Debug: Log initial form state
-console.log("Profile Show - Initial form state:", {
-    is_anonymous: anonymousForm.is_anonymous,
-    is_anonymousType: typeof anonymousForm.is_anonymous,
-});
-
 // Watch for prop changes and update form
 watch(
     () => props.isAnonymous,
-    (newValue, oldValue) => {
-        console.log("Profile Show - Watcher fired:", {
-            oldValue,
-            newValue,
-            newValueType: typeof newValue,
-            booleanValue: Boolean(newValue),
-        });
+    (newValue) => {
         anonymousForm.is_anonymous = Boolean(newValue);
-        console.log("Profile Show - After watcher update:", {
-            formValue: anonymousForm.is_anonymous,
-        });
     },
     { immediate: true }
 );
@@ -130,21 +108,12 @@ watch(
 const updateAnonymousMode = (event) => {
     const newValue = event.target.checked;
 
-    console.log("Profile Show - updateAnonymousMode called:", {
-        newValue,
-        currentFormValue: anonymousForm.is_anonymous,
-        currentPropValue: props.isAnonymous,
-    });
-
     // Update form value
     anonymousForm.is_anonymous = newValue;
-
-    console.log("Profile Show - Form updated to:", anonymousForm.is_anonymous);
 
     anonymousForm.put(route("profile.anonymous.update"), {
         preserveScroll: true,
         onSuccess: () => {
-            console.log("Profile Show - Update successful, reloading props...");
             // Reload page props to get updated anonymous status and name
             router.reload({ only: ["isAnonymous", "anonymousName"] });
         },

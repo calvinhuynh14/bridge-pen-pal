@@ -1097,6 +1097,37 @@ Route::middleware([
             }
         }
         
+        // Check if user needs to set interests/languages (only for volunteers and residents)
+        $needsOnboarding = false;
+        $availableInterests = [];
+        $availableLanguages = [];
+        $userInterests = [];
+        $userLanguages = [];
+        
+        if ($user->isVolunteer() || $user->isResident()) {
+            // Get available interests and languages
+            $availableInterests = \App\Models\Interest::orderBy('name')->get(['id', 'name'])->toArray();
+            $availableLanguages = \App\Models\Language::orderBy('name')->get(['id', 'name'])->toArray();
+            
+            // Get user's current interests and languages
+            $userInterests = $user->interests()->pluck('interests.id')->toArray();
+            $userLanguages = $user->languages()->pluck('languages.id')->toArray();
+            
+            // Check if user needs onboarding (hasn't set interests or languages)
+            $needsOnboarding = empty($userInterests) || empty($userLanguages);
+            
+            \Log::info('PlatformHome - Onboarding check', [
+                'user_id' => $user->id,
+                'is_volunteer' => $user->isVolunteer(),
+                'is_resident' => $user->isResident(),
+                'user_interests_count' => count($userInterests),
+                'user_languages_count' => count($userLanguages),
+                'available_interests_count' => count($availableInterests),
+                'available_languages_count' => count($availableLanguages),
+                'needs_onboarding' => $needsOnboarding,
+            ]);
+        }
+        
         // Unread letters will be fetched via API call on the frontend
         // This allows for pagination without reloading the page
         $unreadLetters = [];
@@ -1104,6 +1135,11 @@ Route::middleware([
         return Inertia::render('PlatformHome', [
             'storyOfTheWeek' => $featuredStory,
             'unreadLetters' => $unreadLetters,
+            'needsOnboarding' => $needsOnboarding,
+            'availableInterests' => $availableInterests,
+            'availableLanguages' => $availableLanguages,
+            'userInterests' => $userInterests,
+            'userLanguages' => $userLanguages,
         ]);
     })->name('platform.home');
     
@@ -1111,6 +1147,17 @@ Route::middleware([
     Route::get('/platform/discover', function (Request $request) {
         $user = auth()->user();
         $userType = $user->getUserTypeName();
+
+        // Get current user's interests and languages
+        $userInterestIds = DB::table('user_interests')
+            ->where('user_id', $user->id)
+            ->pluck('interest_id')
+            ->toArray();
+        
+        $userLanguageIds = DB::table('user_languages')
+            ->where('user_id', $user->id)
+            ->pluck('language_id')
+            ->toArray();
 
         // Base query for open letters
         $query = "
@@ -1155,10 +1202,54 @@ Route::middleware([
         $query .= " AND l.sender_id != ?";
         $params[] = $user->id;
 
-        // Order by most recent first
+        // Order by most recent first (will be re-sorted after calculating common interests/languages)
         $query .= " ORDER BY l.sent_at DESC, l.created_at DESC";
 
         $openLetters = DB::select($query, $params);
+
+        // Calculate common interests and languages for each letter, and add to letter object
+        foreach ($openLetters as $letter) {
+            // Get common interests
+            $commonInterests = [];
+            if (count($userInterestIds) > 0) {
+                $commonInterests = DB::table('user_interests as ui_sender')
+                    ->join('interests as i', 'ui_sender.interest_id', '=', 'i.id')
+                    ->where('ui_sender.user_id', $letter->sender_id)
+                    ->whereIn('ui_sender.interest_id', $userInterestIds)
+                    ->pluck('i.name')
+                    ->toArray();
+            }
+            
+            // Get common languages
+            $commonLanguages = [];
+            if (count($userLanguageIds) > 0) {
+                $commonLanguages = DB::table('user_languages as ul_sender')
+                    ->join('languages as l', 'ul_sender.language_id', '=', 'l.id')
+                    ->where('ul_sender.user_id', $letter->sender_id)
+                    ->whereIn('ul_sender.language_id', $userLanguageIds)
+                    ->pluck('l.name')
+                    ->toArray();
+            }
+            
+            $letter->common_interests = $commonInterests;
+            $letter->common_interests_count = count($commonInterests);
+            $letter->common_languages = $commonLanguages;
+            $letter->common_languages_count = count($commonLanguages);
+        }
+
+        // Sort by common interests count (descending), then common languages count (descending), then most recent
+        usort($openLetters, function($a, $b) {
+            // First sort by common interests count
+            if ($a->common_interests_count != $b->common_interests_count) {
+                return $b->common_interests_count - $a->common_interests_count;
+            }
+            // Then by common languages count
+            if ($a->common_languages_count != $b->common_languages_count) {
+                return $b->common_languages_count - $a->common_languages_count;
+            }
+            // Finally by sent_at date
+            return strtotime($b->sent_at) - strtotime($a->sent_at);
+        });
 
         // Fetch featured story from database
         $featuredStory = null;

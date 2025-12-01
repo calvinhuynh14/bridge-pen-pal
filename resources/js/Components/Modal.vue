@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch, nextTick } from 'vue';
 
 const props = defineProps({
     show: {
@@ -41,17 +41,20 @@ const titleId = computed(() => props.title ? `${modalId}-title` : null);
 const descriptionId = computed(() => props.description ? `${modalId}-description` : null);
 const previousActiveElement = ref(null);
 
-watch(() => props.show, () => {
-    if (props.show) {
+watch(() => props.show, (newValue) => {
+    if (newValue) {
         // Store the element that triggered the modal
         previousActiveElement.value = document.activeElement;
         document.body.style.overflow = 'hidden';
         showSlot.value = true;
-        dialog.value?.showModal();
-        // Focus trap: focus the dialog element
-        setTimeout(() => {
-            dialog.value?.focus();
-        }, 100);
+        // Use nextTick to ensure dialog is in DOM before calling showModal
+        nextTick(() => {
+            dialog.value?.showModal();
+            // Focus trap: focus the dialog element
+            setTimeout(() => {
+                dialog.value?.focus();
+            }, 100);
+        });
     } else {
         document.body.style.overflow = null;
         setTimeout(() => {
@@ -63,7 +66,7 @@ watch(() => props.show, () => {
             }
         }, 200);
     }
-});
+}, { immediate: true });
 
 const close = () => {
     if (props.closeable) {
@@ -106,6 +109,19 @@ const handleFocus = (e) => {
 onMounted(() => {
     document.addEventListener('keydown', closeOnEscape);
     dialog.value?.addEventListener('keydown', handleFocus);
+    
+    // If modal should be shown on mount, show it
+    if (props.show) {
+        previousActiveElement.value = document.activeElement;
+        document.body.style.overflow = 'hidden';
+        showSlot.value = true;
+        nextTick(() => {
+            dialog.value?.showModal();
+            setTimeout(() => {
+                dialog.value?.focus();
+            }, 100);
+        });
+    }
 });
 
 onUnmounted(() => {

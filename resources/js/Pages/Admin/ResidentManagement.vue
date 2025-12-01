@@ -91,12 +91,10 @@ const handleDelete = (resident) => {
 // Action methods
 const editResident = (residentId) => {
     // TODO: Implement edit functionality
-    console.log("Edit resident:", residentId);
 };
 
 const deleteResident = (residentId) => {
     // TODO: Implement delete functionality
-    console.log("Delete resident:", residentId);
 };
 
 const createResident = () => {

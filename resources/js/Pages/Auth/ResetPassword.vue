@@ -50,7 +50,6 @@ const getErrorMessages = () => {
             } else {
                 // If we don't recognize the error, show it along with requirements
                 // This helps debug what Laravel is actually returning
-                console.log('Password error:', passwordError);
             }
         });
         

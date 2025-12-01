@@ -33,15 +33,12 @@ const props = defineProps({
 
 // Get user type ID based on user type name
 const getUserTypeId = (type) => {
-    console.log("getUserTypeId called with type:", type);
     const typeIds = {
         resident: 3, // Based on the migration order
         volunteer: 2,
         admin: 1,
     };
-    const result = typeIds[type] || 2; // Default to volunteer
-    console.log("getUserTypeId returning:", result);
-    return result;
+    return typeIds[type] || 2; // Default to volunteer
 };
 
 const form = useForm({
@@ -211,19 +208,9 @@ const submit = () => {
     // Ensure user_type_id is set before submission
     form.user_type_id = getUserTypeId(props.type);
 
-    // Log the form data and user type information
-    console.log("=== REGISTRATION DEBUG ===");
-    console.log("Type prop:", props.type);
-    console.log("User type ID:", getUserTypeId(props.type));
-    console.log("Form data:", form.data());
-    console.log("Form user_type_id:", form.user_type_id);
-    console.log("========================");
-
     form.post(route("register"), {
-        onSuccess: (page) => {
+        onSuccess: () => {
             // Fortify will handle the redirect automatically
-            // But we can also manually redirect if needed
-            console.log("Registration successful", page);
 
             // Reset form fields
             form.reset(
@@ -237,8 +224,8 @@ const submit = () => {
                 "organization_name"
             );
         },
-        onError: (errors) => {
-            console.error("Registration errors:", errors);
+        onError: () => {
+            // Errors are handled by form.errors
         },
         onFinish: () => {
             // This runs after success or error
@@ -296,16 +283,8 @@ const applicationNotesRemaining = computed(() => {
     return APPLICATION_NOTES_MAX_LENGTH - applicationNotesLength.value;
 });
 
-// Log component initialization
-console.log("=== REGISTER COMPONENT INIT ===");
-console.log("Props:", props);
-console.log("Initial form data:", form.data());
-console.log("User type ID from getUserTypeId:", getUserTypeId(props.type));
-console.log("================================");
-
 // Ensure user_type_id is set correctly in the form
 form.user_type_id = getUserTypeId(props.type);
-console.log("Updated form user_type_id:", form.user_type_id);
 </script>
 
 <template>

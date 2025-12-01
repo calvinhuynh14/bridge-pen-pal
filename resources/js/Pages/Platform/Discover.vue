@@ -24,15 +24,6 @@ const props = defineProps({
     },
 });
 
-// Debug logging
-console.log('Discover page - Props received:', {
-    openLetters: props.openLetters?.length || 0,
-    letterCount: props.letterCount,
-    storyOfTheWeek: props.storyOfTheWeek,
-    storyOfTheWeekType: typeof props.storyOfTheWeek,
-    storyOfTheWeekIsNull: props.storyOfTheWeek === null,
-    storyOfTheWeekIsUndefined: props.storyOfTheWeek === undefined,
-});
 
 // Get current user from page props
 const page = usePage();

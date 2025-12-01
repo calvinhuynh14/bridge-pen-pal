@@ -1,5 +1,5 @@
 <script setup>
-import { defineProps, defineEmits, computed } from "vue";
+import { defineProps, defineEmits, computed, ref } from "vue";
 import { usePage } from "@inertiajs/vue3";
 import Avatar from "@/Components/Avatar.vue";
 
@@ -28,6 +28,9 @@ const emit = defineEmits(["claim", "report", "view", "reply"]);
 const page = usePage();
 const currentUserId = computed(() => page.props.auth?.user?.id);
 
+// Hover state for common interests tooltip
+const showCommonInterests = ref(false);
+
 // Format date helper (date only, no time)
 const formatDate = (dateString) => {
     if (!dateString) return "N/A";
@@ -52,19 +55,6 @@ const statusConfig = computed(() => {
     const isSender = props.letter.sender_id === currentUserId.value;
     const isReceiver = props.letter.receiver_id === currentUserId.value;
 
-    // Debug logging
-    if (props.letter.id === 67) {
-        console.log("LetterCard statusConfig for letter 67:", {
-            letterId: props.letter.id,
-            status: status,
-            senderId: props.letter.sender_id,
-            receiverId: props.letter.receiver_id,
-            currentUserId: currentUserId.value,
-            isSender: isSender,
-            isReceiver: isReceiver,
-            read_at: props.letter.read_at,
-        });
-    }
 
     // Determine what status to show based on perspective
     let displayStatus = status;
@@ -85,9 +75,6 @@ const statusConfig = computed(() => {
         // Status already reflects: sent → delivered → read
     }
 
-    if (props.letter.id === 67) {
-        console.log("LetterCard displayStatus for letter 67:", displayStatus);
-    }
 
     switch (displayStatus) {
         case "sent":
@@ -187,7 +174,11 @@ const handleReport = (event) => {
         </div>
 
         <!-- Avatar and Name -->
-        <header class="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-3">
+        <header 
+            class="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-3 relative"
+            @mouseenter="showCommonInterests = true"
+            @mouseleave="showCommonInterests = false"
+        >
             <div class="flex-shrink-0">
                 <Avatar
                     :src="letter.sender_avatar ? `/images/avatars/${letter.sender_avatar}` : null"
@@ -212,6 +203,51 @@ const handleReport = (event) => {
                 >
                     {{ formatDate(letter.sent_at) }}
                 </time>
+            </div>
+            
+            <!-- Common Interests/Languages Tooltip -->
+            <div
+                v-if="showCommonInterests"
+                class="absolute left-0 top-full mt-2 z-50 bg-white border-2 border-primary rounded-lg shadow-xl p-3 min-w-[200px] max-w-[300px]"
+                role="tooltip"
+                aria-label="Common interests and languages"
+            >
+                <!-- Common Interests -->
+                <div v-if="letter.common_interests && letter.common_interests.length > 0" class="mb-3">
+                    <div class="text-xs font-semibold text-primary mb-2">
+                        Common Interests:
+                    </div>
+                    <div class="flex flex-wrap gap-1.5">
+                        <span
+                            v-for="(interest, index) in letter.common_interests"
+                            :key="`interest-${index}`"
+                            class="inline-block px-2 py-1 bg-primary text-white text-xs rounded-md whitespace-nowrap"
+                        >
+                            {{ interest }}
+                        </span>
+                    </div>
+                </div>
+                
+                <!-- Common Languages -->
+                <div v-if="letter.common_languages && letter.common_languages.length > 0" :class="{'mb-3': (!letter.common_interests || letter.common_interests.length === 0)}">
+                    <div class="text-xs font-semibold text-primary mb-2">
+                        Common Languages:
+                    </div>
+                    <div class="flex flex-wrap gap-1.5">
+                        <span
+                            v-for="(language, index) in letter.common_languages"
+                            :key="`language-${index}`"
+                            class="inline-block px-2 py-1 bg-accent text-black text-xs rounded-md whitespace-nowrap"
+                        >
+                            {{ language }}
+                        </span>
+                    </div>
+                </div>
+                
+                <!-- No Common Interests or Languages -->
+                <div v-if="(!letter.common_interests || letter.common_interests.length === 0) && (!letter.common_languages || letter.common_languages.length === 0)" class="text-xs text-gray-600 italic">
+                    No common interests or languages
+                </div>
             </div>
         </header>
 

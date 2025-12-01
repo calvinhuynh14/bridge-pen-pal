@@ -448,56 +448,18 @@ const handleView = async (letter) => {
     // Mark letter as read if user is the receiver
     const currentUserId = user.value?.id;
 
-    console.log("=== VIEWING LETTER DEBUG ===");
-    console.log("Viewing letter:", {
-        letterId: letter.id,
-        receiverId: letter.receiver_id,
-        receiverIdType: typeof letter.receiver_id,
-        currentUserId: currentUserId,
-        currentUserIdType: typeof currentUserId,
-        readAt: letter.read_at,
-        status: letter.status,
-        fullLetter: letter,
-        shouldMarkAsRead:
-            letter.receiver_id === currentUserId && !letter.read_at,
-        receiverIdMatch: letter.receiver_id === currentUserId,
-        receiverIdLooseMatch: letter.receiver_id == currentUserId,
-        hasReadAt: !!letter.read_at,
-    });
-
     if (letter.receiver_id === currentUserId && !letter.read_at) {
-        console.log("✓ Conditions met - marking as read");
         try {
-            console.log(`Calling API: GET /api/letters/${letter.id}`);
             // Call API to mark as read (the show endpoint marks it as read)
             const response = await axios.get(`/api/letters/${letter.id}`);
-
-            console.log("API Response:", response);
-            console.log("API Response Data:", response.data);
             const updatedLetter = response.data.letter;
 
-            console.log("Updated letter from API:", {
-                id: updatedLetter.id,
-                status: updatedLetter.status,
-                read_at: updatedLetter.read_at,
-                fullLetter: updatedLetter,
-            });
-
             // Update the letter in the correspondence list
-            console.log(
-                "Before update - correspondence list length:",
-                correspondence.value.length
-            );
             const letterIndex = correspondence.value.findIndex(
                 (l) => l.id === letter.id
             );
-            console.log("Letter index in list:", letterIndex);
 
             if (letterIndex !== -1) {
-                console.log(
-                    "Before update - letter in list:",
-                    correspondence.value[letterIndex]
-                );
                 // Use Vue's reactive update by replacing the entire object
                 correspondence.value[letterIndex] = {
                     ...correspondence.value[letterIndex],
@@ -505,16 +467,6 @@ const handleView = async (letter) => {
                     status: updatedLetter.status || "read",
                     read_at: updatedLetter.read_at,
                 };
-                console.log(
-                    "After update - letter in list:",
-                    correspondence.value[letterIndex]
-                );
-                console.log(
-                    "Letter status after update:",
-                    correspondence.value[letterIndex].status
-                );
-            } else {
-                console.warn("Letter not found in correspondence list!");
             }
 
             // Update viewing letter with latest data
@@ -528,11 +480,8 @@ const handleView = async (letter) => {
             // Refresh pen pal list to update unread count
             reloadPenPals();
         } catch (error) {
-            console.error("Error marking letter as read:", error);
-            console.error("Error details:", error.response?.data);
+            // Error marking letter as read - silently fail
         }
-    } else {
-        console.log("Not marking as read - conditions not met");
     }
 };
 
@@ -663,27 +612,18 @@ const handleContentInput = (event) => {
 
 // Handle STT text insertion
 const handleSTTTextInserted = (text) => {
-    console.log("Write.vue: handleSTTTextInserted called with:", text);
-    
     if (!text || !text.trim()) {
-        console.warn("Write.vue: Empty text received, ignoring");
         return;
     }
     
     const textarea = document.getElementById("letterContent");
     if (!textarea) {
-        console.error("Write.vue: Textarea not found");
         return;
     }
-    
-    console.log("Write.vue: Current letterContent:", letterContent.value);
-    console.log("Write.vue: Textarea value:", textarea.value);
     
     // Get current cursor position
     const start = textarea.selectionStart || letterContent.value.length;
     const end = textarea.selectionEnd || letterContent.value.length;
-    
-    console.log("Write.vue: Cursor position - start:", start, "end:", end);
     
     // Insert text at cursor position
     const currentText = letterContent.value;
@@ -691,15 +631,11 @@ const handleSTTTextInserted = (text) => {
     const afterCursor = currentText.substring(end);
     const newText = beforeCursor + text + afterCursor;
     
-    console.log("Write.vue: New text length:", newText.length, "max:", maxCharacters);
-    
     // Ensure we don't exceed character limit
     if (newText.length > maxCharacters) {
         letterContent.value = newText.substring(0, maxCharacters);
-        console.log("Write.vue: Text truncated to max length");
     } else {
         letterContent.value = newText;
-        console.log("Write.vue: Text inserted successfully");
     }
     
     // Update cursor position after inserted text
@@ -707,7 +643,6 @@ const handleSTTTextInserted = (text) => {
         const newCursorPos = Math.min(start + text.length, maxCharacters);
         textarea.setSelectionRange(newCursorPos, newCursorPos);
         textarea.focus();
-        console.log("Write.vue: Cursor moved to position:", newCursorPos);
     });
 };
 

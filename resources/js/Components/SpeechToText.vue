@@ -54,10 +54,6 @@ const initRecognition = () => {
     };
 
     recognitionInstance.onresult = (event) => {
-        console.log("STT onresult event:", event);
-        console.log("STT results:", event.results);
-        console.log("STT results length:", event.results.length);
-
         // Only process final results to avoid duplicate insertions
         let finalTranscript = "";
         let hasFinalResult = false;
@@ -73,16 +69,12 @@ const initRecognition = () => {
 
         // Only proceed if we have a final result
         if (!hasFinalResult) {
-            console.log("STT: Interim result, waiting for final result...");
             // Update status for interim results (optional visual feedback)
             statusMessage.value = "Listening...";
             return;
         }
 
-        console.log("STT final transcript:", finalTranscript);
-
         if (!finalTranscript || !finalTranscript.trim()) {
-            console.warn("STT: Empty final transcript");
             return;
         }
 
@@ -96,17 +88,10 @@ const initRecognition = () => {
                 processedTranscript.slice(1);
         }
 
-        // Add a space before inserting (if there's existing text, it will be at cursor position)
-        // The parent component handles the actual insertion
-
         isProcessing.value = true;
         statusMessage.value = "Processing...";
 
         // Emit the processed text to parent component to handle insertion
-        console.log(
-            "STT: Emitting text-inserted event with:",
-            processedTranscript
-        );
         emit("text-inserted", processedTranscript);
 
         setTimeout(() => {
