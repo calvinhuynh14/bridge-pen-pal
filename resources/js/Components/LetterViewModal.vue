@@ -1,6 +1,7 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, onMounted, onUnmounted, computed } from "vue";
 import Avatar from "@/Components/Avatar.vue";
+import TextToSpeech from "@/Components/TextToSpeech.vue";
 
 const props = defineProps({
     show: {
@@ -59,6 +60,32 @@ onMounted(() => {
 onUnmounted(() => {
     window.removeEventListener("resize", checkOrientation);
     window.removeEventListener("orientationchange", checkOrientation);
+});
+
+// Prepare text for TTS (includes all letter content)
+const ttsText = computed(() => {
+    if (!props.letter) return '';
+    
+    let text = '';
+    
+    // Date
+    text += `Date: ${formatDate(props.letter.sent_at)}. `;
+    
+    // To
+    text += 'To: ';
+    if (props.letter.is_open_letter || !props.letter.receiver_name) {
+        text += 'Bridge Community. ';
+    } else {
+        text += `${props.letter.receiver_name}. `;
+    }
+    
+    // Content
+    text += `Message: ${props.letter.content}. `;
+    
+    // From
+    text += `From: ${props.letter.sender_name}.`;
+    
+    return text;
 });
 </script>
 
@@ -123,15 +150,15 @@ onUnmounted(() => {
                         </svg>
                     </button>
 
-            <!-- Letter Content (scrollable) -->
-            <div
-                v-if="letter"
-                class="overflow-y-auto p-4 sm:p-6 md:p-8 lg:p-12 flex flex-col"
-                style="flex: 1 1 0; min-height: 0"
-                id="letter-content"
-                role="region"
-                aria-label="Letter content"
-            >
+                    <!-- Letter Content (scrollable) -->
+                    <div
+                        v-if="letter"
+                        class="overflow-y-auto p-4 sm:p-6 md:p-8 lg:p-12 flex flex-col"
+                        style="flex: 1 1 0; min-height: 0"
+                        id="letter-content"
+                        role="region"
+                        aria-label="Letter content"
+                    >
                 <!-- Date (top left) -->
                 <time
                     class="text-left text-gray-600 mb-3 sm:mb-4 md:mb-6 text-xs sm:text-sm md:text-base block"
@@ -182,14 +209,25 @@ onUnmounted(() => {
                             {{ letter.sender_name }}
                         </p>
                     </div>
-                </div>
-            </div>
+                    </div>
+                    </div>
 
-            <!-- Action Buttons (outside letter, at bottom of modal) -->
-            <div
-                class="sticky bottom-0 bg-white border-t border-gray-200 px-4 sm:px-6 md:px-8 py-3 sm:py-4 flex justify-end gap-2 sm:gap-3"
-            >
-                <button
+                    <!-- Action Buttons (outside letter, at bottom of modal) -->
+                    <div
+                        class="sticky bottom-0 bg-white border-t border-gray-200 px-4 sm:px-6 md:px-8 py-3 sm:py-4"
+                    >
+                <!-- TTS Controls -->
+                <div v-if="letter" class="mb-3">
+                    <TextToSpeech
+                        :text="ttsText"
+                        content-id="letter-content"
+                        :compact="false"
+                    />
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex justify-end gap-2 sm:gap-3">
+                    <button
                     @click="$emit('report', letter)"
                     class="px-3 py-1.5 sm:px-4 sm:py-2 border-2 border-red-300 text-red-600 rounded-lg font-medium hover:bg-red-50 transition-colors flex items-center gap-1 sm:gap-2 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                     aria-label="Report this letter"
@@ -229,9 +267,10 @@ onUnmounted(() => {
                             d="M5.25 5.25a3 3 0 0 0-3 3v10.5a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3V13.5a.75.75 0 0 0-1.5 0v5.25a1.5 1.5 0 0 1-1.5 1.5H5.25a1.5 1.5 0 0 1-1.5-1.5V8.25a1.5 1.5 0 0 1 1.5-1.5h5.25a.75.75 0 0 0 0-1.5H5.25Z"
                         />
                     </svg>
-                    Reply
-                </button>
-            </div>
+                        Reply
+                    </button>
+                </div>
+                    </div>
                 </div>
             </transition>
         </div>

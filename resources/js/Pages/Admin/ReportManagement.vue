@@ -194,13 +194,19 @@ const statusFilters = [
                         >
                             Report Statistics
                         </h2>
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6" role="list">
+                        <div
+                            class="grid grid-cols-1 sm:grid-cols-3 gap-6"
+                            role="list"
+                        >
                             <div
                                 class="text-center bg-white bg-opacity-20 rounded-lg p-4"
                                 role="listitem"
                                 aria-label="Total Reports"
                             >
-                                <div class="text-3xl font-bold text-white mb-2" aria-hidden="true">
+                                <div
+                                    class="text-3xl font-bold text-white mb-2"
+                                    aria-hidden="true"
+                                >
                                     {{ statistics.total }}
                                 </div>
                                 <div
@@ -214,7 +220,10 @@ const statusFilters = [
                                 role="listitem"
                                 aria-label="Pending Reports"
                             >
-                                <div class="text-3xl font-bold text-accent mb-2" aria-hidden="true">
+                                <div
+                                    class="text-3xl font-bold text-accent mb-2"
+                                    aria-hidden="true"
+                                >
                                     {{ statistics.pending }}
                                 </div>
                                 <div
@@ -228,7 +237,10 @@ const statusFilters = [
                                 role="listitem"
                                 aria-label="Resolved Reports"
                             >
-                                <div class="text-3xl font-bold text-green-300 mb-2" aria-hidden="true">
+                                <div
+                                    class="text-3xl font-bold text-green-300 mb-2"
+                                    aria-hidden="true"
+                                >
                                     {{ statistics.resolved }}
                                 </div>
                                 <div
@@ -242,69 +254,70 @@ const statusFilters = [
 
                     <!-- Status Filter Dropdown -->
                     <section aria-label="Filter Reports" class="mb-6">
-                    <Dropdown
-                        align="left"
-                        width="48"
-                        aria-label="Filter reports by status"
-                    >
-                        <template #trigger="{ open }">
-                            <button
-                                type="button"
-                                :aria-expanded="open ? 'true' : 'false'"
-                                aria-haspopup="true"
-                                aria-label="Filter reports by status"
-                                class="inline-flex items-center gap-2 px-2 py-1 text-sm md:px-4 md:py-2 md:text-sm rounded-lg font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 bg-primary text-white hover:bg-hover hover:text-white cursor-pointer"
-                            >
-                                <span>
-                                    {{
-                                        statusFilters.find(
-                                            (f) =>
-                                                f.value === activeStatusFilter
-                                        )?.label || "Filter Status"
-                                    }}
-                                </span>
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke-width="1.5"
-                                    stroke="currentColor"
-                                    :class="[
-                                        'size-4 transition-transform',
-                                        open ? 'rotate-180' : '',
-                                    ]"
-                                    aria-hidden="true"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        d="m19.5 8.25-7.5 7.5-7.5-7.5"
-                                    />
-                                </svg>
-                            </button>
-                        </template>
-                        <template #content>
-                            <div class="py-1">
+                        <Dropdown
+                            align="left"
+                            width="48"
+                            aria-label="Filter reports by status"
+                        >
+                            <template #trigger="{ open }">
                                 <button
-                                    v-for="filter in statusFilters"
-                                    :key="filter.value"
-                                    @click="setStatusFilter(filter.value)"
-                                    :class="[
-                                        'block w-full text-left px-4 py-2 text-sm text-white transition-colors',
-                                        activeStatusFilter === filter.value
-                                            ? 'bg-pressed font-semibold'
-                                            : 'hover:bg-pressed hover:bg-opacity-80',
-                                    ]"
-                                    :aria-label="`Filter by ${filter.label}`"
-                                    :aria-pressed="
-                                        activeStatusFilter === filter.value
-                                    "
+                                    type="button"
+                                    :aria-expanded="open ? 'true' : 'false'"
+                                    aria-haspopup="true"
+                                    aria-label="Filter reports by status"
+                                    class="inline-flex items-center gap-2 px-2 py-1 text-sm md:px-4 md:py-2 md:text-sm rounded-lg font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 bg-primary text-white hover:bg-hover hover:text-white cursor-pointer"
                                 >
-                                    {{ filter.label }}
+                                    <span>
+                                        {{
+                                            statusFilters.find(
+                                                (f) =>
+                                                    f.value ===
+                                                    activeStatusFilter
+                                            )?.label || "Filter Status"
+                                        }}
+                                    </span>
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke-width="1.5"
+                                        stroke="currentColor"
+                                        :class="[
+                                            'size-4 transition-transform',
+                                            open ? 'rotate-180' : '',
+                                        ]"
+                                        aria-hidden="true"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            d="m19.5 8.25-7.5 7.5-7.5-7.5"
+                                        />
+                                    </svg>
                                 </button>
-                            </div>
-                        </template>
-                    </Dropdown>
+                            </template>
+                            <template #content>
+                                <div class="py-1">
+                                    <button
+                                        v-for="filter in statusFilters"
+                                        :key="filter.value"
+                                        @click="setStatusFilter(filter.value)"
+                                        :class="[
+                                            'block w-full text-left px-4 py-2 text-sm text-white transition-colors',
+                                            activeStatusFilter === filter.value
+                                                ? 'bg-pressed font-semibold'
+                                                : 'hover:bg-pressed hover:bg-opacity-80',
+                                        ]"
+                                        :aria-label="`Filter by ${filter.label}`"
+                                        :aria-pressed="
+                                            activeStatusFilter === filter.value
+                                        "
+                                    >
+                                        {{ filter.label }}
+                                    </button>
+                                </div>
+                            </template>
+                        </Dropdown>
                     </section>
 
                     <!-- DataTable -->
@@ -562,26 +575,12 @@ const statusFilters = [
                                             selectedReport.reported_user_id
                                         )
                                     "
-                    />
-                    </section>
-                </div>
-            </div>
-        </main>
-
-                    <!-- Footer -->
-                    <div
-                        class="bg-gray-50 px-6 py-4 sm:flex sm:flex-row-reverse sm:gap-3"
-                    >
-                        <CustomButton
-                            text="Close"
-                            preset="neutral"
-                            size="small"
-                            class="w-full sm:w-auto"
-                            @click="closeDetailsModal"
-                        />
+                                />
+                            </div>
+                        </div>
                     </div>
                 </Modal>
             </div>
-        </div>
+        </main>
     </AppLayout>
 </template>

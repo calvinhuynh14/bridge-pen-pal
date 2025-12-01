@@ -14,6 +14,7 @@ import FilterControls from "@/Components/FilterControls.vue";
 import Select from "@/Components/Select.vue";
 import Avatar from "@/Components/Avatar.vue";
 import LoadingSpinner from "@/Components/LoadingSpinner.vue";
+import SpeechToText from "@/Components/SpeechToText.vue";
 
 // Get current user from page props
 const page = usePage();
@@ -658,6 +659,56 @@ const handleContentInput = (event) => {
         event.target.value = letterContent.value;
     }
     sendError.value = null; // Clear error on input
+};
+
+// Handle STT text insertion
+const handleSTTTextInserted = (text) => {
+    console.log("Write.vue: handleSTTTextInserted called with:", text);
+    
+    if (!text || !text.trim()) {
+        console.warn("Write.vue: Empty text received, ignoring");
+        return;
+    }
+    
+    const textarea = document.getElementById("letterContent");
+    if (!textarea) {
+        console.error("Write.vue: Textarea not found");
+        return;
+    }
+    
+    console.log("Write.vue: Current letterContent:", letterContent.value);
+    console.log("Write.vue: Textarea value:", textarea.value);
+    
+    // Get current cursor position
+    const start = textarea.selectionStart || letterContent.value.length;
+    const end = textarea.selectionEnd || letterContent.value.length;
+    
+    console.log("Write.vue: Cursor position - start:", start, "end:", end);
+    
+    // Insert text at cursor position
+    const currentText = letterContent.value;
+    const beforeCursor = currentText.substring(0, start);
+    const afterCursor = currentText.substring(end);
+    const newText = beforeCursor + text + afterCursor;
+    
+    console.log("Write.vue: New text length:", newText.length, "max:", maxCharacters);
+    
+    // Ensure we don't exceed character limit
+    if (newText.length > maxCharacters) {
+        letterContent.value = newText.substring(0, maxCharacters);
+        console.log("Write.vue: Text truncated to max length");
+    } else {
+        letterContent.value = newText;
+        console.log("Write.vue: Text inserted successfully");
+    }
+    
+    // Update cursor position after inserted text
+    nextTick(() => {
+        const newCursorPos = Math.min(start + text.length, maxCharacters);
+        textarea.setSelectionRange(newCursorPos, newCursorPos);
+        textarea.focus();
+        console.log("Write.vue: Cursor moved to position:", newCursorPos);
+    });
 };
 
 // Handle send letter
@@ -1545,44 +1596,58 @@ onUnmounted(() => {
                 </svg>
             </button>
 
-            <!-- Floating Send Button - Only visible when writing interface is open -->
-            <button
+            <!-- Floating Action Buttons - Only visible when writing interface is open -->
+            <div
                 v-if="showWritingInterface"
-                @click="handleSendLetter"
-                :disabled="isSending || !letterContent.trim() || isOverLimit"
-                class="fixed bottom-20 right-4 lg:bottom-4 bg-accent hover:bg-pressed text-hover rounded-full p-4 lg:p-6 transition-colors flex items-center justify-center z-50 w-fit shadow-lg disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent"
-                :aria-label="isSending ? 'Sending letter...' : 'Send letter'"
-                :aria-busy="isSending"
+                class="fixed bottom-20 right-4 lg:bottom-4 flex items-center gap-3 z-50"
+                role="group"
+                aria-label="Letter actions"
             >
-                <svg
-                    v-if="isSending"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    class="size-6 lg:size-8 animate-spin"
-                    aria-hidden="true"
+                <!-- Speech-to-Text Button -->
+                <SpeechToText
+                    target-id="letterContent"
+                    help-text-id="stt-help-text"
+                    @text-inserted="handleSTTTextInserted"
+                />
+
+                <!-- Send Button -->
+                <button
+                    @click="handleSendLetter"
+                    :disabled="isSending || !letterContent.trim() || isOverLimit"
+                    class="bg-accent hover:bg-pressed text-hover rounded-full p-4 lg:p-6 transition-colors flex items-center justify-center w-fit shadow-lg disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent"
+                    :aria-label="isSending ? 'Sending letter...' : 'Send letter'"
+                    :aria-busy="isSending"
                 >
-                    <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"
-                    />
-                </svg>
-                <svg
-                    v-else
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                    class="size-6 lg:size-8"
-                    aria-hidden="true"
-                >
-                    <path
-                        d="M3.478 2.404a.75.75 0 0 0-.926.941l2.432 7.905H13.5a.75.75 0 0 1 0 1.5H4.984l-2.432 7.905a.75.75 0 0 0 .926.94 60.519 60.519 0 0 0 18.445-8.986.75.75 0 0 0 0-1.218A60.517 60.517 0 0 0 3.478 2.404Z"
-                    />
-                </svg>
-            </button>
+                    <svg
+                        v-if="isSending"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        class="size-6 lg:size-8 animate-spin"
+                        aria-hidden="true"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"
+                        />
+                    </svg>
+                    <svg
+                        v-else
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                        class="size-6 lg:size-8"
+                        aria-hidden="true"
+                    >
+                        <path
+                            d="M3.478 2.404a.75.75 0 0 0-.926.941l2.432 7.905H13.5a.75.75 0 0 1 0 1.5H4.984l-2.432 7.905a.75.75 0 0 0 .926.94 60.519 60.519 0 0 0 18.445-8.986.75.75 0 0 0 0-1.218A60.517 60.517 0 0 0 3.478 2.404Z"
+                        />
+                    </svg>
+                </button>
+            </div>
         </main>
 
         <!-- View Letter Modal -->

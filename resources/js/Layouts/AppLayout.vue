@@ -451,7 +451,7 @@ const logout = () => {
                                     "
                                     class="flex items-center px-4 py-3 text-base font-medium rounded-md hover:bg-hover transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary"
                                     :class="{
-                                        'bg-pressed text-black':
+                                        'bg-pressed text-black hover:text-white':
                                             $page.url.startsWith(
                                                 '/admin/dashboard'
                                             ),
@@ -483,7 +483,7 @@ const logout = () => {
                                     "
                                     class="flex items-center px-4 py-3 text-base font-medium rounded-md hover:bg-hover transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary"
                                     :class="{
-                                        'bg-pressed text-black':
+                                        'bg-pressed text-black hover:text-white':
                                             $page.url.startsWith(
                                                 '/admin/residents'
                                             ),
@@ -519,7 +519,7 @@ const logout = () => {
                                     "
                                     class="flex items-center px-4 py-3 text-base font-medium rounded-md hover:bg-hover transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary"
                                     :class="{
-                                        'bg-pressed text-black':
+                                        'bg-pressed text-black hover:text-white':
                                             $page.url.startsWith(
                                                 '/admin/volunteers'
                                             ),
@@ -548,7 +548,7 @@ const logout = () => {
                                     "
                                     class="flex items-center px-4 py-3 text-base font-medium rounded-md hover:bg-hover transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary"
                                     :class="{
-                                        'bg-pressed text-black':
+                                        'bg-pressed text-black hover:text-white':
                                             $page.url.startsWith(
                                                 '/admin/reports'
                                             ),
@@ -582,7 +582,7 @@ const logout = () => {
                                     "
                                     class="flex items-center px-4 py-3 text-base font-medium rounded-md hover:bg-hover transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary"
                                     :class="{
-                                        'bg-pressed text-black':
+                                        'bg-pressed text-black hover:text-white':
                                             $page.url.startsWith(
                                                 '/platform/home'
                                             ),
@@ -616,7 +616,7 @@ const logout = () => {
                                     "
                                     class="flex items-center px-4 py-3 text-base font-medium rounded-md hover:bg-hover transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary"
                                     :class="{
-                                        'bg-pressed text-black':
+                                        'bg-pressed text-black hover:text-white':
                                             $page.url.startsWith(
                                                 '/platform/discover'
                                             ),
@@ -646,7 +646,7 @@ const logout = () => {
                                     "
                                     class="flex items-center px-4 py-3 text-base font-medium rounded-md hover:bg-hover transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary"
                                     :class="{
-                                        'bg-pressed text-black':
+                                        'bg-pressed text-black hover:text-white':
                                             $page.url.startsWith(
                                                 '/platform/write'
                                             ),
@@ -677,7 +677,7 @@ const logout = () => {
                                     "
                                     class="flex items-center px-4 py-3 text-base font-medium rounded-md hover:bg-hover transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary"
                                     :class="{
-                                        'bg-pressed text-black':
+                                        'bg-pressed text-black hover:text-white':
                                             $page.url.startsWith(
                                                 '/user/profile'
                                             ),
@@ -731,7 +731,7 @@ const logout = () => {
                             "
                             class="flex flex-col items-center py-2 px-3 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary"
                             :class="{
-                                'bg-pressed text-black':
+                                'bg-pressed text-black hover:text-white':
                                     $page.url.startsWith('/admin/dashboard'),
                             }"
                         >
@@ -761,7 +761,7 @@ const logout = () => {
                             "
                             class="flex flex-col items-center py-2 px-3 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary"
                             :class="{
-                                'bg-pressed text-black':
+                                'bg-pressed text-black hover:text-white':
                                     $page.url.startsWith('/admin/residents'),
                             }"
                         >
@@ -793,7 +793,7 @@ const logout = () => {
                             "
                             class="flex flex-col items-center py-2 px-3 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary"
                             :class="{
-                                'bg-pressed text-black':
+                                'bg-pressed text-black hover:text-white':
                                     $page.url.startsWith('/admin/volunteers'),
                             }"
                         >
@@ -820,7 +820,7 @@ const logout = () => {
                             "
                             class="flex flex-col items-center py-2 px-3 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary"
                             :class="{
-                                'bg-pressed text-black':
+                                'bg-pressed text-black hover:text-white':
                                     $page.url.startsWith('/admin/reports'),
                             }"
                         >
@@ -852,7 +852,7 @@ const logout = () => {
                             "
                             class="flex flex-col items-center py-2 px-3 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary"
                             :class="{
-                                'bg-pressed text-black':
+                                'bg-pressed text-black hover:text-white':
                                     $page.url.startsWith('/platform/home'),
                             }"
                         >
@@ -882,7 +882,7 @@ const logout = () => {
                             "
                             class="flex flex-col items-center py-2 px-3 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary"
                             :class="{
-                                'bg-pressed text-black':
+                                'bg-pressed text-black hover:text-white':
                                     $page.url.startsWith('/platform/discover'),
                             }"
                         >
@@ -911,7 +911,7 @@ const logout = () => {
                             "
                             class="flex flex-col items-center py-2 px-3 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary"
                             :class="{
-                                'bg-pressed text-black':
+                                'bg-pressed text-black hover:text-white':
                                     $page.url.startsWith('/platform/write'),
                             }"
                         >
@@ -941,7 +941,7 @@ const logout = () => {
                             "
                             class="flex flex-col items-center py-2 px-3 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary"
                             :class="{
-                                'bg-pressed text-black':
+                                'bg-pressed text-black hover:text-white':
                                     $page.url.startsWith('/user/profile'),
                             }"
                         >
