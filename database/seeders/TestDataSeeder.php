@@ -14,6 +14,17 @@ class TestDataSeeder extends Seeder
      */
     public function run(): void
     {
+        // Ensure interests and languages are seeded first
+        $interestsCount = DB::table('interests')->count();
+        $languagesCount = DB::table('languages')->count();
+        
+        if ($interestsCount === 0 || $languagesCount === 0) {
+            $this->command->warn('Interests or languages tables are empty. Running seeders first...');
+            $this->call(InterestLanguageSeeder::class);
+            $this->call(AddNewInterestsSeeder::class);
+            $this->command->info('Interest and language seeders completed.');
+        }
+        
         // Create test organizations
         $organizations = [
             ['name' => 'Sunshine Senior Care'],
@@ -697,6 +708,9 @@ class TestDataSeeder extends Seeder
             "That sounds like a great idea! I'm always happy to talk about my garden and learn from others too.",
         ];
 
+        // Get resident type ID
+        $residentTypeId = DB::table('user_types')->where('name', 'resident')->value('id');
+        
         // Find Robert Williams (resident) specifically for correspondence testing
         $robertWilliams = DB::table('users')
             ->where('name', 'Robert Williams')
@@ -762,6 +776,17 @@ class TestDataSeeder extends Seeder
         // Get all interests and languages
         $allInterests = DB::table('interests')->pluck('id', 'name')->toArray();
         $allLanguages = DB::table('languages')->pluck('id', 'name')->toArray();
+        
+        // Check if interests and languages exist
+        if (empty($allInterests)) {
+            $this->command->warn('No interests found in database. Please run InterestLanguageSeeder first.');
+            return;
+        }
+        
+        if (empty($allLanguages)) {
+            $this->command->warn('No languages found in database. Please run InterestLanguageSeeder first.');
+            return;
+        }
 
         // Get approved volunteers and residents
         $volunteers = DB::select("
@@ -870,11 +895,21 @@ class TestDataSeeder extends Seeder
             if ($index < count($languageGroups)) {
                 $selectedLanguages = $languageGroups[$index];
             } else {
-                $randomKeys = array_rand($allLanguages, min(2, count($allLanguages)));
-                if (!is_array($randomKeys)) {
-                    $randomKeys = [$randomKeys];
+                // Ensure we have languages to choose from
+                if (empty($allLanguages)) {
+                    $selectedLanguages = [];
+                } else {
+                    $numLanguages = min(2, count($allLanguages));
+                    if ($numLanguages > 0) {
+                        $randomKeys = array_rand($allLanguages, $numLanguages);
+                        if (!is_array($randomKeys)) {
+                            $randomKeys = [$randomKeys];
+                        }
+                        $selectedLanguages = array_keys(array_intersect_key($allLanguages, array_flip($randomKeys)));
+                    } else {
+                        $selectedLanguages = [];
+                    }
                 }
-                $selectedLanguages = array_keys(array_intersect_key($allLanguages, array_flip($randomKeys)));
             }
 
             foreach ($selectedLanguages as $langName) {
