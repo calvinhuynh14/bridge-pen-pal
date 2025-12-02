@@ -97,7 +97,6 @@ const columns = computed(() => {
             { key: "avatar", label: "Avatar", sortable: false, mobile: false },
             { key: "name", label: "Name", sortable: true, mobile: true },
             { key: "id", label: "ID", sortable: true, mobile: true },
-            { key: "status", label: "Status", sortable: true, mobile: true },
             {
                 key: "room_floor",
                 label: "Room/Floor",
@@ -182,6 +181,7 @@ const filteredItems = computed(() => {
         if (props.type === "resident") {
             return (
                 item.name?.toLowerCase().includes(searchLower) ||
+                item.username?.toString().includes(searchLower) ||
                 item.id?.toString().includes(searchLower)
             );
         } else if (props.type === "volunteer") {
@@ -451,12 +451,12 @@ const truncateText = (text, maxLength = 50) => {
                                 {{ item.name }}
                             </div>
 
-                            <!-- ID -->
+                            <!-- ID (User ID - username, not resident table id) -->
                             <div
                                 v-else-if="column.key === 'id'"
                                 class="text-sm text-black font-mono"
                             >
-                                {{ item.id }}
+                                {{ item.username || item.id }}
                             </div>
 
                             <!-- Status -->
@@ -585,7 +585,7 @@ const truncateText = (text, maxLength = 50) => {
                                     v-if="type === 'resident'"
                                     class="text-xs text-gray-500"
                                 >
-                                    ID: {{ item.id }}
+                                    ID: {{ item.username || item.id }}
                                 </div>
                                 <div
                                     v-if="type === 'report'"

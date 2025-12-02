@@ -137,6 +137,163 @@ const handleResidentDeleted = () => {
     // Refresh the page to show updated data
     window.location.reload();
 };
+
+// Print functionality
+const printResidents = () => {
+    // Print all residents (no status filtering needed)
+    const residentsToPrint = props.residents;
+
+    if (residentsToPrint.length === 0) {
+        alert("No residents to print.");
+        return;
+    }
+
+    // Debug: Log first resident to verify data structure
+    if (approvedResidents.length > 0) {
+        console.log("Sample resident data:", approvedResidents[0]);
+        console.log("Resident ID (r.id):", approvedResidents[0].id);
+        console.log("Username (User ID):", approvedResidents[0].username);
+    }
+
+    // Escape HTML to prevent XSS
+    const escapeHtml = (text) => {
+        if (!text) return "N/A";
+        const div = document.createElement("div");
+        div.textContent = text;
+        return div.innerHTML;
+    };
+
+    // Create print window content
+    const printWindow = window.open("", "_blank");
+    const printContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Resident Account Information</title>
+            <style>
+                @media print {
+                    @page {
+                        margin: 0.5in;
+                    }
+                    body {
+                        margin: 0;
+                        padding: 0;
+                    }
+                    .no-print {
+                        display: none;
+                    }
+                }
+                body {
+                    font-family: Arial, sans-serif;
+                    padding: 20px;
+                }
+                h1 {
+                    text-align: center;
+                    margin-bottom: 20px;
+                    color: #333;
+                }
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-top: 20px;
+                    page-break-inside: auto;
+                }
+                tr {
+                    page-break-inside: avoid;
+                    page-break-after: auto;
+                }
+                thead {
+                    display: table-header-group;
+                }
+                tfoot {
+                    display: table-footer-group;
+                }
+                th, td {
+                    border: 1px solid #000;
+                    padding: 12px;
+                    text-align: left;
+                    font-size: 14px;
+                }
+                th {
+                    background-color: #f0f0f0;
+                    font-weight: bold;
+                    text-align: center;
+                }
+                td {
+                    text-align: center;
+                }
+                .resident-name {
+                    font-weight: bold;
+                }
+                .user-id, .pin-code {
+                    font-family: 'Courier New', monospace;
+                    font-size: 16px;
+                    letter-spacing: 2px;
+                }
+                .print-date {
+                    text-align: right;
+                    margin-bottom: 10px;
+                    font-size: 12px;
+                    color: #666;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="print-date">Printed: ${escapeHtml(
+                new Date().toLocaleString()
+            )}</div>
+            <h1>Resident Account Information</h1>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 40%;">Resident Name</th>
+                        <th style="width: 30%;">User ID</th>
+                        <th style="width: 30%;">PIN Code</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${residentsToPrint
+                        .map((resident) => {
+                            // IMPORTANT: Use username (User ID - 6 digit login ID), NOT id (resident table primary key)
+                            // The username field contains the 6-digit User ID that residents use to log in
+                            const userID = resident.username;
+                            if (!userID) {
+                                console.warn(
+                                    "Resident missing username:",
+                                    resident
+                                );
+                            }
+                            return `
+                        <tr>
+                            <td class="resident-name">${escapeHtml(
+                                resident.name || "N/A"
+                            )}</td>
+                            <td class="user-id">${escapeHtml(
+                                userID || "N/A"
+                            )}</td>
+                            <td class="pin-code">${escapeHtml(
+                                resident.pin_code || "N/A"
+                            )}</td>
+                        </tr>
+                    `;
+                        })
+                        .join("")}
+                </tbody>
+            </table>
+        </body>
+        </html>
+    `;
+
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+
+    // Wait for content to load, then trigger print
+    printWindow.onload = () => {
+        setTimeout(() => {
+            printWindow.print();
+        }, 250);
+    };
+};
 </script>
 
 <template>
@@ -168,13 +325,16 @@ const handleResidentDeleted = () => {
                         >
                             Resident Statistics
                         </h2>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6" role="list">
+                        <div class="flex justify-center" role="list">
                             <div
                                 class="text-center bg-white bg-opacity-20 rounded-lg p-4"
                                 role="listitem"
                                 aria-label="Total Residents"
                             >
-                                <div class="text-3xl font-bold text-white mb-2" aria-hidden="true">
+                                <div
+                                    class="text-3xl font-bold text-white mb-2"
+                                    aria-hidden="true"
+                                >
                                     {{ totalCount }}
                                 </div>
                                 <div
@@ -183,40 +343,16 @@ const handleResidentDeleted = () => {
                                     Total Residents: {{ totalCount }}
                                 </div>
                             </div>
-                            <div
-                                class="text-center bg-white bg-opacity-20 rounded-lg p-4"
-                                role="listitem"
-                                aria-label="Pending Residents"
-                            >
-                                <div class="text-3xl font-bold text-white mb-2" aria-hidden="true">
-                                    {{ pendingCount }}
-                                </div>
-                                <div
-                                    class="text-white sm:text-sm lg:text-lg font-medium"
-                                >
-                                    Pending: {{ pendingCount }}
-                                </div>
-                            </div>
-                            <div
-                                class="text-center bg-white bg-opacity-20 rounded-lg p-4"
-                                role="listitem"
-                                aria-label="Approved Residents"
-                            >
-                                <div class="text-3xl font-bold text-white mb-2" aria-hidden="true">
-                                    {{ approvedCount }}
-                                </div>
-                                <div
-                                    class="text-white sm:text-sm lg:text-lg font-medium"
-                                >
-                                    Approved: {{ approvedCount }}
-                                </div>
-                            </div>
                         </div>
                     </section>
 
                     <!-- Action Buttons -->
                     <section aria-label="Resident Actions" class="mb-6">
-                        <div class="flex flex-col md:flex-row gap-4" role="group" aria-label="Create resident options">
+                        <div
+                            class="flex flex-col md:flex-row gap-4"
+                            role="group"
+                            aria-label="Create resident options"
+                        >
                             <button
                                 @click="openBatchModal"
                                 aria-label="Open batch create residents modal"
@@ -231,6 +367,13 @@ const handleResidentDeleted = () => {
                             >
                                 Manual Create
                             </button>
+                            <button
+                                @click="printResidents"
+                                aria-label="Print resident account information"
+                                class="bg-primary hover:bg-pressed text-white px-6 py-3 rounded-lg font-medium transition-colors shadow-sm"
+                            >
+                                Print Accounts
+                            </button>
                         </div>
                     </section>
 
@@ -239,14 +382,14 @@ const handleResidentDeleted = () => {
                         aria-label="Residents Table"
                         class="bg-white overflow-hidden shadow-lg rounded-lg border-2 border-primary p-6"
                     >
-                    <!-- DataTable Component -->
-                    <DataTable
-                        :items="residents"
-                        type="resident"
-                        @view="handleView"
-                        @edit="handleEdit"
-                        @delete="handleDelete"
-                    />
+                        <!-- DataTable Component -->
+                        <DataTable
+                            :items="residents"
+                            type="resident"
+                            @view="handleView"
+                            @edit="handleEdit"
+                            @delete="handleDelete"
+                        />
                     </section>
                 </div>
             </div>
