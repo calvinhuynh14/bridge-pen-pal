@@ -212,13 +212,14 @@ class TestDataSeeder extends Seeder
         }
 
         // Create 30 residents with proper usernames and PINs
+        // Using unique names that don't overlap with volunteer names
         $residentNames = [
-            'Alice Johnson', 'Bob Smith', 'Carol Davis', 'David Wilson', 'Emma Brown',
-            'Frank Miller', 'Grace Lee', 'Henry Taylor', 'Ivy Anderson', 'Jack Thomas',
-            'Karen White', 'Liam Harris', 'Mia Martin', 'Noah Thompson', 'Olivia Garcia',
-            'Peter Martinez', 'Quinn Robinson', 'Rachel Clark', 'Sam Rodriguez', 'Tina Lewis',
-            'Uma Walker', 'Victor Hall', 'Wendy Allen', 'Xavier Young', 'Yara King',
-            'Zoe Wright', 'Adam Lopez', 'Beth Hill', 'Carl Scott', 'Diana Green'
+            'Margaret Thompson', 'Robert Williams', 'Patricia Jones', 'James Moore', 'Mary Taylor',
+            'William Anderson', 'Elizabeth Jackson', 'Richard White', 'Susan Harris', 'Joseph Martin',
+            'Dorothy Thompson', 'Charles Garcia', 'Nancy Martinez', 'Thomas Robinson', 'Betty Clark',
+            'Christopher Rodriguez', 'Helen Lewis', 'Daniel Walker', 'Sharon Hall', 'Matthew Allen',
+            'Donna Young', 'Anthony King', 'Carol Wright', 'Mark Lopez', 'Ruth Hill',
+            'Donald Scott', 'Shirley Green', 'Steven Adams', 'Anna Baker', 'Paul Nelson'
         ];
 
         $roomNumbers = ['101', '102', '103', '104', '105', '201', '202', '203', '204', '205', 
@@ -696,15 +697,16 @@ class TestDataSeeder extends Seeder
             "That sounds like a great idea! I'm always happy to talk about my garden and learn from others too.",
         ];
 
-        // Find Bob Smith specifically
-        $bobSmith = DB::table('users')
-            ->where('name', 'Bob Smith')
+        // Find Robert Williams (resident) specifically for correspondence testing
+        $robertWilliams = DB::table('users')
+            ->where('name', 'Robert Williams')
+            ->where('user_type_id', $residentTypeId)
             ->first();
 
         // Create correspondence with each pen pal
         foreach ($penPals as $penPal) {
-            // Bob Smith gets 30 messages, others get 8-10
-            $messageCount = ($bobSmith && $penPal->id == $bobSmith->id) ? 30 : rand(8, 10);
+            // Robert Williams (resident) gets 30 messages, others get 8-10
+            $messageCount = ($robertWilliams && $penPal->id == $robertWilliams->id) ? 30 : rand(8, 10);
             
             for ($i = 0; $i < $messageCount; $i++) {
                 // Alternate sender between resident 100000 and pen pal
@@ -714,8 +716,8 @@ class TestDataSeeder extends Seeder
                 // Use different messages for variety
                 $content = $correspondenceMessages[$i % count($correspondenceMessages)];
                 
-                // Create messages over the past 90 days for Bob Smith (to fit 30 messages), 30 days for others
-                $maxDays = ($bobSmith && $penPal->id == $bobSmith->id) ? 90 : 30;
+                // Create messages over the past 90 days for Robert Williams (to fit 30 messages), 30 days for others
+                $maxDays = ($robertWilliams && $penPal->id == $robertWilliams->id) ? 90 : 30;
                 $daysAgo = ($i * $maxDays) / $messageCount; // Space messages evenly
                 $sentAt = $now->copy()->subDays($daysAgo)->subHours(rand(0, 23));
                 $deliveredAt = $sentAt->copy()->addHours(8);
