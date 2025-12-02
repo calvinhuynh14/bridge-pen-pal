@@ -297,6 +297,34 @@ class TestDataSeeder extends Seeder
             $this->command->info("Skipping letter seeding - {$existingLetters} letters already exist.");
         }
 
+        // Always create/refresh in-transit letters to demonstrate 8-hour delivery delay
+        // Delete existing in-transit letters first to avoid duplicates
+        $now = now();
+        DB::table('letters')
+            ->where('delivered_at', '>', $now)
+            ->where('is_open_letter', false)
+            ->delete();
+        
+        // Get residents and volunteers for in-transit letters
+        $residents = DB::select("
+            SELECT u.id, u.name, r.organization_id
+            FROM users u
+            JOIN resident r ON u.id = r.user_id
+            LIMIT 10
+        ");
+        
+        $volunteers = DB::select("
+            SELECT u.id, u.name, v.organization_id
+            FROM users u
+            JOIN volunteer v ON u.id = v.user_id
+            WHERE v.status = 'approved'
+            LIMIT 10
+        ");
+        
+        if (!empty($residents) && !empty($volunteers)) {
+            $this->createInTransitLetters($residents, $volunteers, $now);
+        }
+
         // Seed correspondence for resident 100000 (for testing Write page)
         $this->seedCorrespondenceForResident100000();
         $this->command->info('Created correspondence data for resident 100000.');
@@ -505,6 +533,90 @@ class TestDataSeeder extends Seeder
                 'updated_at' => $now,
             ]);
         }
+
+        // Create letters currently in transit to demonstrate 8-hour delivery delay
+        $this->createInTransitLetters($residents, $volunteers, $now);
+    }
+
+    /**
+     * Create letters that are currently in transit (sent recently, not yet delivered)
+     * This demonstrates the 8-hour delivery delay feature
+     */
+    private function createInTransitLetters($residents, $volunteers, $now)
+    {
+        if (empty($residents) || empty($volunteers)) {
+            return;
+        }
+
+        $inTransitContents = [
+            "I'm so excited to write to you! I've been thinking about what to say all day.",
+            "Thank you for your last letter. It really made my day brighter!",
+            "I wanted to share something special with you today.",
+            "Your words always bring a smile to my face. Thank you for being my pen pal!",
+            "I hope this letter finds you well. I've been doing great lately!",
+            "I have some wonderful news to share with you in this letter.",
+            "Your friendship means so much to me. Thank you for writing!",
+            "I've been thinking about what you wrote in your last letter.",
+        ];
+
+        // Create 8-12 letters in transit with varying delivery times
+        $inTransitCount = min(12, count($residents), count($volunteers));
+        
+        for ($i = 0; $i < $inTransitCount; $i++) {
+            // Alternate between volunteer->resident and resident->volunteer
+            if ($i % 2 === 0) {
+                $sender = $volunteers[array_rand($volunteers)];
+                $receiver = $residents[array_rand($residents)];
+            } else {
+                $sender = $residents[array_rand($residents)];
+                $receiver = $volunteers[array_rand($volunteers)];
+            }
+
+            // Ensure sender and receiver are different
+            if ($sender->id === $receiver->id) {
+                continue;
+            }
+
+            $content = $inTransitContents[$i % count($inTransitContents)];
+
+            // Create letters with different delivery times:
+            // - Some sent 1-2 hours ago (arriving in 6-7 hours)
+            // - Some sent 3-4 hours ago (arriving in 4-5 hours)
+            // - Some sent 5-6 hours ago (arriving in 2-3 hours)
+            // - Some sent 7 hours ago (arriving in ~1 hour)
+            $mod = $i % 4;
+            if ($mod === 0) {
+                $hoursAgo = rand(1, 2);      // Arriving in 6-7 hours
+            } elseif ($mod === 1) {
+                $hoursAgo = rand(3, 4);      // Arriving in 4-5 hours
+            } elseif ($mod === 2) {
+                $hoursAgo = rand(5, 6);      // Arriving in 2-3 hours
+            } else {
+                $hoursAgo = 7;               // Arriving in ~1 hour
+            }
+
+            $sentAt = $now->copy()->subHours($hoursAgo);
+            $deliveredAt = $sentAt->copy()->addHours(8); // 8-hour delay
+
+            // Status should be 'sent' since it hasn't arrived yet
+            $status = 'sent';
+
+            DB::table('letters')->insert([
+                'sender_id' => $sender->id,
+                'receiver_id' => $receiver->id,
+                'content' => $content,
+                'is_open_letter' => false,
+                'parent_letter_id' => null,
+                'status' => $status,
+                'sent_at' => $sentAt,
+                'delivered_at' => $deliveredAt,
+                'read_at' => null,
+                'created_at' => $sentAt,
+                'updated_at' => $now,
+            ]);
+        }
+
+        $this->command->info("Created {$inTransitCount} letters currently in transit (demonstrating 8-hour delivery delay)");
     }
 
     /**

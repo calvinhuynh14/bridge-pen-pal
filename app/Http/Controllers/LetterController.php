@@ -104,6 +104,17 @@ class LetterController extends Controller
 
         $openLetters = DB::select($query, $params);
 
+        // Convert timestamps to ISO8601 format to avoid timezone issues
+        $openLetters = array_map(function($letter) {
+            if ($letter->sent_at) {
+                $letter->sent_at = \Carbon\Carbon::parse($letter->sent_at)->utc()->toIso8601String();
+            }
+            if ($letter->created_at) {
+                $letter->created_at = \Carbon\Carbon::parse($letter->created_at)->utc()->toIso8601String();
+            }
+            return $letter;
+        }, $openLetters);
+
         return response()->json([
             'letters' => $openLetters,
             'count' => count($openLetters)
@@ -328,6 +339,7 @@ class LetterController extends Controller
     {
         $user = Auth::user();
 
+        // Only get incoming letters (not yet delivered - delivered_at > now())
         $letters = DB::select("
             SELECT 
                 l.id,
@@ -352,8 +364,27 @@ class LetterController extends Controller
             JOIN users sender ON l.sender_id = sender.id
             WHERE l.receiver_id = ?
             AND l.deleted_at IS NULL
-            ORDER BY l.delivered_at DESC, l.created_at DESC
-        ", [$user->id]);
+            AND l.delivered_at > ?
+            AND l.is_open_letter = 0
+            ORDER BY l.delivered_at ASC, l.created_at ASC
+        ", [$user->id, now()]);
+
+        // Convert timestamps to ISO8601 format to avoid timezone issues
+        $letters = array_map(function($letter) {
+            if ($letter->sent_at) {
+                $letter->sent_at = \Carbon\Carbon::parse($letter->sent_at)->utc()->toIso8601String();
+            }
+            if ($letter->delivered_at) {
+                $letter->delivered_at = \Carbon\Carbon::parse($letter->delivered_at)->utc()->toIso8601String();
+            }
+            if ($letter->read_at) {
+                $letter->read_at = \Carbon\Carbon::parse($letter->read_at)->utc()->toIso8601String();
+            }
+            if ($letter->created_at) {
+                $letter->created_at = \Carbon\Carbon::parse($letter->created_at)->utc()->toIso8601String();
+            }
+            return $letter;
+        }, $letters);
 
         return response()->json([
             'letters' => $letters,
@@ -394,6 +425,20 @@ class LetterController extends Controller
             AND l.deleted_at IS NULL
             ORDER BY l.sent_at DESC, l.created_at DESC
         ", [$user->id]);
+
+        // Convert timestamps to ISO8601 format to avoid timezone issues
+        $letters = array_map(function($letter) {
+            if ($letter->sent_at) {
+                $letter->sent_at = \Carbon\Carbon::parse($letter->sent_at)->utc()->toIso8601String();
+            }
+            if ($letter->delivered_at) {
+                $letter->delivered_at = \Carbon\Carbon::parse($letter->delivered_at)->utc()->toIso8601String();
+            }
+            if ($letter->created_at) {
+                $letter->created_at = \Carbon\Carbon::parse($letter->created_at)->utc()->toIso8601String();
+            }
+            return $letter;
+        }, $letters);
 
         return response()->json([
             'letters' => $letters,
@@ -521,6 +566,23 @@ class LetterController extends Controller
             ", [$id]);
         }
 
+        // Convert timestamps to ISO8601 format to avoid timezone issues
+        if ($letter->sent_at) {
+            $letter->sent_at = \Carbon\Carbon::parse($letter->sent_at)->utc()->toIso8601String();
+        }
+        if ($letter->delivered_at) {
+            $letter->delivered_at = \Carbon\Carbon::parse($letter->delivered_at)->utc()->toIso8601String();
+        }
+        if ($letter->read_at) {
+            $letter->read_at = \Carbon\Carbon::parse($letter->read_at)->utc()->toIso8601String();
+        }
+        if ($letter->created_at) {
+            $letter->created_at = \Carbon\Carbon::parse($letter->created_at)->utc()->toIso8601String();
+        }
+        if ($letter->updated_at) {
+            $letter->updated_at = \Carbon\Carbon::parse($letter->updated_at)->utc()->toIso8601String();
+        }
+
         return response()->json(['letter' => $letter]);
     }
 
@@ -556,15 +618,17 @@ class LetterController extends Controller
         $sort = $request->input('sort', 'newest'); // 'newest', 'oldest'
 
         // Build WHERE clause
+        // For letters sent TO the user: only show delivered letters (delivered_at <= now())
+        // For letters sent BY the user: show all letters (including undelivered ones)
         $whereClause = "
             WHERE l.deleted_at IS NULL
             AND (
-                (l.sender_id = ? AND l.receiver_id = ?)
-                OR (l.sender_id = ? AND l.receiver_id = ?)
+                (l.sender_id = ? AND l.receiver_id = ?)  -- Letters sent by current user (show all)
+                OR (l.sender_id = ? AND l.receiver_id = ? AND l.delivered_at <= ?)  -- Letters sent to current user (only delivered)
             )
         ";
 
-        $params = [$user->id, $penPalId, $penPalId, $user->id];
+        $params = [$user->id, $penPalId, $penPalId, $user->id, now()];
 
         // Apply sender filter
         if ($filter === 'me') {
@@ -593,6 +657,7 @@ class LetterController extends Controller
         }
 
         // Build count query for pagination
+        // Includes all letters sent by current user + only delivered letters sent to current user
         $countQuery = "
             SELECT COUNT(*) as total
             FROM letters l
@@ -656,6 +721,23 @@ class LetterController extends Controller
 
         // Execute query
         $messages = DB::select($query, $params);
+
+        // Convert timestamps to ISO8601 format to avoid timezone issues
+        $messages = array_map(function($msg) {
+            if ($msg->sent_at) {
+                $msg->sent_at = \Carbon\Carbon::parse($msg->sent_at)->utc()->toIso8601String();
+            }
+            if ($msg->delivered_at) {
+                $msg->delivered_at = \Carbon\Carbon::parse($msg->delivered_at)->utc()->toIso8601String();
+            }
+            if ($msg->read_at) {
+                $msg->read_at = \Carbon\Carbon::parse($msg->read_at)->utc()->toIso8601String();
+            }
+            if ($msg->created_at) {
+                $msg->created_at = \Carbon\Carbon::parse($msg->created_at)->utc()->toIso8601String();
+            }
+            return $msg;
+        }, $messages);
 
         // Calculate pagination metadata
         $lastPage = ceil($total / $perPage);
@@ -914,6 +996,20 @@ class LetterController extends Controller
 
         $queryParams = array_merge([$user->id], $penPalIdArray, [$perPage, $offset]);
         $letters = DB::select($query, $queryParams);
+
+        // Convert timestamps to ISO8601 format to avoid timezone issues
+        $letters = array_map(function($letter) {
+            if ($letter->sent_at) {
+                $letter->sent_at = \Carbon\Carbon::parse($letter->sent_at)->utc()->toIso8601String();
+            }
+            if ($letter->read_at) {
+                $letter->read_at = \Carbon\Carbon::parse($letter->read_at)->utc()->toIso8601String();
+            }
+            if ($letter->created_at) {
+                $letter->created_at = \Carbon\Carbon::parse($letter->created_at)->utc()->toIso8601String();
+            }
+            return $letter;
+        }, $letters);
 
         return response()->json([
             'letters' => $letters,

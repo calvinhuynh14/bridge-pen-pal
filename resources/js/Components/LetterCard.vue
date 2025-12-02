@@ -28,6 +28,22 @@ const emit = defineEmits(["claim", "report", "view", "reply"]);
 const page = usePage();
 const currentUserId = computed(() => page.props.auth?.user?.id);
 
+// Check if letter is undelivered
+// For senders: letter is undelivered if delivered_at > now
+// For recipients: letter is undelivered if delivered_at > now (shouldn't appear, but check anyway)
+const isUndelivered = computed(() => {
+    if (!props.letter.delivered_at) return false;
+    const deliveredAt = new Date(props.letter.delivered_at);
+    const now = new Date();
+    // Use getTime() for accurate comparison to avoid timezone issues
+    return deliveredAt.getTime() > now.getTime();
+});
+
+// Check if current user is the recipient and letter is undelivered
+const isRecipientUndelivered = computed(() => {
+    return props.letter.receiver_id === currentUserId.value && isUndelivered.value;
+});
+
 // Hover state for common interests tooltip
 const showCommonInterests = ref(false);
 
@@ -47,6 +63,17 @@ const truncateContent = (content, maxLength = 150) => {
     if (!content) return "";
     if (content.length <= maxLength) return content;
     return content.substring(0, maxLength).trim() + "...";
+};
+
+// Calculate hours remaining consistently
+const getHoursRemaining = () => {
+    if (!props.letter.delivered_at) return 0;
+    const deliveredAt = new Date(props.letter.delivered_at);
+    const now = new Date();
+    const timeRemaining = deliveredAt.getTime() - now.getTime();
+    // Only return hours if letter is actually in transit (not already delivered)
+    if (timeRemaining <= 0) return 0;
+    return Math.max(0, Math.ceil(timeRemaining / (1000 * 60 * 60)));
 };
 
 // Status icon configuration - perspective-aware
@@ -108,6 +135,12 @@ const handleCardClick = (event) => {
     // Don't emit view if clicking on buttons or their children
     const target = event.target;
     const isButton = target.closest("button");
+    
+    // Prevent viewing if recipient and letter is undelivered
+    if (isRecipientUndelivered.value) {
+        return;
+    }
+    
     if (!isButton) {
         emit("view", props.letter);
     }
@@ -132,14 +165,19 @@ const handleReport = (event) => {
 <template>
     <article
         @click="handleCardClick"
-        class="border-2 border-gray-300 rounded-sm p-1.5 sm:p-3 md:p-4 shadow-md hover:shadow-lg transition-shadow relative flex flex-col cursor-pointer w-full max-h-[300px] sm:max-h-none mx-auto sm:mx-0"
+        class="border-2 rounded-sm p-1.5 sm:p-3 md:p-4 shadow-md hover:shadow-lg transition-shadow relative flex flex-col cursor-pointer w-full max-h-[300px] sm:max-h-none mx-auto sm:mx-0"
+        :class="{
+            'border-gray-300': !isUndelivered,
+            'border-gray-400': isUndelivered,
+            'opacity-60': isUndelivered,
+        }"
         style="
             background-color: #ffffff;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1),
                 0 1px 2px rgba(0, 0, 0, 0.06);
             aspect-ratio: 3 / 4;
         "
-        :aria-label="`Letter from ${letter.sender_name} dated ${formatDate(letter.sent_at)}`"
+        :aria-label="`Letter from ${letter.sender_name} dated ${formatDate(letter.sent_at)}${isUndelivered ? ' (in transit)' : ''}`"
         role="article"
     >
         <!-- Status Icon (Bottom Right) -->
@@ -256,7 +294,11 @@ const handleReport = (event) => {
             class="flex-1 mb-1 sm:mb-2 md:mb-3 min-h-[30px] sm:min-h-[60px] md:min-h-[80px] overflow-hidden"
         >
             <p
-                class="text-gray-700 text-xs sm:text-sm md:text-base leading-relaxed"
+                class="text-xs sm:text-sm md:text-base leading-relaxed"
+                :class="{
+                    'text-gray-700': !isUndelivered,
+                    'text-gray-500': isUndelivered,
+                }"
                 style="
                     display: -webkit-box;
                     -webkit-line-clamp: 4;
@@ -267,6 +309,24 @@ const handleReport = (event) => {
             >
                 {{ letter.content }}
             </p>
+            <!-- Undelivered indicator -->
+            <div
+                v-if="isUndelivered"
+                class="mt-2 text-xs text-gray-500 italic flex items-center gap-1"
+            >
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                    class="w-3 h-3"
+                    aria-hidden="true"
+                >
+                    <path
+                        d="M3.478 2.404a.75.75 0 0 0-.926.941l2.432 7.905H13.5a.75.75 0 0 1 0 1.5H4.984l-2.432 7.905a.75.75 0 0 0 .926.94 60.519 60.519 0 0 0 18.445-8.986.75.75 0 0 0 0-1.218A60.517 60.517 0 0 0 3.478 2.404Z"
+                    />
+                </svg>
+                <span>In transit - will arrive in {{ getHoursRemaining() }} hour{{ getHoursRemaining() !== 1 ? 's' : '' }}</span>
+            </div>
         </div>
 
         <!-- Action Buttons -->

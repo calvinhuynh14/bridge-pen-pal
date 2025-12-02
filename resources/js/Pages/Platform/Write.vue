@@ -78,21 +78,47 @@ const showPreviewModal = ref(false);
 const showReportModal = ref(false);
 const selectedLetter = ref(null);
 
+// Delivery delay modal
+const showDeliveryModal = ref(false);
+const deliveryModalRecipient = ref(null);
+
 // Load incoming letters from API
 const loadIncomingLetters = async () => {
     isLoadingIncomingLetters.value = true;
 
     try {
         const response = await axios.get("/api/letters/received");
-        // Get unique senders from received letters
+        // Get unique senders from incoming letters with delivery time info
+        // Use the minimum hours remaining (soonest delivery) for each sender
         const uniqueSenders = new Map();
+        const now = new Date();
+        
         response.data.letters.forEach((letter) => {
+            const deliveredAt = new Date(letter.delivered_at);
+            const timeRemaining = deliveredAt.getTime() - now.getTime();
+            
+            // Skip letters that are already delivered (shouldn't happen, but safety check)
+            if (timeRemaining <= 0) {
+                return;
+            }
+            
+            const hoursRemaining = Math.ceil(timeRemaining / (1000 * 60 * 60));
+            
             if (!uniqueSenders.has(letter.sender_id)) {
                 uniqueSenders.set(letter.sender_id, {
                     id: letter.sender_id,
                     name: letter.sender_name,
                     avatar: letter.sender_avatar ? `/images/avatars/${letter.sender_avatar}` : null,
+                    delivered_at: letter.delivered_at,
+                    hours_remaining: hoursRemaining,
                 });
+            } else {
+                // Update if this letter arrives sooner
+                const existing = uniqueSenders.get(letter.sender_id);
+                if (hoursRemaining < existing.hours_remaining) {
+                    existing.hours_remaining = hoursRemaining;
+                    existing.delivered_at = letter.delivered_at;
+                }
             }
         });
         incomingLetters.value = Array.from(uniqueSenders.values());
@@ -442,12 +468,21 @@ const handleView = async (letter) => {
         return;
     }
 
+    // Prevent recipients from viewing undelivered letters
+    const currentUserId = user.value?.id;
+    if (letter.receiver_id === currentUserId) {
+        const deliveredAt = new Date(letter.delivered_at);
+        const now = new Date();
+        if (deliveredAt.getTime() > now.getTime()) {
+            // Letter hasn't arrived yet - don't allow viewing
+            return;
+        }
+    }
+
     viewingLetter.value = letter;
     showViewModal.value = true;
 
     // Mark letter as read if user is the receiver
-    const currentUserId = user.value?.id;
-
     if (letter.receiver_id === currentUserId && !letter.read_at) {
         try {
             // Call API to mark as read (the show endpoint marks it as read)
@@ -682,17 +717,26 @@ const handleSendLetter = async () => {
             handleCancelWrite();
             // Optionally show a success message or refresh the discover page
         } else {
-            // Pen pal letter - select the pen pal and show correspondence
+            // Pen pal letter - show delivery delay modal
             const recipientPal = penPals.value.find(
                 (pal) => pal.id === selectedRecipient.value
             );
 
             if (recipientPal) {
+                // Store recipient name for modal
+                deliveryModalRecipient.value = recipientPal.name;
+                
                 // Close the writing interface first
                 showWritingInterface.value = false;
                 letterContent.value = "";
                 selectedRecipient.value = null;
                 sendError.value = null;
+
+                // Reload incoming letters (in case someone sent us a letter)
+                loadIncomingLetters();
+
+                // Show delivery delay modal
+                showDeliveryModal.value = true;
 
                 // Select the pen pal (this will load correspondence and show the new message)
                 selectPenPal(recipientPal);
@@ -791,6 +835,10 @@ onUnmounted(() => {
     if (penPalSearchTimeout) {
         clearTimeout(penPalSearchTimeout);
     }
+    if (incomingLettersInterval) {
+        clearInterval(incomingLettersInterval);
+        incomingLettersInterval = null;
+    }
 });
 </script>
 
@@ -864,15 +912,28 @@ onUnmounted(() => {
                                         :key="letter.id"
                                         class="flex-shrink-0 flex flex-col items-center gap-2"
                                         role="listitem"
-                                        :aria-label="`Letter from ${letter.name}`"
+                                        :aria-label="`Letter from ${letter.name}, arriving in ${letter.hours_remaining} hours`"
+                                        :title="`Letter from ${letter.name}\nArriving in ${letter.hours_remaining} hour${letter.hours_remaining !== 1 ? 's' : ''}`"
                                     >
-                                        <Avatar
-                                            :src="letter.avatar"
-                                            :name="letter.name"
-                                            size="md"
-                                            border-color="white"
-                                            opacity="70"
-                                        />
+                                        <div class="relative">
+                                            <Avatar
+                                                :src="letter.avatar"
+                                                :name="letter.name"
+                                                size="md"
+                                                border-color="white"
+                                                opacity="70"
+                                            />
+                                            <!-- Time remaining badge -->
+                                            <div
+                                                class="absolute -bottom-1 -right-1 bg-accent text-black text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center border-2 border-white"
+                                                :title="`${letter.hours_remaining} hour${letter.hours_remaining !== 1 ? 's' : ''} remaining`"
+                                            >
+                                                {{ letter.hours_remaining }}
+                                            </div>
+                                        </div>
+                                        <p class="text-white text-xs text-center max-w-[60px] truncate">
+                                            {{ letter.name }}
+                                        </p>
                                     </div>
                                 </div>
 
@@ -1609,5 +1670,51 @@ onUnmounted(() => {
             :letter="selectedLetter"
             @close="closeReportModal"
         />
+
+        <!-- Delivery Delay Modal -->
+        <Modal :show="showDeliveryModal" @close="showDeliveryModal = false">
+            <div class="p-6">
+                <div class="flex items-center gap-4 mb-4">
+                    <div class="flex-shrink-0">
+                        <div class="w-12 h-12 bg-primary rounded-full flex items-center justify-center">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 24 24"
+                                fill="currentColor"
+                                class="w-6 h-6 text-white"
+                                aria-hidden="true"
+                            >
+                                <path
+                                    d="M3.478 2.404a.75.75 0 0 0-.926.941l2.432 7.905H13.5a.75.75 0 0 1 0 1.5H4.984l-2.432 7.905a.75.75 0 0 0 .926.94 60.519 60.519 0 0 0 18.445-8.986.75.75 0 0 0 0-1.218A60.517 60.517 0 0 0 3.478 2.404Z"
+                                />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-xl font-bold text-gray-900">
+                            Letter Sent!
+                        </h3>
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <p class="text-gray-700 mb-2">
+                        Your letter to <strong>{{ deliveryModalRecipient }}</strong> has been sent successfully.
+                    </p>
+                    <p class="text-gray-600 text-sm">
+                        Your letter will take approximately <strong>8 hours</strong> to arrive, simulating the traditional pen pal experience. You can see your sent letter in the correspondence, but it will appear greyed out until it's delivered.
+                    </p>
+                </div>
+
+                <div class="flex justify-end">
+                    <button
+                        @click="showDeliveryModal = false"
+                        class="px-4 py-2 bg-primary hover:bg-pressed text-white rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                    >
+                        Got it
+                    </button>
+                </div>
+            </div>
+        </Modal>
     </AppLayout>
 </template>
